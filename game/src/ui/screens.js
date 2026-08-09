@@ -174,6 +174,7 @@ export const UI = {
   showBoard() {
     Game.state = 'board';
     if (Career.finished()) { this.showOver(false); return; }
+    Career.pendingSummary = null;
     if (!Career.offers.length) Career.refreshBoard();
     show('board');
     this.syncDevTools();
@@ -285,6 +286,7 @@ export const UI = {
       return;
     }
     Career.accept(offer);
+    Career.pendingSummary = null;
     hideAll();
     Game.startContract(offer);
   },

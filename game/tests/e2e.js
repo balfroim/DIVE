@@ -34,7 +34,6 @@ async function captureBrief(page, organId, seed) {
       mapPainted: painted,
       pressure: organ.pressure,
       mapPressure: parseFloat(document.getElementById('brief-mapdesc').textContent),
-      mapText: document.getElementById('brief-mapdesc').textContent,
       mapLink: __D.Career.pending.organ.map ?? null
     };
   }, { organId, seed });
