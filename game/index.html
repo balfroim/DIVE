@@ -11,6 +11,14 @@
   :root{
     --pink:#ff5f8f; --cyan:#6fe8ff; --green:#57f2a7;
     --amber:#ffc25a; --red:#ff4d5e; --txt:#ffe6ef; --mut:#cf93a8;
+    --bg-page:#14020c; --bg-panel:#2a0518; --bg-card:#35081f; --bg-card-raised:#401026;
+    --border-subtle:rgba(255,120,180,.14); --border-card:rgba(255,120,180,.22);
+    --text-primary:#ffe4ef; --text-secondary:#f2a8c8; --text-muted:#b9738f;
+    --accent-brand:#ff4d94; --accent-threat:#ff5b47; --accent-caution:#ffb347;
+    --accent-reward:#ffd76a; --accent-ready:#5fe3a1;
+    --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+    --font-sans:"Inter",system-ui,sans-serif;
+    --gap-xs:4px; --gap-sm:8px; --gap-md:12px; --gap-lg:20px; --gap-xl:32px; --radius:10px;
   }
   html,body{height:100%;background:#0b0308;overflow:hidden}
   body{
@@ -245,6 +253,69 @@
   .mini{font-size:clamp(9.5px,1.8vw,11px);color:var(--mut);letter-spacing:.08em}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   @media (max-width:520px){.grid2{grid-template-columns:1fr}}
+
+  /* ---------- briefing rework ---------- */
+  .briefing{--line:var(--border-subtle);--card:var(--bg-card);--card2:var(--bg-card-raised);--text:var(--text-primary)}
+  .briefing .label{font:600 11px/1.2 var(--font-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+  .briefing .value{font:500 13px/1.4 var(--font-mono);color:var(--text-primary)}
+  .briefing .prose{font:400 13px/1.55 var(--font-sans);color:var(--text-secondary)}
+  .briefing .act__title{font:600 10px/1 var(--font-sans);letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);display:flex;gap:var(--gap-md);margin:32px 0 12px}
+  .briefing .act__title::after{content:"";flex:1;height:1px;background:var(--border-subtle)}
+  .briefing .site-banner{display:grid;grid-template-columns:120px 1fr;gap:var(--gap-lg);padding:var(--gap-lg);background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius)}
+  .briefing .site-banner__map{margin:0}
+  .briefing .site-banner__map canvas{display:block;width:100%;height:auto;border-radius:10px;background:radial-gradient(circle at 50% 45%,rgba(90,10,30,.7),rgba(12,2,7,.9));border:1px solid rgba(255,140,175,.18)}
+  .briefing .metric-row{display:flex;gap:var(--gap-xl);margin-top:var(--gap-md);flex-wrap:wrap}
+  .briefing .metric-row > div{min-width:74px}
+  .briefing .metric-row dt{margin-bottom:var(--gap-xs)}
+  .briefing .metric-row dd{margin:0}
+  .briefing .threat-bar{display:flex;justify-content:space-between;gap:var(--gap-lg);padding:var(--gap-md) var(--gap-lg);border-radius:var(--radius);border:1px solid var(--border-card);background:var(--bg-card);align-items:center}
+  .briefing .threat-bar__tier{display:flex;flex-direction:column;gap:var(--gap-xs);margin-left:auto;text-align:right}
+  .briefing .threat-bar__grade{font:700 20px/1 var(--font-sans);letter-spacing:.04em;text-transform:uppercase}
+  .briefing .threat-bar__tier[data-severity="high"] .threat-bar__grade{color:var(--accent-threat)}
+  .briefing .threat-bar__tier[data-severity="mid"] .threat-bar__grade{color:var(--accent-caution)}
+  .briefing .threat-bar__tier[data-severity="low"] .threat-bar__grade{color:var(--accent-brand)}
+  .briefing .threat-bar__readiness{display:flex;align-items:center;gap:var(--gap-sm);font:500 13px/1.3 var(--font-sans);color:var(--accent-ready)}
+  .briefing .threat-bar__readiness[data-state="blocked"]{color:var(--accent-threat)}
+  .briefing .threat-bar__tier-note{font:400 12px/1.3 var(--font-sans);color:var(--text-secondary)}
+  .briefing .threat-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-md)}
+  .briefing .card{display:grid;grid-template-columns:76px 1fr;gap:var(--gap-md);padding:var(--gap-md);background:var(--bg-card);border:1px solid var(--border-card);border-left:3px solid var(--border-card);border-radius:var(--radius)}
+  .briefing .card canvas{display:block;width:76px;height:76px;border-radius:10px;background:radial-gradient(circle at 50% 45%,rgba(90,10,30,.7),rgba(12,2,7,.9));border:1px solid rgba(255,140,175,.18)}
+  .briefing .card--primary{grid-column:1 / -1;background:var(--bg-card-raised);border-left-color:var(--accent-brand)}
+  .briefing .card--warning{border-left-color:var(--accent-caution)}
+  .briefing .card--info{border-left-color:var(--border-card)}
+  .briefing .card__title{font:600 12px/1.2 var(--font-sans);letter-spacing:.1em;text-transform:uppercase;margin:0 0 var(--gap-xs)}
+  .briefing .card--primary .card__title{color:var(--accent-brand)}
+  .briefing .card--warning .card__title{color:var(--accent-caution)}
+  .briefing .card__rule{display:flex;gap:var(--gap-sm);font:600 13px/1.4 var(--font-sans);color:var(--accent-caution);margin:0 0 var(--gap-sm)}
+  .briefing .card--primary .card__rule{color:var(--accent-brand)}
+  .briefing .card--info .card__rule{color:var(--text-secondary)}
+  .briefing .card__behavior{margin:var(--gap-sm) 0 0}
+  .briefing .terms{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-lg);padding:var(--gap-lg);background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius)}
+  .briefing .terms__ledger{margin:0}
+  .briefing .terms__line{display:flex;justify-content:space-between;padding:var(--gap-sm) 0;border-bottom:1px solid var(--border-subtle)}
+  .briefing .terms__line dt,.briefing .terms__line dd{margin:0}
+  .briefing .terms__line--total{border-bottom:none;font-weight:700}
+  .briefing .value--credit{color:var(--accent-reward)}
+  .briefing .rep-swing{display:flex;gap:var(--gap-lg);margin-top:var(--gap-sm);align-items:flex-start}
+  .briefing .rep-swing__gain,.briefing .rep-swing__loss{font:700 18px/1 var(--font-mono)}
+  .briefing .rep-swing__gain{color:var(--accent-brand)}
+  .briefing .rep-swing__loss{color:var(--accent-threat)}
+  .briefing .rep-swing small{display:block;font:500 10px/1 var(--font-sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+  .briefing .callout--info{display:flex;gap:var(--gap-md);padding:var(--gap-md) var(--gap-lg);border-left:3px solid var(--text-muted);background:rgba(255,255,255,.03);border-radius:var(--radius);color:var(--text-secondary);font:400 13px/1.5 var(--font-sans);margin-top:var(--gap-md)}
+  .briefing .callout--info[data-state="blocked"]{border-left-color:var(--accent-threat)}
+  .briefing .callout--info p{margin:0}
+  .briefing__actions{display:grid;grid-template-columns:1.4fr 1fr;gap:var(--gap-md);align-items:stretch;margin-top:var(--gap-xl)}
+  .briefing__actions .btn{height:56px;border-radius:var(--radius);font:700 15px/1 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;box-shadow:none}
+  .briefing__actions .btn:focus-visible{outline:2px solid var(--accent-brand);outline-offset:3px}
+  .briefing__actions .btn--primary,.briefing__actions .btn{background:linear-gradient(180deg,#ff77ad,#ff2e7e);color:#2a0010;border:none;box-shadow:0 0 24px rgba(255,60,130,.35)}
+  .briefing__actions .ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border-card);box-shadow:none}
+  .briefing__actions .btn:disabled{opacity:.45;cursor:not-allowed;filter:saturate(.6)}
+  @media (max-width:620px){
+    .briefing .site-banner,.briefing .terms,.briefing .threat-grid{grid-template-columns:1fr}
+    .briefing .threat-bar{flex-direction:column;align-items:flex-start}
+    .briefing .threat-bar__tier{margin-left:0;text-align:left}
+    .briefing__actions{grid-template-columns:1fr}
+  }
 </style>
 <body>
 <div id="app">
@@ -368,48 +439,83 @@
 
     <!-- ============ BRIEFING ============ -->
     <div class="overlay" id="scr-brief">
-      <div class="panel wide">
+      <div class="panel wide briefing">
         <div class="kicker" id="brief-num">Work order</div>
         <h2 id="brief-client">Client</h2>
-        <div class="tag" id="brief-title">title</div>
-        <div class="tag" id="brief-site">site</div>
-        <div class="chips" id="brief-chips"></div>
-        <div class="cols">
-          <div class="card">
-            <canvas id="cv-sig" width="150" height="150"></canvas>
+        <div class="prose" id="brief-title">title</div>
+        <div class="value" id="brief-site">site</div>
+        <section class="act">
+          <h2 class="act__title">Deployment</h2>
+          <div class="site-banner">
+            <figure class="site-banner__map">
+              <canvas id="cv-site" width="150" height="150"></canvas>
+            </figure>
             <div>
-              <div class="kicker">Client signature</div>
-              <div class="d">Do not mark these</div>
-              <div class="m" id="brief-sigdesc">&mdash;</div>
+              <div class="label">Site note</div>
+              <div class="prose" id="brief-mapnote">&mdash;</div>
+              <dl class="metric-row">
+                <div><dt class="label">Depth</dt><dd class="value" id="brief-depth">&mdash;</dd></div>
+                <div><dt class="label">Waves</dt><dd class="value" id="brief-waves">&mdash;</dd></div>
+                <div><dt class="label">Pressure</dt><dd class="value" id="brief-mapdesc">&mdash;</dd></div>
+              </dl>
             </div>
           </div>
-          <div class="card">
-            <canvas id="cv-tgt" width="150" height="150"></canvas>
-            <div>
-              <div class="kicker">Contract target</div>
-              <div class="d" id="brief-tgtdesc">&mdash;</div>
-              <div class="m" id="brief-tgtname">&mdash;</div>
+        </section>
+        <section class="act">
+          <h2 class="act__title">Threat assessment</h2>
+          <div class="threat-bar">
+            <div class="threat-bar__readiness" id="brief-readiness" data-state="clear"><span>✓</span><span>Cleared</span></div>
+            <div class="threat-bar__tier" id="brief-tier" data-severity="mid">
+              <div class="threat-bar__grade" id="brief-grade">NORMAL</div>
+              <div class="threat-bar__tier-note" id="brief-tiernote">&mdash;</div>
             </div>
           </div>
-        </div>
-        <div class="card" style="margin-top:9px">
-          <canvas id="cv-sym" width="150" height="150"></canvas>
-          <div>
-            <div class="kicker">Symbiotes &mdash; twin halo</div>
-            <div class="d">Paying tenants. Killing one is litigation.</div>
-            <div class="m" id="brief-kit">KIT</div>
+          <div class="threat-grid">
+            <article class="card card--primary">
+              <canvas id="cv-tgt" width="150" height="150"></canvas>
+              <div>
+                <div class="card__title">Contract target</div>
+                <div class="card__rule" id="brief-tgtname">&mdash;</div>
+                <div class="prose card__behavior" id="brief-tgtdesc">&mdash;</div>
+              </div>
+            </article>
+            <article class="card card--warning">
+              <canvas id="cv-sym" width="150" height="150"></canvas>
+              <div>
+                <div class="card__title">Symbiotes</div>
+                <div class="card__rule">TWIN HALO</div>
+                <div class="prose card__behavior" id="brief-kit">&mdash;</div>
+              </div>
+            </article>
+            <article class="card card--info">
+              <canvas id="cv-sig" width="150" height="150"></canvas>
+              <div>
+                <div class="card__title">Client signature</div>
+                <div class="card__rule">NUC · HUE</div>
+                <div class="prose card__behavior" id="brief-sigdesc">&mdash;</div>
+              </div>
+            </article>
           </div>
-        </div>
-        <div class="card" style="margin-top:9px">
-          <canvas id="cv-site" width="150" height="150"></canvas>
-          <div>
-            <div class="kicker">Site map</div>
-            <div class="brief-note" id="brief-mapnote">&mdash;</div>
-            <div class="m" id="brief-mapdesc">&mdash;</div>
+        </section>
+        <section class="act">
+          <h2 class="act__title">Contract terms</h2>
+          <div class="terms">
+            <dl class="terms__ledger">
+              <div class="terms__line"><dt class="label">Advance</dt><dd class="value value--credit" id="brief-fee">&mdash;</dd></div>
+              <div class="terms__line"><dt class="label">On completion</dt><dd class="value value--credit" id="brief-comp">&mdash;</dd></div>
+              <div class="terms__line terms__line--total"><dt class="label">Total potential</dt><dd class="value value--credit" id="brief-total">&mdash;</dd></div>
+            </dl>
+            <div>
+              <div class="label">Reputation swing</div>
+              <div class="rep-swing">
+                <div class="rep-swing__gain"><small>Gain</small><span id="brief-rep-gain">+0</span></div>
+                <div class="rep-swing__loss"><small>Loss</small><span id="brief-rep-loss">&minus;0</span></div>
+              </div>
+              <div class="callout--info" id="brief-warn"></div>
+            </div>
           </div>
-        </div>
-        <div class="warnline" id="brief-warn"></div>
-        <div class="btnrow">
+        </section>
+        <div class="briefing__actions">
           <button class="btn" id="btn-dive">Dive</button>
           <button class="btn ghost" id="btn-decline">Back to board</button>
         </div>

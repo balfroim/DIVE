@@ -18,7 +18,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     const started = await page.evaluate(() => {
       __D.UI.showBoard();
-      __D.UI.showBrief(0);
+      __D.Career.suit = 99;
+      const idx = __D.Career.offers.findIndex((offer) => __D.suitFor(offer.pressure) <= __D.Career.suit);
+      __D.UI.showBrief(idx >= 0 ? idx : 0);
       __D.UI.dive();
       for (let i = 0; i < 30; i++) __D.Game.step(0.016);
       return {

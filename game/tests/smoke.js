@@ -49,7 +49,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     pass++;
 
     const contract = await page.evaluate(() => {
-      __D.UI.showBrief(0);
+      __D.Career.suit = 99;
+      const i = __D.Career.offers.findIndex((offer) => __D.suitFor(offer.pressure) <= __D.Career.suit);
+      __D.UI.showBrief(i >= 0 ? i : 0);
       __D.UI.dive();
       return {
         state: __D.Game.state,
