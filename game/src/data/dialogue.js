@@ -213,7 +213,7 @@ export const SCRIPTS = {
   }
 };
 
-/** Back-compatible handle on the induction nodes. */
+/** The induction nodes - the only script the engine currently plays. */
 export const SCRIPT = SCRIPTS.induction.nodes;
 
 export function script(name) {

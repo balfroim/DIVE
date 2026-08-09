@@ -10,7 +10,7 @@
  */
 
 /** @returns {() => number} a function producing floats in [0,1). */
-export function makeRng(seed) {
+function makeRng(seed) {
   let a = seed >>> 0;
   return function () {
     a = (a + 0x6d2b79f5) >>> 0;
