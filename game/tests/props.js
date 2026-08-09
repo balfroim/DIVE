@@ -16,6 +16,31 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     await page.goto('file:///tmp/dive_test.html', { waitUntil: 'load' });
     await sleep(800);
 
+    const organs = await page.evaluate(() => ({
+      rep0: __D.organsForRep(0).map((o) => o.id),
+      rep12: __D.organsForRep(12).map((o) => o.id),
+      rep100: __D.organsForRep(100).map((o) => o.id)
+    }));
+    if (organs.rep0.length !== 1 || organs.rep0[0] !== 'marrow') throw new Error('low reputation unlocks too many organs');
+    if (organs.rep100[organs.rep100.length - 1] !== 'brain') throw new Error('high reputation does not reach the deepest organ');
+    pass++;
+
+    const spawnRows = await page.evaluate(() => {
+      const contract = __D.makeContract(12, 9, 0);
+      __D.Game.startContract(contract);
+      __D.Maze.nodes.forEach((n) => {
+        if (n.r === 0) n.radius = 12;
+        if (n.r === 1) n.radius = 260;
+      });
+      __D.Maze.rebuildShapes();
+      const sig = { ...__D.Game.contract.sig, r: 90 };
+      const loose = __D.spawnEnt(__D.Game.contract.hostArch, sig, 1, { row: 0, now: __D.Game.t });
+      const strict = __D.spawnEnt(__D.Game.contract.hostArch, sig, 1, { row: 0, now: __D.Game.t, strictRow: true });
+      return { looseRow: loose ? loose.row : -1, strictRow: strict ? strict.row : -1 };
+    });
+    if (spawnRows.strictRow !== 0) throw new Error('row-specific spawning still spills into later waves');
+    pass++;
+
     const generated = await page.evaluate(() => {
       const offers = [];
       for (let i = 0; i < 10; i++) {

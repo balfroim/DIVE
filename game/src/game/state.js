@@ -74,6 +74,7 @@ export const Game = {
   bannerT: 0,
   comboFlash: 0,
   o2Warned: 0,
+  marks: [],
 
   /* aiming - there is no target acquisition, only a direction */
   aimX: 0, aimY: 0, aimDX: 1, aimDY: 0, aimValid: false,
@@ -126,6 +127,7 @@ export const Game = {
     this.siphonCd = 0;
     this.siphonFx = 0;
     this.o2Warned = 0;
+    this.marks = [];
 
     Maze.build({
       seed: contract.seed ^ hashSeed(contract.id),
@@ -155,7 +157,7 @@ export const Game = {
     const hosts = T.hostCount(contract.diff);
     for (let r = 0; r < Maze.rows; r++) {
       for (let i = 0; i < Math.ceil(hosts / Maze.rows) + 1; i++) {
-        spawnEnt(contract.hostArch, contract.sig, 1, this.spawnOpts(r));
+        spawnEnt(contract.hostArch, contract.sig, 1, { ...this.spawnOpts(r), strictRow: true });
       }
     }
 
@@ -188,7 +190,7 @@ export const Game = {
 
     const n = T.threatCount(c.diff, r);
     for (let i = 0; i < n; i++) {
-      spawnEnt(c.targetSpecies, c.sig, c.deviation, this.spawnOpts(r, player, 240));
+      spawnEnt(c.targetSpecies, c.sig, c.deviation, { ...this.spawnOpts(r, player, 240), strictRow: true });
     }
 
     for (const ex of T.extras) {
@@ -197,7 +199,7 @@ export const Game = {
       if (Math.random() >= ex.chance) continue;
       const id = typeof ex.arch === 'function' ? ex.arch(c) : ex.arch;
       const dev = clamp(c.deviation + (ex.devBonus || 0), 0, 1);
-      spawnEnt(id, c.sig, dev, this.spawnOpts(r, player, ex.awayD || 200));
+      spawnEnt(id, c.sig, dev, { ...this.spawnOpts(r, player, ex.awayD || 200), strictRow: true });
     }
 
     if (r > 0) {
