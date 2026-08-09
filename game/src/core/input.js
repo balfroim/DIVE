@@ -105,7 +105,7 @@ const pointers = new Map();
 export function pollHold() { Input.pollStale(pointers); }
 
 /** Show the on-screen controls and let CSS know we are on a touch device. */
-export function setTouchMode() {
+function setTouchMode() {
   Input.touch.enabled = true;
   if (View.cv) View.cv.classList.add('touchmode');
   const th = document.getElementById('touchhelp');

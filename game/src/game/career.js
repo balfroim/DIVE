@@ -21,7 +21,7 @@ import { generateOffers } from './contracts.js';
 import { repLabel, repStars } from './economy.js';
 
 /** Multipliers an heir's traits can bend. 0 means "standard issue". */
-export function blankMods() {
+function blankMods() {
   return {
     /** Tank capacity, fractional bonus. */
     tank: 0,

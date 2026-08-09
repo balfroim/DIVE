@@ -25,7 +25,6 @@ import { Input, pollHold } from '../core/input.js';
 import { Maze } from '../world/maze.js';
 import { hashSeed } from '../core/rng.js';
 import { runSystems } from '../ecs/systems.js';
-import { World } from '../ecs/world.js';
 import { ents, spawnEnt, morphEnt, clearEnts, countEnts } from '../entities/pool.js';
 import '../entities/systems.js';   // registers the pipeline
 import { player, playerReset } from '../entities/player.js';
@@ -37,7 +36,7 @@ import { burst, ringPart, popup, updateParts } from '../entities/particles.js';
 import { contractType } from '../data/contract-types.js';
 import { Career } from './career.js';
 import { bounty, buildInvoice, repDelta, scanPrice, tierMul, siphonRepCost } from './economy.js';
-import { scatter } from '../render/ambience.js';
+import { scatter, updateBG } from '../render/ambience.js';
 
 /** Fresh per-dive tallies. */
 function blankRun() {
@@ -620,6 +619,7 @@ export const Game = {
     this.updateAim();
     runSystems(dt, ctx);
     updateParts(dt);
+    updateBG(dt, this.t, ctx.env ? ctx.env.flow : 1);
     this.updateScan(dt, live);
     this.updateFire(dt, live);
     this.updateO2(dt, live);
@@ -711,5 +711,3 @@ export function firingPreview() {
     collateral
   };
 }
-
-export { World };

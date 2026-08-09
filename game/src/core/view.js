@@ -44,7 +44,7 @@ export function attachCanvas(canvas) {
   return View.ctx;
 }
 
-export function resize() {
+function resize() {
   const cv = View.cv;
   if (!cv) return;
   View.dpr = Math.min(window.devicePixelRatio || 1, Q.dprCap);
@@ -61,7 +61,7 @@ export function resize() {
   View.zoom = clamp(z * 1.06, isCoarse ? 0.72 : 0.58, 1.2);
 }
 
-export function applyTier(t) {
+function applyTier(t) {
   Q.tier = t;
   Q.layers = t >= 2 ? 3 : t === 1 ? 2 : 1;
   Q.motes = t >= 2;
