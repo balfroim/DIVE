@@ -391,8 +391,8 @@ export const UI = {
     const dead = Career.dead;
     $('over-title').textContent = retired ? 'Retired' : dead ? 'Deceased' : struck ? 'Licence revoked' : 'Career closed';
     let sub = '';
-    if (retired && !dead) sub = 'You surfaced with the money and the badge.';
-    else if (dead) sub = 'You did not surface from the dive.';
+    if (dead) sub = 'You did not surface from the dive.';
+    else if (retired) sub = 'You surfaced with the money and the badge.';
     else if (Career.reason === 'debt') sub = 'Terminated for negative balance';
     else if (Career.reason === 'litigation') sub = 'Terminated following litigation';
     $('over-sub').textContent = sub;
