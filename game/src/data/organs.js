@@ -27,7 +27,7 @@ export const ORGANS = [
     note: 'Freshly oxygenated blood on its way back from the lungs. The flow rises and falls with every breath. Lungs are also the front door for anything breathed in, so expect company.' },
   { id: 'heart',    name: 'Aortic arch',     short: 'HEART',   map: 'heart', mx: 0.53, my: 0.315, depth: 6, pressure: 1.95, hue: 0,   vessel: 'aortic arch',
     note: 'The body\'s main highway out of the heart. Pressure is at its highest here and the flow is rough. Anything infectious passing through reaches the entire body within minutes.' },
-  { id: 'brain',    name: 'Cortex',          short: 'BRAIN',   mx: 0.50, my: 0.045, depth: 8, pressure: 2.35, hue: 245, vessel: 'cerebral artery',
+  { id: 'brain',    name: 'Cortex',          short: 'BRAIN',   map: null, mx: 0.50, my: 0.045, depth: 8, pressure: 2.35, hue: 245, vessel: 'cerebral artery',
     note: 'The final contract. No map is provided; by this stage you are expected to know the route.' }
   ];
 
