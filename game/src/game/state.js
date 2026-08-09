@@ -4,7 +4,7 @@
  *
  * Screen flow
  *   start -> dialog -> board -> brief -> play -> results -> shop -> board ...
- *   ...and when the diver does not come back up: -> ascension -> board
+ *   ...and when the diver does not come back up: -> over (the career closes)
  *
  * Wave model
  *   Each maze row holds one wave. Entering a row's chamber for the first time
@@ -100,7 +100,7 @@ export const Game = {
 
   diff() { return this.contract ? this.contract.diff : 1; },
   tierMul() { return this.contract ? tierMul(this.contract.tier.i) : 1; },
-  scanPrice() { return scanPrice(this.tierMul(), Career.mods.scanCost); },
+  scanPrice() { return scanPrice(this.tierMul(), 0); },
   env() { return this.contract ? this.contract.env : pressureProfile(1); },
   type() { return contractType(this.contract ? this.contract.type : 'purge'); },
 
@@ -254,7 +254,7 @@ export const Game = {
     result.scansUsed = run.scansUsed;
     result.integrity = run.integrity;
     result.siphons = run.siphons;
-    result.siphonRep = siphonRepCost(run.siphons, c.tier.i, Career.mods.siphonRep);
+    result.siphonRep = siphonRepCost(run.siphons, c.tier.i, 0);
     result.died = run.died;
     result.o2Left = Math.max(0, Math.round(run.o2));
     this.result = result;
@@ -396,7 +396,7 @@ export const Game = {
   /** Reputation this dive's siphoning will cost at extraction. */
   siphonRepPending() {
     if (!this.contract) return 0;
-    return siphonRepCost(this.run.siphons, this.contract.tier.i, Career.mods.siphonRep);
+    return siphonRepCost(this.run.siphons, this.contract.tier.i, 0);
   },
 
   /* ---------------------------------------------------------------- */

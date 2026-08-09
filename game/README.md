@@ -4,9 +4,9 @@ A single-file browser game about being a **freelance diver** in a world where
 the patient is a client, the client is a cost centre, and your white blood cell
 kills everything it touches on the way to the target.
 
-The current release adds the oxygen clock and siphon loop, the heir/ascension
-succession path, and a data-driven ECS-friendly structure for enemies and
-conversation while keeping the build fully self-contained in one `dive.html`.
+The current release adds the oxygen clock and siphon loop, and a data-driven
+ECS-friendly structure for enemies and conversation while keeping the build
+fully self-contained in one `dive.html`.
 
 The source is organised as ES modules under `src/`; `npm run build` bundles
 it into one self-contained `dive.html` with no external requests.
@@ -142,16 +142,14 @@ src/
 │   ├── state.js  ⭐       Game: the dive state machine and all scoring
 │   ├── career.js          Career: the persistent freelancer + save/load
 │   ├── contracts.js       contract generation from reputation
-│   ├── economy.js         bounties, invoice, reputation maths
-│   └── lineage.js         succession: heirs, estates, cause of death
+│   └── economy.js         bounties, invoice, reputation maths
 │
 ├── data/          ⭐      pure content - edit freely, no logic here
 │   ├── enemies.js         the bestiary: every cell archetype, as data
 │   ├── contract-types.js  job types: populations, objectives, setup rolls
 │   ├── organs.js          dive sites
 │   ├── clients.js         clients + tiers
-│   ├── heirs.js           succession candidates: relations, boons, flaws
-│   ├── dialogue.js        every script (induction, ascension), as data
+│   ├── dialogue.js        every script (the induction), as data
 │   └── shop.js            requisitions
 │
 ├── render/                draw only; never mutates simulation state
@@ -209,7 +207,6 @@ cycle — the simulation needing to tell the game "this got eaten" — goes thro
 | Change maze topology | `world/maze.js` → `build()` (keep the row-connectivity pass!) |
 | Add an enemy species | append to `data/enemies.js` + list it in `data/contract-types.js` |
 | Add a contract type | append to `data/contract-types.js` (`minRep`, `weight`, `threats`) |
-| Add a heir boon / flaw | append to `data/heirs.js` (`apply(career)` adjusts the estate) |
 
 The full step-by-step versions of these recipes live in
 [`docs/ADDING-CONTENT.md`](docs/ADDING-CONTENT.md).

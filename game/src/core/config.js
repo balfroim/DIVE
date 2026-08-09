@@ -142,26 +142,6 @@ export const CFG = {
     offers: 3
   },
 
-  /* ---- succession: what your heir inherits ---------------------------- */
-  heir: {
-    /** How many candidates the Division puts forward. */
-    candidates: 3,
-    /** Fraction of the estate that survives probate... */
-    moneyKeep: 0.45,
-    /** ...minus the Division's administration of the estate. */
-    estateTax: 0.12,
-    /** Fraction of reputation that carries as "the family name". */
-    repKeep: 0.25,
-    /** Fraction of consumables (scan charges, waivers, stabilisers) kept. */
-    itemKeep: 0.5,
-    /** Suit ratings lost in probate. */
-    suitDrop: 1,
-    /** Fraction of the permanent bounty escalator that carries. */
-    boostKeep: 0.5,
-    /** A destitute heir is still given this much to start with. */
-    floor: 60
-  },
-
   /* ---- the vessel maze ------------------------------------------------- */
   maze: {
     cell: 460,        // horizontal grid pitch in world units

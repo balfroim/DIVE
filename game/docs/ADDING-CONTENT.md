@@ -135,22 +135,6 @@ field (like `thrust` above), persist it: add the field name to the `SAVED`
 list in `src/game/career.js` and give it a default in `Career.reset()`. Then
 read it wherever it matters (e.g. `entities/player.js`).
 
-## Add an heir boon or flaw
-
-**File: `src/data/heirs.js`.** Append to `BOONS` or `FLAWS`:
-
-```js
-{
-  id: 'stubborn', name: 'Refuses to die quietly',
-  desc: 'Starts with +25 client integrity on every contract.',
-  apply(c) { /* runs after the estate transfers; adjust the career */ }
-}
-```
-
-A trait can also set `estate: <mult>` (share of the estate kept) or
-`keepSuit: true`; `game/lineage.js` → `computeEstate()` reads those flags
-before `apply` runs.
-
 ## Add a new behaviour (a component + a system)
 
 This is the one recipe that touches code outside `src/data/`:

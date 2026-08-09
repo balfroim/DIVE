@@ -210,38 +210,6 @@ export const SCRIPTS = {
         next: null
       }
     }
-  },
-
-  /* ================================================================== */
-  /* succession - plays once, the first time an heir takes the badge     */
-  /* ================================================================== */
-  ascension: {
-    start: 'a0',
-    nodes: {
-      a0: {
-        who: 'vax',
-        text: 'Ah. %N%. Come in, sit down, mind the box \u2014 that is the *previous* holder of your licence. What is left of the paperwork, at any rate.',
-        choices: [
-          { t: 'What happens to me now?', go: 'a1' },
-          { t: 'Where do I sign?', go: 'a2' }
-        ]
-      },
-      a1: {
-        who: 'vax',
-        text: 'You take the badge, the debts, a *percentage* of the estate and a *fraction* of the family reputation. The Division calls this ~continuity of service~. Actuarially it is the cheapest form of recruitment there is.',
-        next: 'a3'
-      },
-      a2: {
-        who: 'vax',
-        text: 'Marvellous attitude. Here, here, and \u2014 initial here, which confirms you understand that the tank is a *clock* and the clock does not care whose surname is on it.',
-        next: 'a3'
-      },
-      a3: {
-        who: 'vax',
-        text: 'The board is open, %N%. Try to last longer than the last one. The catering budget for memorials has been *reduced*.',
-        next: null
-      }
-    }
   }
 };
 

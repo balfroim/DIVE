@@ -47,7 +47,6 @@ export function siphonRepCost(n, tierIdx, mod) {
 export function buildInvoice(run, contract, career, success) {
   const e = CFG.econ;
   const tm = tierMul(contract.tier.i);
-  const mods = (career && career.mods) || {};
   const lines = [];
   const add = (label, amount, note) => lines.push({ label, amount: Math.round(amount), note: note || '' });
 
@@ -63,8 +62,8 @@ export function buildInvoice(run, contract, career, success) {
     add('Abandonment fee', -Math.round(120 * tm));
   }
 
-  const scanBill = run.scansUsed * scanPrice(tm, mods.scanCost);
-  if (scanBill) add('Diagnostic activations', -scanBill, run.scansUsed + ' x ' + scanPrice(tm, mods.scanCost) + ' cr');
+  const scanBill = run.scansUsed * scanPrice(tm, 0);
+  if (scanBill) add('Diagnostic activations', -scanBill, run.scansUsed + ' x ' + scanPrice(tm, 0) + ' cr');
 
   if (run.siphons) {
     add('Clause nine oxygen levy', -Math.round(run.siphons * e.siphonFee * tm),
@@ -82,8 +81,7 @@ export function buildInvoice(run, contract, career, success) {
 
 /** Reputation swing for a finished contract. */
 export function repDelta(contract, run, success, career) {
-  const mods = (career && career.mods) || {};
-  const siphon = siphonRepCost(run.siphons, contract.tier.i, mods.siphonRep);
+  const siphon = siphonRepCost(run.siphons, contract.tier.i, 0);
   if (!success) return -(contract.repLoss + siphon);
   let d = contract.repGain;
   if (run.innocent === 0 && run.symKills === 0 && !run.siphons) d += CFG.rep.cleanBonus;
