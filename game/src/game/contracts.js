@@ -60,10 +60,9 @@ export function makeContract(rep, seed, slot) {
   const R = rngHelpers(seed);
   const clients = clientsForRep(rep);
   const variant = slot <= 0 ? 'easy' : slot >= 2 ? 'hard' : 'normal';
-  const variantIndex = variant === 'easy' ? 0 : variant === 'normal' ? 1 : 2;
   const variantMul = variant === 'easy' ? 0.82 : variant === 'hard' ? 1.18 : 1;
   const organ = organForSlot(rep, slot);
-  const type = pickType(rep, R, variantIndex);
+  const type = pickType(rep, R, clamp(slot, 0, 2));
 
   const ci = clamp(Math.floor(clients.length * (0.2 + slot * 0.3) + R.range(0, 1.4)), 0, clients.length - 1);
   const client = clients[ci];
