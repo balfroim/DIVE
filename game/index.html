@@ -188,6 +188,25 @@
 
   .corner{position:absolute;bottom:9px;right:12px;font-size:10px;color:#7d5464;letter-spacing:.13em;pointer-events:none}
   .rot{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#0b0308;z-index:20;text-align:center;padding:24px;font-size:13px;letter-spacing:.14em;color:var(--mut)}
+  .devtools{
+    position:absolute;right:12px;bottom:38px;z-index:25;width:min(92vw,220px);
+    padding:10px 11px;border-radius:12px;
+    background:rgba(16,5,11,.92);border:1px solid rgba(255,194,90,.28);
+    box-shadow:0 12px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);
+    pointer-events:auto
+  }
+  .devtools[hidden]{display:none}
+  .devtools .kicker{margin-bottom:6px}
+  .devtools .devrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+  .devtools .devfield{display:grid;gap:4px;font-size:9.5px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
+  .devtools input{
+    width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,194,90,.32);border-radius:8px;
+    color:#fff;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;padding:7px 8px;
+    outline:none
+  }
+  .devtools input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,194,90,.15)}
+  .devtools .btn{margin-top:7px;padding:9px 10px;font-size:10.5px;letter-spacing:.12em}
+  .devtools .btn.ghost{padding:8px 10px}
   @media (max-height:430px) and (orientation:portrait){.rot{display:flex}}
 </style>
 <style>
@@ -449,6 +468,26 @@
 
   </div>
   <div class="corner" id="corner">v3.0</div>
+  <div class="devtools" id="dev-tools" hidden>
+    <div class="kicker">Dev mode</div>
+    <label class="devfield">Reputation<input id="dev-rep" type="number" min="0" step="1" value="0"></label>
+    <div class="devrow">
+      <button class="btn ghost" id="dev-rep-down">-10 rep</button>
+      <button class="btn ghost" id="dev-rep-up">+10 rep</button>
+    </div>
+    <label class="devfield">Credits<input id="dev-credits" type="number" step="1" value="0"></label>
+    <div class="devrow">
+      <button class="btn ghost" id="dev-credits-down">-250 cr</button>
+      <button class="btn ghost" id="dev-credits-up">+250 cr</button>
+    </div>
+    <label class="devfield">Scan charges<input id="dev-scans" type="number" min="0" step="1" value="0"></label>
+    <div class="devrow">
+      <button class="btn ghost" id="dev-scans-down">-1 scan</button>
+      <button class="btn ghost" id="dev-scans-up">+1 scan</button>
+    </div>
+    <button class="btn ghost" id="dev-refresh">Refresh board</button>
+    <button class="btn ghost" id="dev-reset">Reset defaults</button>
+  </div>
 </div>
 <script type="module" src="./src/main.js"></script>
 </body>

@@ -50,5 +50,6 @@ export const KEYS = {
   scores: 'dive_payroll_v3',
   mute: 'dive_mute_v1',
   name: 'dive_name',
-  seenIntro: 'dive_seen_intro_v3'
+  seenIntro: 'dive_seen_intro_v3',
+  dev: 'dive_dev_v1'
 };

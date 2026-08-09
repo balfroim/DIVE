@@ -68,13 +68,77 @@ function paintSiteMap(canvas, organ, t) {
 }
 
 export const UI = {
+  devMode: false,
+
   /* ---------------------------------------------------------------- */
   /* start                                                             */
   /* ---------------------------------------------------------------- */
 
+  setDevMode(on) {
+    this.devMode = !!on;
+    const el = $('dev-tools');
+    if (el) el.hidden = !this.devMode;
+    if (this.devMode) this.syncDevTools();
+  },
+
+  syncDevTools() {
+    const rep = $('dev-rep');
+    if (rep) {
+      rep.max = String(CFG.rep.max);
+      rep.value = String(Math.round(Career.rep));
+    }
+    const credits = $('dev-credits');
+    if (credits) credits.value = String(Math.round(Career.credits));
+    const scans = $('dev-scans');
+    if (scans) scans.value = String(Math.max(0, Math.round(Career.scans)));
+  },
+
+  refreshDevView() {
+    if (!this.devMode) return;
+    this.syncDevTools();
+    if (Game.state === 'board') {
+      Career.refreshBoard();
+      this.paintBoard();
+    }
+  },
+
+  devSetRep(rep) {
+    const n = Number(rep);
+    if (!Number.isFinite(n)) return;
+    Career.setDevPreset({ rep: n });
+    this.refreshDevView();
+  },
+
+  devSetCredits(credits) {
+    const n = Number(credits);
+    if (!Number.isFinite(n)) return;
+    Career.setDevPreset({ credits: n });
+    this.refreshDevView();
+  },
+
+  devSetScans(scans) {
+    const n = Number(scans);
+    if (!Number.isFinite(n)) return;
+    Career.setDevPreset({ scans: n });
+    this.refreshDevView();
+  },
+
+  devNudgeRep(delta) {
+    this.devSetRep(Number(Career.rep) + delta);
+  },
+
+  devNudgeCredits(delta) {
+    this.devSetCredits(Number(Career.credits) + delta);
+  },
+
+  devNudgeScans(delta) {
+    this.devSetScans(Number(Career.scans) + delta);
+  },
+
   showStart() {
     Game.state = 'start';
     show('start');
+    this.syncDevTools();
     const saved = Store.getJSON(KEYS.career, null);
     const cont = $('btn-continue');
     if (cont) cont.style.display = saved && !saved.struckOff ? '' : 'none';
@@ -104,7 +168,11 @@ export const UI = {
     if (Career.struckOff) { this.showOver(); return; }
     if (!Career.offers.length) Career.refreshBoard();
     show('board');
+    this.syncDevTools();
+    this.paintBoard();
+  },
 
+  paintBoard() {
     $('lic-class').textContent = repLabel(Career.rep);
     $('lic-rep').textContent = Math.round(Career.rep);
     $('lic-bar').style.width = clamp(Career.rep, 0, 100) + '%';
@@ -314,6 +382,7 @@ export const UI = {
   showOver(retired) {
     Game.state = 'over';
     show('over');
+    this.syncDevTools();
     const struck = Career.struckOff;
     $('over-title').textContent = retired ? 'Retired' : struck ? 'Licence revoked' : 'Career closed';
     $('over-sub').textContent = retired
@@ -455,4 +524,22 @@ export function wireUI() {
 
   on('btn-save', 'click', () => UI.saveScore());
   on('btn-again', 'click', () => UI.newCareer());
+
+  on('dev-rep', 'change', (e) => UI.devSetRep(e.target.value));
+  on('dev-credits', 'change', (e) => UI.devSetCredits(e.target.value));
+  on('dev-scans', 'change', (e) => UI.devSetScans(e.target.value));
+  on('dev-rep-down', 'click', () => UI.devNudgeRep(-10));
+  on('dev-rep-up', 'click', () => UI.devNudgeRep(10));
+  on('dev-credits-down', 'click', () => UI.devNudgeCredits(-250));
+  on('dev-credits-up', 'click', () => UI.devNudgeCredits(250));
+  on('dev-scans-down', 'click', () => UI.devNudgeScans(-1));
+  on('dev-scans-up', 'click', () => UI.devNudgeScans(1));
+  on('dev-refresh', 'click', () => {
+    Career.refreshBoard();
+    UI.refreshDevView();
+  });
+  on('dev-reset', 'click', () => {
+    Career.resetDevPreset();
+    UI.refreshDevView();
+  });
 }

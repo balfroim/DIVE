@@ -27,6 +27,8 @@ const SAVED = [
   'bestTier', 'deaths', 'struckOff', 'dead', 'reason'
 ];
 
+const DEV_DEFAULTS = { rep: CFG.rep.start, credits: 0, scans: 0 };
+
 export const Career = {
   /* identity */
   agent: 'AGENT',
@@ -62,12 +64,15 @@ export const Career = {
   struckOff: false,
   dead: false,
   reason: '',
+  devMode: false,
+  dev: { ...DEV_DEFAULTS },
 
   reset(name) {
     this.agent = (name || this.agent || 'AGENT').toUpperCase().slice(0, 12);
-    this.rep = CFG.rep.start;
-    this.credits = 0;
-    this.scans = 0;
+    const base = this.devMode ? this.dev : DEV_DEFAULTS;
+    this.rep = base.rep;
+    this.credits = base.credits;
+    this.scans = base.scans;
     this.suit = 1;
     this.waiver = 0;
     this.stab = 0;
@@ -90,6 +95,53 @@ export const Career = {
     this.struckOff = false;
     this.dead = false;
     this.reason = '';
+  },
+
+  loadDev() {
+    this.devMode = true;
+    const s = Store.getJSON(KEYS.dev, null);
+    if (!s) {
+      this.dev = { ...DEV_DEFAULTS };
+      return this.dev;
+    }
+    this.dev = {
+      rep: clamp(Math.round(s.rep ?? CFG.rep.start), 0, CFG.rep.max),
+      credits: Math.max(CFG.econ.debtFloor, Math.round(s.credits ?? DEV_DEFAULTS.credits)),
+      scans: Math.max(0, Math.round(s.scans ?? 0))
+    };
+    return this.dev;
+  },
+
+  saveDev() {
+    Store.setJSON(KEYS.dev, this.dev);
+  },
+
+  setDevPreset(partial) {
+    if (partial.rep !== undefined) {
+      this.dev.rep = clamp(Math.round(partial.rep), 0, CFG.rep.max);
+      this.rep = this.dev.rep;
+    }
+    if (partial.credits !== undefined) {
+      this.dev.credits = Math.max(CFG.econ.debtFloor, Math.round(partial.credits));
+      this.credits = this.dev.credits;
+    }
+    if (partial.scans !== undefined) {
+      this.dev.scans = Math.max(0, Math.round(partial.scans));
+      this.scans = this.dev.scans;
+    }
+    this.saveDev();
+    this.save();
+    return this;
+  },
+
+  resetDevPreset() {
+    this.dev = { ...DEV_DEFAULTS };
+    this.rep = this.dev.rep;
+    this.credits = this.dev.credits;
+    this.scans = this.dev.scans;
+    this.saveDev();
+    this.save();
+    return this.dev;
   },
 
   /* ---------------------------------------------------------------- */
