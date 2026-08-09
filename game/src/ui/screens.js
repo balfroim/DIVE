@@ -141,7 +141,7 @@ export const UI = {
     this.syncDevTools();
     const saved = Store.getJSON(KEYS.career, null);
     const cont = $('btn-continue');
-    if (cont) cont.style.display = saved && !saved.struckOff ? '' : 'none';
+    if (cont) cont.style.display = saved && !saved.struckOff && !saved.dead ? '' : 'none';
     this.paintScores('scores-start');
   },
 
@@ -156,6 +156,7 @@ export const UI = {
 
   continueCareer() {
     if (!Career.load()) { this.newCareer(); return; }
+    if (Career.finished()) { this.showOver(false); return; }
     this.showBoard();
   },
 
@@ -165,7 +166,7 @@ export const UI = {
 
   showBoard() {
     Game.state = 'board';
-    if (Career.struckOff) { this.showOver(); return; }
+    if (Career.finished()) { this.showOver(false); return; }
     if (!Career.offers.length) Career.refreshBoard();
     show('board');
     this.syncDevTools();
@@ -193,7 +194,7 @@ export const UI = {
         '<div>' +
           '<div class="job"><span class="tierpill t' + offer.tier.i + '">TIER ' + s.tier + '</span>' + esc(s.job) + '</div>' +
           '<div class="sub">' + esc(s.site) + ' \u00b7 depth ' + s.depth + ' \u00b7 ' + s.waves + ' waves \u00b7 ' +
-            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + '</div>' +
+            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + ' \u00b7 ' + esc(s.difficulty) + '</div>' +
         '</div>' +
         '<div>' +
           '<div class="pay">' + (s.fee + s.comp) + ' cr</div>' +
@@ -232,6 +233,7 @@ export const UI = {
       ['SITE', s.organ],
       ['DEPTH', s.depth + ' rows'],
       ['WAVES', String(s.waves)],
+      ['CONTRACT', s.difficulty],
       ['PRESSURE', s.band + ' ' + s.pressure],
       ['SUIT', 'rating ' + s.suit + (Career.suit >= s.suit ? ' \u2713' : ' \u2717 yours ' + Career.suit)],
       ['ADVANCE', s.fee + ' cr'],
@@ -329,7 +331,11 @@ export const UI = {
     if (Career.struckOff) {
       memo = Career.reason === 'debt'
         ? '<b>Vax:</b> Your balance is negative and your licence is collateral. The Division has exercised its option. Badge, please.'
-        : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
+        : Career.dead
+          ? '<b>Vax:</b> The client survived, but you did not surface. The estate has already been billed.'
+          : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
+    } else if (Career.dead) {
+      memo = '<b>Vax:</b> You did not surface. The file is closed, and the estate is already arguing with Accounts.';
     } else if (Career.credits < 0) {
       memo = '<b>Vax:</b> You are ' + cr(-Career.credits) + ' in the red. The Division is content to let you work it off \u2014 ' +
         'that is what the licence is for. Fall past ' + cr(-CFG.econ.debtFloor) + ' owed and it stops being content.';
@@ -341,7 +347,7 @@ export const UI = {
       memo = '<b>Vax:</b> Clean work. The board will reflect your standing shortly.';
     }
     $('res-memo').innerHTML = memo;
-    $('btn-res-next').textContent = Career.struckOff ? 'Collect your badge' : 'Requisitions';
+    $('btn-res-next').textContent = Career.finished() ? 'Collect your badge' : 'Requisitions';
   },
 
   /* ---------------------------------------------------------------- */
@@ -384,9 +390,11 @@ export const UI = {
     show('over');
     this.syncDevTools();
     const struck = Career.struckOff;
-    $('over-title').textContent = retired ? 'Retired' : struck ? 'Licence revoked' : 'Career closed';
+    const dead = Career.dead;
+    $('over-title').textContent = retired ? 'Retired' : dead ? 'Deceased' : struck ? 'Licence revoked' : 'Career closed';
     $('over-sub').textContent = retired
       ? 'You surfaced with the money and the badge.'
+      : dead ? 'You did not surface from the dive.'
       : Career.reason === 'debt' ? 'Terminated for negative balance'
       : Career.reason === 'litigation' ? 'Terminated following litigation'
       : '';
@@ -440,7 +448,7 @@ export const UI = {
   /* ---------------------------------------------------------------- */
 
   afterResults() {
-    if (Career.struckOff) { this.showOver(false); return; }
+    if (Career.finished()) { this.showOver(false); return; }
     Career.refreshBoard();
     this.showShop();
   },

@@ -15,7 +15,7 @@
 import { CFG, pressureProfile } from '../core/config.js';
 import { clamp } from '../core/math.js';
 import { rngHelpers } from '../core/rng.js';
-import { organsForRep } from '../data/organs.js';
+import { ORGANS } from '../data/organs.js';
 import { TIERS, clientsForRep } from '../data/clients.js';
 import { pickType, contractType } from '../data/contract-types.js';
 import { makeSignature } from '../entities/species.js';
@@ -28,6 +28,30 @@ let seedCounter = 1;
  */
 function difficultyOf(rows, pressure, tierIdx, typeBonus) {
   return 1 + (rows - 3) * 0.55 + (pressure - 0.95) * 1.5 + tierIdx * 0.35 + (typeBonus || 0);
+}
+
+function orderedOrgans() {
+  return [...ORGANS].sort((a, b) => (a.meanRep - b.meanRep) || a.id.localeCompare(b.id));
+}
+
+function organForRep(rep, slot) {
+  const list = orderedOrgans();
+  const currentRep = Math.max(0, Math.min(100, rep || 0));
+  let best = 0;
+  let bestGap = Infinity;
+  for (let i = 0; i < list.length; i++) {
+    const gap = Math.abs((list[i].meanRep ?? currentRep) - currentRep);
+    if (gap < bestGap || (gap === bestGap && (list[i].meanRep ?? 0) > (list[best].meanRep ?? 0))) {
+      best = i;
+      bestGap = gap;
+    }
+  }
+  const variants = [
+    list[Math.max(0, best - 1)],
+    list[best],
+    list[Math.min(list.length - 1, best + 1)]
+  ];
+  return variants[clamp(slot, 0, variants.length - 1)] || list[best] || ORGANS[0];
 }
 
 /**
@@ -48,19 +72,18 @@ function o2Estimate(rows, diff, pressure) {
  */
 export function makeContract(rep, seed, slot) {
   const R = rngHelpers(seed);
-  const pool = organsForRep(rep);
   const clients = clientsForRep(rep);
-  const type = pickType(rep, R, slot);
+  const variant = slot <= 0 ? 'easy' : slot >= 2 ? 'hard' : 'normal';
+  const variantMul = variant === 'easy' ? 0.82 : variant === 'hard' ? 1.18 : 1;
+  const organ = organForRep(rep, slot);
+  const type = pickType(rep, R, variant === 'easy' ? 0 : slot);
 
-  /* riskier slots reach deeper into the list the licence allows */
-  const oi = clamp(Math.floor(pool.length * (0.15 + slot * 0.34) + R.range(0, 1.2)), 0, pool.length - 1);
-  const organ = pool[oi];
   const ci = clamp(Math.floor(clients.length * (0.2 + slot * 0.3) + R.range(0, 1.4)), 0, clients.length - 1);
   const client = clients[ci];
   const tier = TIERS[client.tier];
 
-  const rows = clamp(organ.depth + (slot >= 2 ? 1 : 0) + (R.chance(0.3) ? 1 : 0), 2, 9);
-  const pressure = +(organ.pressure * R.range(0.94, 1.1) + slot * 0.05).toFixed(2);
+  const rows = clamp(organ.depth + (variant === 'easy' ? -1 : variant === 'hard' ? 1 : 0) + (R.chance(0.3) ? 1 : 0), 2, 9);
+  const pressure = +(organ.pressure * R.range(0.94, 1.1) * (variant === 'easy' ? 0.92 : variant === 'hard' ? 1.08 : 1)).toFixed(2);
   const diff = difficultyOf(rows, pressure, tier.i, type.diffBonus);
   const clientCode = 1000 + (seed % 8999);
 
@@ -69,11 +92,13 @@ export function makeContract(rep, seed, slot) {
 
   const money = Math.round((70 + diff * 46) * tier.payMult);
   const fee = Math.round(money * 0.32);          // advance, paid on acceptance
-  const comp = Math.round(money * 1.55);         // completion bonus
+  const comp = Math.round(money * (1.38 + (variant === 'hard' ? 0.12 : variant === 'easy' ? -0.08 : 0)));         // completion bonus
 
   const sig = makeSignature();
   const targetSpecies = type.threats[(R.f() * type.threats.length) | 0] || type.threats[0];
   const deviation = clamp(1.05 - diff * 0.1 - R.range(0, 0.12), 0.28, 1);
+  const repGap = Math.abs((organ.meanRep ?? rep) - rep);
+  const repScale = clamp(0.92 + repGap / 18, 0.92, 2.2) * variantMul;
 
   const c = {
     id: 'C' + String(seed % 9973).padStart(4, '0'),
@@ -88,6 +113,9 @@ export function makeContract(rep, seed, slot) {
     hostArch: type.hostArch,
     client: { job: 'CLIENT #' + clientCode, memo: client.memo, tier: tier.i },
     tier,
+    variant,
+    variantLabel: variant.toUpperCase(),
+    difficulty: variant.toUpperCase(),
     organ,
     map: organ.map || null,
     rows,
@@ -100,8 +128,8 @@ export function makeContract(rep, seed, slot) {
     fee,
     comp,
     /** Reputation swing. */
-    repGain: Math.max(2, Math.round(CFG.rep.gainBase * diff * 0.55)),
-    repLoss: Math.round(CFG.rep.lossFail * (0.6 + tier.i * 0.22)),
+    repGain: Math.max(2, Math.round(CFG.rep.gainBase * diff * 0.55 * repScale)),
+    repLoss: Math.round(CFG.rep.lossFail * (0.6 + tier.i * 0.22) * repScale),
     sig,
     targetSpecies,
     deviation,
@@ -148,6 +176,7 @@ export function offerSummary(c) {
     job: c.client.job,
     tier: c.tier.name,
     tierLabel: c.tier.label,
+    difficulty: c.variantLabel,
     type: c.type,
     typeName: c.typeName,
     typeShort: c.typeShort,

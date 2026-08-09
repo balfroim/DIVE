@@ -25,6 +25,31 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (organs.rep100[organs.rep100.length - 1] !== 'brain') throw new Error('high reputation does not reach the deepest organ');
     pass++;
 
+    const variants = await page.evaluate(() => {
+      const offers = [
+        __D.makeContract(28, 21, 0),
+        __D.makeContract(28, 21, 1),
+        __D.makeContract(28, 21, 2)
+      ];
+      return offers.map((offer) => ({
+        organ: offer.organ.id,
+        mean: offer.organ.meanRep,
+        difficulty: offer.difficulty,
+        repGain: offer.repGain,
+        repLoss: offer.repLoss
+      }));
+    });
+    if (variants[0].difficulty !== 'EASY' || variants[1].difficulty !== 'NORMAL' || variants[2].difficulty !== 'HARD') {
+      throw new Error('contract variants were not labeled easy/normal/hard');
+    }
+    if (!(variants[0].mean <= variants[1].mean && variants[1].mean <= variants[2].mean)) {
+      throw new Error('contract organs were not ordered by rep expectation');
+    }
+    if (!(variants[1].repLoss <= variants[0].repLoss && variants[1].repLoss <= variants[2].repLoss)) {
+      throw new Error('normal contract did not stay the baseline difficulty');
+    }
+    pass++;
+
     const spawnRows = await page.evaluate(() => {
       const contract = __D.makeContract(12, 9, 0);
       __D.Game.startContract(contract);

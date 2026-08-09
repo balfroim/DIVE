@@ -31,6 +31,23 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     if (started.state !== 'play' || !started.finite || !Number.isFinite(started.row)) throw new Error('sim loop broke');
     pass++;
+
+    const over = await page.evaluate(() => {
+      __D.Career.dead = true;
+      __D.Career.reason = 'asphyxia';
+      __D.Game.state = 'results';
+      __D.UI.afterResults();
+      return {
+        state: __D.Game.state,
+        visible: document.getElementById('scr-over').classList.contains('on'),
+        title: document.getElementById('over-title').textContent,
+        sub: document.getElementById('over-sub').textContent
+      };
+    });
+    if (over.state !== 'over' || !over.visible || over.title !== 'Deceased' || !over.sub.includes('surface')) {
+      throw new Error('career over screen did not open for a dead diver');
+    }
+    pass++;
   } catch (error) {
     fail++;
     errors.push(String(error && error.message ? error.message : error));
