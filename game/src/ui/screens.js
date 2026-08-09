@@ -230,6 +230,7 @@ export const UI = {
     Game.state = 'brief';
     show('brief');
     const s = offerSummary(offer);
+    Career.pendingSummary = s;
 
     $('brief-num').textContent = 'Work order ' + offer.id;
     $('brief-client').textContent = offer.client.job;
@@ -279,13 +280,8 @@ export const UI = {
   dive() {
     const offer = Career.pending;
     if (!offer) return;
-    const s = offerSummary(offer);
+    const s = Career.pendingSummary || offerSummary(offer);
     if (Career.suit < s.suit) {
-      const warn = $('brief-warn');
-      if (warn) {
-        warn.dataset.state = 'blocked';
-        warn.innerHTML = blockedSuitCopy(s, Career.suit);
-      }
       return;
     }
     Career.accept(offer);

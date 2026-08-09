@@ -1,6 +1,7 @@
 /* Lightweight boot and onboarding smoke test. */
 const puppeteer = require('puppeteer');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const { findSuitableOfferIdx } = require('./test-helpers');
 
 (async () => {
   let pass = 0;
@@ -48,18 +49,16 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (board.rep !== 70) throw new Error('dev reputation was not carried into the board');
     pass++;
 
-    const contract = await page.evaluate(() => {
-      __D.Career.suit = 99;
-      const suitableIdx = __D.Career.offers.findIndex((offer) => __D.suitFor(offer.pressure) <= __D.Career.suit);
-      if (suitableIdx < 0) throw new Error('no suitable offer found for smoke test');
-      __D.UI.showBrief(suitableIdx);
+    const suitableIdx = await findSuitableOfferIdx(page);
+    const contract = await page.evaluate((idx) => {
+      __D.UI.showBrief(idx);
       __D.UI.dive();
       return {
         state: __D.Game.state,
         o2: Math.round(__D.Game.run.o2),
         contract: !!__D.Game.contract
       };
-    });
+    }, suitableIdx);
     if (contract.state !== 'play' || contract.o2 <= 0 || !contract.contract) throw new Error('dive did not start');
     pass++;
   } catch (error) {
