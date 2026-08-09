@@ -37,6 +37,10 @@ Two ways to run it while developing:
 | `npm run dev` → `index.html` | raw ES modules, real stack traces, edit-and-refresh |
 | `npm run build` → `../dive.html` | the shipped artefact, one file, double-clickable |
 
+Tip: open `index.html?dev=1` to reveal the dev tools panel. You can nudge
+reputation, credits, and scan charges, or pass `?dev=1&rep=60&credits=1000`
+to start with custom values.
+
 ---
 
 ## The three headline systems

@@ -13,15 +13,21 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   await page.setViewport({ width: 1280, height: 800 });
 
   try {
-    await page.goto('file:///tmp/dive_test.html', { waitUntil: 'load' });
+    await page.goto('file:///tmp/dive_test.html?dev=1&rep=70&credits=500&scans=4', { waitUntil: 'load' });
     await sleep(1200);
 
     const boot = await page.evaluate(() => ({
       state: __D.Game.state,
       overlay: document.getElementById('scr-start').classList.contains('on'),
-      offers: __D.Career.offers.length
+      offers: __D.Career.offers.length,
+      dev: !document.getElementById('dev-tools').hidden,
+      rep: __D.Career.rep,
+      credits: __D.Career.credits,
+      scans: __D.Career.scans
     }));
     if (boot.state !== 'start' || !boot.overlay) throw new Error('start screen failed to show');
+    if (!boot.dev) throw new Error('dev tools panel was not visible');
+    if (boot.rep !== 70 || boot.credits !== 500 || boot.scans !== 4) throw new Error('dev defaults were not applied');
     pass++;
 
     await page.click('#btn-play');
@@ -33,11 +39,13 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       state: __D.Game.state,
       offers: __D.Career.offers.length,
       boardVisible: document.getElementById('scr-board').classList.contains('on'),
-      anonJob: document.getElementById('board-offers').textContent.includes('CLIENT #')
+      anonJob: document.getElementById('board-offers').textContent.includes('CLIENT #'),
+      rep: __D.Career.rep
     }));
     if (board.state !== 'board' || board.offers < 1 || !board.boardVisible || !board.anonJob) {
       throw new Error('board did not open');
     }
+    if (board.rep !== 70) throw new Error('dev reputation was not carried into the board');
     pass++;
 
     const contract = await page.evaluate(() => {

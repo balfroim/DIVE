@@ -26,6 +26,21 @@ import { Career } from './game/career.js';
 import { UI, wireUI } from './ui/screens.js';
 import { DLG } from './ui/dialogue.js';
 import { cam } from './core/view.js';
+import { GAME_VERSION } from './core/version.js';
+
+function queryParams() {
+  const out = Object.create(null);
+  const raw = window.location.search.replace(/^\?/, '');
+  if (!raw) return out;
+  for (const pair of raw.split('&')) {
+    if (!pair) continue;
+    const eq = pair.indexOf('=');
+    const key = decodeURIComponent(eq >= 0 ? pair.slice(0, eq) : pair).toLowerCase();
+    const value = decodeURIComponent(eq >= 0 ? pair.slice(eq + 1) : '');
+    out[key] = value;
+  }
+  return out;
+}
 
 /** A small living vessel to sit behind the menus. */
 function bootBackdrop() {
@@ -47,7 +62,25 @@ function boot() {
   initBG();
   wireUI();
 
+  const corner = document.getElementById('corner');
+  if (corner) corner.textContent = GAME_VERSION;
+
   Career.agent = Store.get(KEYS.name, 'AGENT');
+  const params = queryParams();
+  const devMode = params.dev !== undefined && params.dev !== '0' && params.dev !== 'false';
+  Career.devMode = devMode;
+  if (devMode) {
+    Career.loadDev();
+    const patch = {};
+    const rep = params.rep;
+    const credits = params.credits;
+    const scans = params.scans;
+    if (rep !== undefined && Number.isFinite(Number(rep))) patch.rep = Number(rep);
+    if (credits !== undefined && Number.isFinite(Number(credits))) patch.credits = Number(credits);
+    if (scans !== undefined && Number.isFinite(Number(scans))) patch.scans = Number(scans);
+    if (Object.keys(patch).length) Career.setDevPreset(patch);
+  }
+  UI.setDevMode(devMode);
 
   attachInput(View.cv, {
     onKey: (code, k) => Game.onKey(code, k),
