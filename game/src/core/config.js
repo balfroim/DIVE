@@ -129,6 +129,8 @@ export const CFG = {
     gainBase: 5.5,
     /** Reputation burned when a client dies or you abandon the dive. */
     lossFail: 14,
+    /** Credits per reputation point when you bribe your way out of a deficit. */
+    bribeCost: 25,
     /** Bonus for a spotless dive (no wrongful kills, no siphoning). */
     cleanBonus: 3,
     /**

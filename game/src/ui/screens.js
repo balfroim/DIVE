@@ -20,6 +20,7 @@ import { repLabel } from '../game/economy.js';
 import { mapFor } from '../data/maps.js';
 import { SHOP } from '../data/shop.js';
 import { PSPEC, NUCNAME } from '../entities/species.js';
+import { anySymbiote } from '../data/enemies.js';
 import { drawBody } from '../render/minimap.js';
 import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
 import { DLG } from './dialogue.js';
@@ -245,9 +246,9 @@ export const UI = {
       .join('');
 
     /* specimens */
-    preview.sig = previewEnt('healthy', offer.sig, 1);
-    preview.tgt = previewEnt('pathogen', offer.sig, offer.deviation, offer.targetSpecies);
-    preview.sym = previewEnt('symbiote', offer.sig, 1);
+    preview.sig = previewEnt(offer.hostArch, offer.sig, 1);
+    preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation);
+    preview.sym = previewEnt(anySymbiote(), offer.sig, 1);
     const spec = PSPEC[offer.targetSpecies];
     $('brief-sigdesc').textContent = NUCNAME[offer.sig.nuc] + ' \u00b7 ' + Math.round(offer.sig.hue) + '\u00b0 hue';
     $('brief-tgtdesc').textContent = spec ? spec.desc : '';

@@ -45,25 +45,50 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (!(variants[0].mean <= variants[1].mean && variants[1].mean <= variants[2].mean)) {
       throw new Error('contract organs were not ordered by rep expectation');
     }
-    if (!(variants[1].repLoss <= variants[0].repLoss && variants[1].repLoss <= variants[2].repLoss)) {
-      throw new Error('normal contract did not stay the baseline difficulty');
+    if (!(variants[0].repLoss <= variants[1].repLoss && variants[1].repLoss <= variants[2].repLoss)) {
+      throw new Error('contract variants did not scale in difficulty');
+    }
+    pass++;
+
+    const previews = await page.evaluate(() => {
+      const offer = __D.makeContract(28, 21, 0);
+      __D.Career.offers = [offer];
+      __D.UI.showBrief(0);
+      __D.UI.tickPreviews(__D.Game.t);
+      return {
+        sig: document.getElementById('cv-sig').toDataURL(),
+        tgt: document.getElementById('cv-tgt').toDataURL(),
+        sym: document.getElementById('cv-sym').toDataURL()
+      };
+    });
+    if (previews.sig === previews.tgt || previews.sig === previews.sym) {
+      throw new Error('brief preview images were not entity-specific');
     }
     pass++;
 
     const spawnRows = await page.evaluate(() => {
       const contract = __D.makeContract(12, 9, 0);
+      const enterRow = __D.Game.enterRow;
+      __D.Game.enterRow = () => {};
       __D.Game.startContract(contract);
-      __D.Maze.nodes.forEach((n) => {
-        if (n.r === 0) n.radius = 12;
-        if (n.r === 1) n.radius = 260;
-      });
-      __D.Maze.rebuildShapes();
-      const sig = { ...__D.Game.contract.sig, r: 90 };
-      const loose = __D.spawnEnt(__D.Game.contract.hostArch, sig, 1, { row: 0, now: __D.Game.t });
-      const strict = __D.spawnEnt(__D.Game.contract.hostArch, sig, 1, { row: 0, now: __D.Game.t, strictRow: true });
-      return { looseRow: loose ? loose.row : -1, strictRow: strict ? strict.row : -1 };
+      const before = {
+        host: __D.ents.filter((e) => e.on && e.arch === contract.hostArch).length,
+        hostile: __D.ents.filter((e) => e.on && e.comp && e.comp.hostile).length
+      };
+      __D.Game.enterRow = enterRow;
+      __D.Game.enterRow(0);
+      const after = {
+        host: __D.ents.filter((e) => e.on && e.arch === contract.hostArch).length,
+        hostile: __D.ents.filter((e) => e.on && e.comp && e.comp.hostile).length
+      };
+      return { before, after };
     });
-    if (spawnRows.strictRow !== 0) throw new Error('row-specific spawning still spills into later waves');
+    if (spawnRows.before.host !== 0 || spawnRows.before.hostile !== 0) {
+      throw new Error('host cells still spawn before the first wave');
+    }
+    if (spawnRows.after.host === 0 || spawnRows.after.hostile === 0) {
+      throw new Error('wave spawning did not add hosts and hostiles together');
+    }
     pass++;
 
     const generated = await page.evaluate(() => {
@@ -83,6 +108,40 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (generated.length !== 10) throw new Error('offers were not generated');
     const allValid = generated.every((offer) => offer.rows > 0 && offer.waves > 0 && offer.target);
     if (!allValid) throw new Error('generated contract shape was invalid');
+    pass++;
+
+    const debt = await page.evaluate(() => {
+      const contract = __D.makeContract(0, 7, 0);
+      contract.tier = { i: 0, name: 'D', payMult: 1, lethal: false };
+      contract.repLoss = 12;
+      __D.Game.contract = contract;
+      __D.Career.contract = contract;
+      __D.Career.rep = 1;
+      __D.Career.credits = 10;
+      __D.Career.struckOff = false;
+      __D.Career.dead = false;
+      __D.Game.run = {
+        bounty: 0, damages: 0, scansUsed: 0, pathKills: 0, innocent: 0, symKills: 0,
+        corruptEvents: 0, shots: 0, integrity: 100, combo: 0, comboT: 0, runTime: 0,
+        o2: 100, o2max: 100, siphons: 0, siphonO2: 0, siphonDamage: 0, repBribe: 0, died: false
+      };
+      __D.Game.state = 'play';
+      __D.Game._settled = false;
+      __D.Game.finish(false);
+      __D.UI.afterResults();
+      return {
+        state: __D.Game.state,
+        over: document.getElementById('scr-over').classList.contains('on'),
+        finished: __D.Career.finished(),
+        reason: __D.Career.reason,
+        credits: Math.round(__D.Career.credits),
+        rep: Math.round(__D.Career.rep)
+      };
+    });
+    if (debt.state !== 'over' || !debt.over || !debt.finished || debt.reason !== 'debt' ||
+      debt.rep !== 0 || debt.credits >= 0) {
+      throw new Error('reputation bribe did not trigger a debt game over');
+    }
     pass++;
   } catch (error) {
     fail++;

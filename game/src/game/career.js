@@ -206,7 +206,12 @@ export const Career = {
   settle(result) {
     this.credits += result.net;
     this.gross += Math.max(0, result.gross);
-    this.rep = clamp(this.rep + result.repDelta, 0, CFG.rep.max);
+    const nextRep = this.rep + result.repDelta;
+    if (nextRep < 0) {
+      this.rep = 0;
+    } else {
+      this.rep = clamp(nextRep, 0, CFG.rep.max);
+    }
     this.pathogens += result.pathKills;
     this.wrongful += result.innocent;
     this.charges += result.scansUsed;
