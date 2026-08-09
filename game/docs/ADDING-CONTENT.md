@@ -28,7 +28,7 @@ toxoplasma: {
   name: 'Toxoplasma-type', short: 'TOXO',
   desc: 'Crescent body. Drifts until the diver is close, then darts.',
   idName: 'PATHOGEN', idSub: 'TOXOPLASMA', idCol: '#ff5a72',
-  dress(e, sig, dev) {
+  dress(e, sig, dev, o) {
     e.hue = wrapHue(sig.hue + sgn() * (20 + 40 * dev));
     e.r = sig.r * rr(0.6, 0.8);
     e.nuc = 'crescent';
