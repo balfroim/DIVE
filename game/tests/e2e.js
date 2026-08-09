@@ -67,13 +67,13 @@ async function captureBrief(page, organId, seed) {
     }
     pass++;
 
+    await page.evaluate(() => { __D.Career.suit = 99; });
     const fallback = await captureBrief(page, 'brain', 54321);
     if (!fallback.visible || !fallback.site || fallback.site !== 'Cortex' || !fallback.grade ||
-      !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
+      fallback.readiness !== 'clear' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
       fallback.mapText !== (fallback.pressure + ' P') || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
     }
-    await page.evaluate(() => { __D.Career.suit = 99; });
     await page.evaluate(() => __D.UI.dive());
     await sleep(600);
     const dive = await page.evaluate(() => ({

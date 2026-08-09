@@ -261,7 +261,8 @@ export const UI = {
 
     const under = Career.suit < s.suit;
     $('brief-warn').innerHTML = under
-      ? '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() + ' pressure.</p>'
+      ? '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
+        ' pressure; yours is ' + Career.suit + '.</p>'
       : s.lethal
         ? '<p><b>Insured client.</b> Death here voids the licence and ends the career file.</p>'
         : '<p><b>Uninsured client.</b> Casualties are billable, not terminal.</p>';
