@@ -328,14 +328,12 @@ export const UI = {
       '<div class="inv-row"><span>Balance</span><b>' + cr(Career.credits) + '</b></div>';
 
     let memo;
-    if (Career.struckOff) {
+    if (Career.dead) {
+      memo = '<b>Vax:</b> You did not surface. The file is closed, and the estate is already arguing with Accounts.';
+    } else if (Career.struckOff) {
       memo = Career.reason === 'debt'
         ? '<b>Vax:</b> Your balance is negative and your licence is collateral. The Division has exercised its option. Badge, please.'
-        : Career.dead
-          ? '<b>Vax:</b> The client survived, but you did not surface. The estate has already been billed.'
-          : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
-    } else if (Career.dead) {
-      memo = '<b>Vax:</b> You did not surface. The file is closed, and the estate is already arguing with Accounts.';
+        : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
     } else if (Career.credits < 0) {
       memo = '<b>Vax:</b> You are ' + cr(-Career.credits) + ' in the red. The Division is content to let you work it off \u2014 ' +
         'that is what the licence is for. Fall past ' + cr(-CFG.econ.debtFloor) + ' owed and it stops being content.';
