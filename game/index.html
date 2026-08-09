@@ -103,6 +103,12 @@
   .chip.good{border-color:rgba(87,242,167,.5);color:var(--green);background:rgba(87,242,167,.10)}
   .chip.bad{border-color:rgba(255,77,94,.55);color:#ff8b98;background:rgba(255,77,94,.12)}
   .chip.gold{border-color:rgba(255,194,90,.55);color:var(--amber);background:rgba(255,194,90,.12)}
+  .hoverterm{border-bottom:1px dotted rgba(255,255,255,.45);cursor:help}
+  .brief-note{font-size:11.5px;line-height:1.5;color:#ffe3b8;padding:2px 0 0}
+  .brief-note b{display:block;margin-bottom:3px;color:var(--amber);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+  .result-state{display:inline-flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.08em}
+  .result-state.dead{color:#ff8b98}
+  .result-state.badge{color:#ffc86b}
 
   /* ---------- dialogue ---------- */
   .dlg{display:flex;gap:14px;align-items:flex-start}
@@ -397,12 +403,11 @@
           <canvas id="cv-site" width="150" height="150"></canvas>
           <div>
             <div class="kicker">Site map</div>
-            <div class="d">Where the target sits in the client body.</div>
+            <div class="brief-note" id="brief-mapnote">&mdash;</div>
             <div class="m" id="brief-mapdesc">&mdash;</div>
           </div>
         </div>
         <div class="warnline" id="brief-warn"></div>
-        <div class="memo" id="brief-memo"></div>
         <div class="btnrow">
           <button class="btn" id="btn-dive">Dive</button>
           <button class="btn ghost" id="btn-decline">Back to board</button>

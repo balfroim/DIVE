@@ -29,6 +29,10 @@ import { previewEnt, paintPreview } from './previews.js';
 /** Live specimens on the briefing cards. */
 const preview = { sig: null, tgt: null, sym: null };
 
+function hover(text, tip) {
+  return '<span class="hoverterm" title="' + esc(tip || '') + '">' + esc(text) + '</span>';
+}
+
 function paintSiteMap(canvas, organ, t) {
   if (!canvas || !organ || !canvas.getContext) return;
   const c = canvas.getContext('2d');
@@ -227,7 +231,7 @@ export const UI = {
 
     $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
     $('brief-client').textContent = offer.client.job;
-    $('brief-site').textContent = s.job + ' \u00b7 ' + s.site;
+    $('brief-site').innerHTML = esc(s.job) + ' \u00b7 ' + hover(s.site, s.note);
 
     const chips = [
       ['TIER', s.tier + ' \u00b7 ' + s.tierLabel],
@@ -257,6 +261,7 @@ export const UI = {
     $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
       (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
       (Career.stab ? ' \u00b7 STABILISER READY' : '');
+    $('brief-mapnote').textContent = s.note;
     $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
       s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
     paintSiteMap($('cv-site'), offer.organ, Game.t);
@@ -270,7 +275,6 @@ export const UI = {
         ? '<b>INSURED CLIENT.</b> If this one dies, Legal terminates your licence. The white cell kills everything on its path \u2014 mind your angles.'
         : '<b>UNINSURED CLIENT.</b> A casualty here is billable, not terminal. Good conditions to learn the vessel.';
 
-    $('brief-memo').innerHTML = '<b>Vax:</b> ' + esc(s.memo) + ' <i>' + esc(s.note) + '</i>';
   },
 
   dive() {
@@ -309,11 +313,26 @@ export const UI = {
     show('results');
     const c = Game.contract || Career.pending;
     const good = result.success;
+    const dead = Career.dead;
+    const struck = Career.struckOff;
+    const o2Left = Math.max(0, Math.round(result.o2Left || 0));
     $('res-kicker').textContent = 'Extraction report \u00b7 ' + (c ? c.id : '');
-    $('res-title').textContent = good ? 'Contract closed' : 'Client lost';
-    $('res-sub').textContent = good
-      ? 'Client viable at ' + Math.round(result.integrity) + '%'
-      : 'Integrity zero \u00b7 extraction under protest';
+    $('res-title').textContent = dead
+      ? '\u2620 Diver lost'
+      : struck
+        ? '\u26a0 Licence revoked'
+        : good
+          ? '\u2713 Contract closed'
+          : 'Client lost';
+    $('res-sub').textContent = dead
+      ? 'O\u2082 left 0s \u00b7 body recovery billed to the estate'
+      : struck
+        ? (Career.reason === 'debt'
+          ? 'O\u2082 left ' + o2Left + 's \u00b7 negative balance terminated the file'
+          : 'O\u2082 left ' + o2Left + 's \u00b7 the licence was removed')
+        : good
+          ? 'O\u2082 left ' + o2Left + 's \u00b7 client viable at ' + Math.round(result.integrity) + '%'
+          : 'O\u2082 left ' + o2Left + 's \u00b7 extraction under protest';
 
     const rows = result.lines
       .map((l) => '<div class="inv-row"><span>' + esc(l.label) +
@@ -326,12 +345,14 @@ export const UI = {
     $('res-inv').innerHTML = rows +
       '<div class="inv-row total"><span>Net</span><b class="' + (result.net < 0 ? 'neg' : '') + '">' +
       cr(result.net) + '</b></div>' + repRow +
+      '<div class="inv-row"><span>Oxygen left</span><b class="' + (o2Left <= 0 ? 'neg' : '') + '">' +
+      o2Left + 's</b></div>' +
       '<div class="inv-row"><span>Balance</span><b>' + cr(Career.credits) + '</b></div>';
 
     let memo;
-    if (Career.dead) {
-      memo = '<b>Vax:</b> You did not surface. The file is closed, and the estate is already arguing with Accounts.';
-    } else if (Career.struckOff) {
+    if (dead) {
+      memo = '<b>Vax:</b> You did not surface. The tank hit zero, the body was bagged, and Accounts has already opened the estate.';
+    } else if (struck) {
       memo = Career.reason === 'debt'
         ? '<b>Vax:</b> Your balance is negative and your licence is collateral. The Division has exercised its option. Badge, please.'
         : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
@@ -390,12 +411,18 @@ export const UI = {
     this.syncDevTools();
     const struck = Career.struckOff;
     const dead = Career.dead;
-    $('over-title').textContent = dead ? 'Deceased' : retired ? 'Retired' : struck ? 'Licence revoked' : 'Career closed';
+    $('over-title').textContent = dead
+      ? 'Deceased'
+      : retired
+        ? '\u25c7 Retired'
+        : struck
+          ? '\u26a0 Licence revoked'
+          : 'Career closed';
     let sub = '';
-    if (dead) sub = 'You did not surface from the dive.';
+    if (dead) sub = 'O\u2082 exhausted \u00b7 did not surface from the dive.';
     else if (retired) sub = 'You surfaced with the money and the badge.';
-    else if (Career.reason === 'debt') sub = 'Terminated for negative balance';
-    else if (Career.reason === 'litigation') sub = 'Terminated following litigation';
+    else if (Career.reason === 'debt') sub = 'Negative balance \u00b7 licence surrendered.';
+    else if (Career.reason === 'litigation') sub = 'Insured casualty \u00b7 licence revoked.';
     $('over-sub').textContent = sub;
     const tiles = [
       [String(Career.contracts), 'Contracts closed'],
@@ -405,6 +432,7 @@ export const UI = {
       [String(Career.pathogens), 'Pathogens'],
       [String(Career.wrongful), 'Wrongful kills'],
       [String(Career.charges), 'Charges fired'],
+      [dead ? '0s' : '—', 'Oxygen left'],
       [cr(Career.credits), 'Final balance']
     ];
     $('over-stats').innerHTML = tiles
