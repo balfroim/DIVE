@@ -28,7 +28,7 @@ export const ORGANS = [
   { id: 'heart',    name: 'Aortic arch',     short: 'HEART',   map: 'heart', mx: 0.53, my: 0.315, depth: 6, pressure: 1.95, hue: 0,   vessel: 'aortic arch',
     note: 'The body\'s main highway out of the heart. Pressure is at its highest here and the flow is rough. Anything infectious passing through reaches the entire body within minutes.' },
   { id: 'brain',    name: 'Cortex',          short: 'BRAIN',   map: null, mx: 0.50, my: 0.045, depth: 8, pressure: 2.35, hue: 245, vessel: 'cerebral artery',
-    note: 'The final contract. No map is provided; by this stage you are expected to know the route.' }
+    note: 'The most complicated type of contract.' }
   ];
 
 /** Sites appropriate to a reputation level: better licence, deeper work. */

@@ -143,6 +143,35 @@ export const MAPS = [
     'O'
   ]
 },
+
+
+{
+  id: 'brain',
+  /* Cerebral circulation: the Circle of Willis feeding a dense cortical web.
+     Crossings stack three deep in places - one wrong valve and a chamber is
+     cut off by its own overpass. The deepest dive in the fleet. */
+  rows: [
+    '    E      ',
+    '    |      ',
+    ' #--#--#   ',
+    ' |  |  |   ',
+    ' #--+--+--#',
+    ' |  |  | |',
+    '#-#  #  # #',
+    '| |  |  | |',
+    '# +--#--+ #',
+    '| |  |  | |',
+    '#-#--#  #-#',
+    '  |  |  |  ',
+    '  #--+--#  ',
+    '  |  |  |  ',
+    '  #-#--#   ',
+    '    |  |   ',
+    '    #--#   ',
+    '    |  |   ',
+    '    O--#   '
+  ]
+},
 ];
 
 /** The map an organ names, or null when the organ grows its vessel. */

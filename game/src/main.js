@@ -26,6 +26,7 @@ import { Career } from './game/career.js';
 import { UI, wireUI } from './ui/screens.js';
 import { DLG } from './ui/dialogue.js';
 import { cam } from './core/view.js';
+import { GAME_VERSION } from './core/version.js';
 
 function queryParams() {
   const out = Object.create(null);
@@ -60,6 +61,9 @@ function boot() {
   bootBackdrop();
   initBG();
   wireUI();
+
+  const corner = document.getElementById('corner');
+  if (corner) corner.textContent = GAME_VERSION;
 
   Career.agent = Store.get(KEYS.name, 'AGENT');
   const params = queryParams();
