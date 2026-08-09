@@ -389,7 +389,7 @@ export const UI = {
     this.syncDevTools();
     const struck = Career.struckOff;
     const dead = Career.dead;
-    $('over-title').textContent = retired ? 'Retired' : dead ? 'Deceased' : struck ? 'Licence revoked' : 'Career closed';
+    $('over-title').textContent = dead ? 'Deceased' : retired ? 'Retired' : struck ? 'Licence revoked' : 'Career closed';
     let sub = '';
     if (dead) sub = 'You did not surface from the dive.';
     else if (retired) sub = 'You surfaced with the money and the badge.';
