@@ -19,12 +19,22 @@ import { offerSummary, pressureLabel, suitFor } from '../game/contracts.js';
 import { repLabel } from '../game/economy.js';
 import { SHOP } from '../data/shop.js';
 import { PSPEC, NUCNAME } from '../entities/species.js';
+import { drawBody } from '../render/minimap.js';
 import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
 import { DLG } from './dialogue.js';
 import { previewEnt, paintPreview } from './previews.js';
 
 /** Live specimens on the briefing cards. */
 const preview = { sig: null, tgt: null, sym: null };
+
+function paintSiteMap(canvas, organ, t) {
+  if (!canvas || !organ || !canvas.getContext) return;
+  const c = canvas.getContext('2d');
+  const S = canvas.width;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, S, S);
+  drawBody(c, 12, 10, S - 24, S - 20, organ, 0.5 + 0.5 * Math.sin(t * 2.2));
+}
 
 export const UI = {
   /* ---------------------------------------------------------------- */
@@ -115,7 +125,7 @@ export const UI = {
     const s = offerSummary(offer);
 
     $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
-    $('brief-client').textContent = 'CLIENT #' + (1000 + (offer.seed % 8999));
+    $('brief-client').textContent = offer.client.job;
     $('brief-site').textContent = s.job + ' \u00b7 ' + s.site;
 
     const chips = [
@@ -145,6 +155,8 @@ export const UI = {
     $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
       (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
       (Career.stab ? ' \u00b7 STABILISER READY' : '');
+    $('brief-mapdesc').textContent = s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
+    paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
     $('brief-warn').className = 'warnline' + (under || s.lethal ? '' : ' okline');
@@ -380,6 +392,7 @@ export const UI = {
     paintPreview($('cv-sig'), preview.sig, t);
     paintPreview($('cv-tgt'), preview.tgt, t);
     paintPreview($('cv-sym'), preview.sym, t);
+    paintSiteMap($('cv-site'), Career.pending ? Career.pending.organ : Game.contract && Game.contract.organ, t);
   }
 };
 

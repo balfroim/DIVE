@@ -23,13 +23,23 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     const brief = await page.evaluate(() => {
       __D.UI.showBrief(0);
+      const canvas = document.getElementById('cv-site');
+      const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      let painted = false;
+      for (let i = 3; i < pixels.length; i += 4) {
+        if (pixels[i] > 0) { painted = true; break; }
+      }
       return {
         visible: document.getElementById('scr-brief').classList.contains('on'),
         chips: document.getElementById('brief-chips').textContent.length > 0,
-        contract: !!__D.Career.pending
+        contract: !!__D.Career.pending,
+        mapPainted: painted,
+        mapText: document.getElementById('brief-mapdesc').textContent
       };
     });
-    if (!brief.visible || !brief.chips || !brief.contract) throw new Error('briefing failed');
+    if (!brief.visible || !brief.chips || !brief.contract || !brief.mapPainted || !brief.mapText) {
+      throw new Error('briefing failed');
+    }
     pass++;
 
     await page.evaluate(() => __D.UI.dive());

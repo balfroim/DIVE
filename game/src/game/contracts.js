@@ -62,6 +62,7 @@ export function makeContract(rep, seed, slot) {
   const rows = clamp(organ.depth + (slot >= 2 ? 1 : 0) + (R.chance(0.3) ? 1 : 0), 2, 9);
   const pressure = +(organ.pressure * R.range(0.94, 1.1) + slot * 0.05).toFixed(2);
   const diff = difficultyOf(rows, pressure, tier.i, type.diffBonus);
+  const clientCode = 1000 + (seed % 8999);
 
   /* waves: one per row you must fight through, the organ chamber included */
   const waves = rows;
@@ -85,7 +86,7 @@ export function makeContract(rep, seed, slot) {
     typeBrief: type.brief,
     scanHint: type.scanHint,
     hostArch: type.hostArch,
-    client: { job: client.job, memo: client.memo, tier: tier.i },
+    client: { job: 'CLIENT #' + clientCode, memo: client.memo, tier: tier.i },
     tier,
     organ,
     rows,
