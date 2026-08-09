@@ -1,0 +1,413 @@
+/**
+ * Screen controller: every DOM overlay, and the flow between them.
+ *
+ * The game loop never touches the DOM directly - it calls `Game.ui.*`, which is
+ * this object. That keeps the simulation headless-testable and puts all the
+ * innerHTML in one file.
+ *
+ * @module ui/screens
+ */
+
+import { CFG } from '../core/config.js';
+import { clamp } from '../core/math.js';
+import { SFX } from '../core/audio.js';
+import { Store, KEYS } from '../core/store.js';
+import { Input } from '../core/input.js';
+import { Game } from '../game/state.js';
+import { Career } from '../game/career.js';
+import { offerSummary, pressureLabel, suitFor } from '../game/contracts.js';
+import { repLabel } from '../game/economy.js';
+import { SHOP } from '../data/shop.js';
+import { PSPEC, NUCNAME } from '../entities/species.js';
+import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
+import { DLG } from './dialogue.js';
+import { previewEnt, paintPreview } from './previews.js';
+
+/** Live specimens on the briefing cards. */
+const preview = { sig: null, tgt: null, sym: null };
+
+export const UI = {
+  /* ---------------------------------------------------------------- */
+  /* start                                                             */
+  /* ---------------------------------------------------------------- */
+
+  showStart() {
+    Game.state = 'start';
+    show('start');
+    const saved = Store.getJSON(KEYS.career, null);
+    const cont = $('btn-continue');
+    if (cont) cont.style.display = saved && !saved.struckOff ? '' : 'none';
+    this.paintScores('scores-start');
+  },
+
+  /** Begin a brand new career: the induction always plays, and names you. */
+  newCareer() {
+    Career.reset(Store.get(KEYS.name, 'AGENT'));
+    Game.state = 'dialog';
+    show('dialog');
+    DLG.onFinish = () => UI.showBoard();
+    DLG.start('s0');
+  },
+
+  continueCareer() {
+    if (!Career.load()) { this.newCareer(); return; }
+    this.showBoard();
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* job board                                                         */
+  /* ---------------------------------------------------------------- */
+
+  showBoard() {
+    Game.state = 'board';
+    if (Career.struckOff) { this.showOver(); return; }
+    if (!Career.offers.length) Career.refreshBoard();
+    show('board');
+
+    $('lic-class').textContent = repLabel(Career.rep);
+    $('lic-rep').textContent = Math.round(Career.rep);
+    $('lic-bar').style.width = clamp(Career.rep, 0, 100) + '%';
+    $('lic-bank').textContent = cr(Career.credits);
+    $('lic-scans').textContent = Career.scans;
+    $('board-kicker').textContent = 'Contract board \u00b7 ' + Career.agent;
+
+    const box = $('board-offers');
+    box.innerHTML = '';
+    Career.offers.forEach((offer, i) => {
+      const s = offerSummary(offer);
+      const el = document.createElement('div');
+      el.className = 'offer' + (s.lethal ? ' risky' : '');
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.dataset.i = String(i);
+      el.innerHTML =
+        '<div>' +
+          '<div class="job"><span class="tierpill t' + offer.tier.i + '">TIER ' + s.tier + '</span>' + esc(s.job) + '</div>' +
+          '<div class="sub">' + esc(s.site) + ' \u00b7 depth ' + s.depth + ' \u00b7 ' + s.waves + ' waves \u00b7 ' +
+            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="pay">' + (s.fee + s.comp) + ' cr</div>' +
+          '<div class="paysub">+' + s.rep + ' rep \u00b7 \u2212' + s.risk + ' if lost</div>' +
+        '</div>';
+      const openIt = () => UI.showBrief(i);
+      el.addEventListener('click', openIt);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openIt(); } });
+      box.appendChild(el);
+    });
+
+    const worst = Career.offers.some((o) => o.tier.lethal);
+    $('board-memo').innerHTML = worst
+      ? '<b>Vax:</b> Note the insured names on today\u2019s board. If one of them dies down there, the claim outlives your licence.'
+      : '<b>Vax:</b> Nothing on the board today would be missed. Ideal conditions for building a reputation.';
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* briefing                                                          */
+  /* ---------------------------------------------------------------- */
+
+  showBrief(i) {
+    const offer = Career.offers[i];
+    if (!offer) return;
+    Career.pending = offer;
+    Game.state = 'brief';
+    show('brief');
+    const s = offerSummary(offer);
+
+    $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
+    $('brief-client').textContent = 'CLIENT #' + (1000 + (offer.seed % 8999));
+    $('brief-site').textContent = s.job + ' \u00b7 ' + s.site;
+
+    const chips = [
+      ['TIER', s.tier + ' \u00b7 ' + s.tierLabel],
+      ['SITE', s.organ],
+      ['DEPTH', s.depth + ' rows'],
+      ['WAVES', String(s.waves)],
+      ['PRESSURE', s.band + ' ' + s.pressure],
+      ['SUIT', 'rating ' + s.suit + (Career.suit >= s.suit ? ' \u2713' : ' \u2717 yours ' + Career.suit)],
+      ['ADVANCE', s.fee + ' cr'],
+      ['COMPLETION', s.comp + ' cr'],
+      ['REPUTATION', '+' + s.rep + ' / \u2212' + s.risk]
+    ];
+    $('brief-chips').innerHTML = chips
+      .map((c) => '<span class="chip"><b>' + c[0] + '</b> ' + esc(c[1]) + '</span>')
+      .join('');
+
+    /* specimens */
+    preview.sig = previewEnt('healthy', offer.sig, 1);
+    preview.tgt = previewEnt('pathogen', offer.sig, offer.deviation, offer.targetSpecies);
+    preview.sym = previewEnt('symbiote', offer.sig, 1);
+    const spec = PSPEC[offer.targetSpecies];
+    $('brief-sigdesc').textContent = NUCNAME[offer.sig.nuc] + ' \u00b7 ' + Math.round(offer.sig.hue) + '\u00b0 hue';
+    $('brief-tgtdesc').textContent = spec ? spec.desc : '';
+    $('brief-tgtname').textContent = (spec ? spec.name : offer.targetSpecies) +
+      (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION, HARD TO CALL' : '');
+    $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
+      (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
+      (Career.stab ? ' \u00b7 STABILISER READY' : '');
+
+    const under = Career.suit < s.suit;
+    $('brief-warn').className = 'warnline' + (under || s.lethal ? '' : ' okline');
+    $('brief-warn').innerHTML = under
+      ? '<b>SUIT UNDER-RATED.</b> Your shell is rating ' + Career.suit + ' against ' + s.band.toLowerCase() +
+        ' pressure. You will be shoved downstream and the corridors will squeeze. You may dive anyway. Many do.'
+      : s.lethal
+        ? '<b>INSURED CLIENT.</b> If this one dies, Legal terminates your licence. The white cell kills everything on its path \u2014 mind your angles.'
+        : '<b>UNINSURED CLIENT.</b> A casualty here is billable, not terminal. Good conditions to learn the vessel.';
+
+    $('brief-memo').innerHTML = '<b>Vax:</b> ' + esc(s.memo) + ' <i>' + esc(s.note) + '</i>';
+  },
+
+  dive() {
+    const offer = Career.pending;
+    if (!offer) return;
+    Career.accept(offer);
+    hideAll();
+    Game.startContract(offer);
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* pause                                                             */
+  /* ---------------------------------------------------------------- */
+
+  showPause() {
+    show('pause');
+    const run = Game.run;
+    const tiles = [
+      [cr(run.bounty - run.damages), 'Net so far'],
+      [Game.wave + '/' + Game.waveTotal, 'Wave'],
+      [Math.max(0, Math.round(run.integrity)) + '%', 'Integrity'],
+      [String(Career.scans), 'Charges left']
+    ];
+    $('pause-stats').innerHTML = tiles
+      .map((t) => '<div class="stat"><b>' + esc(t[0]) + '</b><span>' + esc(t[1]) + '</span></div>')
+      .join('');
+  },
+
+  hideOverlays() { hideAll(); },
+
+  /* ---------------------------------------------------------------- */
+  /* results                                                           */
+  /* ---------------------------------------------------------------- */
+
+  showResults(result) {
+    show('results');
+    const c = Game.contract || Career.pending;
+    const good = result.success;
+    $('res-kicker').textContent = 'Extraction report \u00b7 ' + (c ? c.id : '');
+    $('res-title').textContent = good ? 'Contract closed' : 'Client lost';
+    $('res-sub').textContent = good
+      ? 'Client viable at ' + Math.round(result.integrity) + '%'
+      : 'Integrity zero \u00b7 extraction under protest';
+
+    const rows = result.lines
+      .map((l) => '<div class="inv-row"><span>' + esc(l.label) +
+        (l.note ? ' <i style="opacity:.6">' + esc(l.note) + '</i>' : '') +
+        '</span><b class="' + (l.amount < 0 ? 'neg' : '') + '">' + cr(l.amount) + '</b></div>')
+      .join('');
+    const repRow = '<div class="inv-row"><span>Reputation</span><b class="' +
+      (result.repDelta < 0 ? 'neg' : '') + '">' +
+      (result.repDelta >= 0 ? '+' : '\u2212') + Math.abs(result.repDelta) + '</b></div>';
+    $('res-inv').innerHTML = rows +
+      '<div class="inv-row total"><span>Net</span><b class="' + (result.net < 0 ? 'neg' : '') + '">' +
+      cr(result.net) + '</b></div>' + repRow +
+      '<div class="inv-row"><span>Balance</span><b>' + cr(Career.credits) + '</b></div>';
+
+    let memo;
+    if (Career.struckOff) {
+      memo = Career.reason === 'debt'
+        ? '<b>Vax:</b> Your balance is negative and your licence is collateral. The Division has exercised its option. Badge, please.'
+        : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
+    } else if (Career.credits < 0) {
+      memo = '<b>Vax:</b> You are ' + cr(-Career.credits) + ' in the red. The Division is content to let you work it off \u2014 ' +
+        'that is what the licence is for. Fall past ' + cr(-CFG.econ.debtFloor) + ' owed and it stops being content.';
+    } else if (!good) {
+      memo = '<b>Vax:</b> Uninsured, thankfully. The file has been closed and the reputation adjusted. Try to lose fewer of them.';
+    } else if (Game.run.innocent > 0) {
+      memo = '<b>Vax:</b> Closed, but you shredded ' + Game.run.innocent + ' of the client\u2019s own cells. The invoice reflects it. So does your file.';
+    } else {
+      memo = '<b>Vax:</b> Clean work. The board will reflect your standing shortly.';
+    }
+    $('res-memo').innerHTML = memo;
+    $('btn-res-next').textContent = Career.struckOff ? 'Collect your badge' : 'Requisitions';
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* shop                                                              */
+  /* ---------------------------------------------------------------- */
+
+  showShop() {
+    Game.state = 'shop';
+    show('shop');
+    $('shop-bank').textContent = 'Balance ' + cr(Career.credits) + ' \u00b7 licence ' + repLabel(Career.rep);
+    const box = $('shop-list');
+    box.innerHTML = '';
+    SHOP.forEach((item) => {
+      const cost = item.cost(Career);
+      const afford = Career.credits >= cost;
+      const el = document.createElement('div');
+      el.className = 'shop-item';
+      el.innerHTML =
+        '<div><b>' + esc(item.name) + '</b><span>' + esc(item.desc) + '</span>' +
+        '<span class="owned">' + esc(item.owned(Career)) + '</span></div>' +
+        '<button class="btn ghost" ' + (afford ? '' : 'disabled') + '>' + cost + ' cr</button>';
+      el.querySelector('button').addEventListener('click', () => {
+        if (Career.credits < cost) return;
+        Career.credits -= cost;
+        item.buy(Career);
+        Career.save();
+        SFX.ui();
+        UI.showShop();
+      });
+      box.appendChild(el);
+    });
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* career over                                                       */
+  /* ---------------------------------------------------------------- */
+
+  showOver(retired) {
+    Game.state = 'over';
+    show('over');
+    const struck = Career.struckOff;
+    $('over-title').textContent = retired ? 'Retired' : struck ? 'Licence revoked' : 'Career closed';
+    $('over-sub').textContent = retired
+      ? 'You surfaced with the money and the badge.'
+      : Career.reason === 'debt' ? 'Terminated for negative balance'
+      : Career.reason === 'litigation' ? 'Terminated following litigation'
+      : '';
+    const tiles = [
+      [String(Career.contracts), 'Contracts closed'],
+      [String(Career.lost), 'Clients lost'],
+      [Math.round(Career.rep) + '', 'Reputation'],
+      [Career.bestTier, 'Highest tier'],
+      [String(Career.pathogens), 'Pathogens'],
+      [String(Career.wrongful), 'Wrongful kills'],
+      [String(Career.charges), 'Charges fired'],
+      [cr(Career.credits), 'Final balance']
+    ];
+    $('over-stats').innerHTML = tiles
+      .map((t) => '<div class="stat"><b>' + esc(t[0]) + '</b><span>' + esc(t[1]) + '</span></div>')
+      .join('');
+    const inp = $('inp-name');
+    if (inp) inp.value = Career.agent;
+    this.paintScores('scores-over');
+  },
+
+  saveScore() {
+    const inp = $('inp-name');
+    if (inp) {
+      Career.agent = (inp.value || Career.agent).toUpperCase().slice(0, 12);
+      try { inp.blur(); } catch (e) { /* headless */ }
+    }
+    Career.filePayroll();
+    Store.set(KEYS.name, Career.agent);
+    $('over-name').style.display = 'none';
+    this.paintScores('scores-over');
+    SFX.ui();
+  },
+
+  paintScores(id) {
+    const el = $(id);
+    if (!el) return;
+    const list = Career.payroll();
+    if (!list.length) {
+      el.innerHTML = '<div class="empty">No payroll records on file.</div>';
+      return;
+    }
+    el.innerHTML = '<table class="scores"><tbody>' + list.map((s, i) =>
+      '<tr><td>' + (i + 1) + '</td><td>' + esc(s.name) + '</td><td>' +
+      (s.tier || 'D') + '</td><td>' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td><td>' +
+      cr(s.cr) + '</td></tr>').join('') + '</tbody></table>';
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* flow + keys                                                       */
+  /* ---------------------------------------------------------------- */
+
+  afterResults() {
+    if (Career.struckOff) { this.showOver(false); return; }
+    Career.refreshBoard();
+    this.showShop();
+  },
+
+  /** Returns true when the key was consumed by a screen. */
+  onKey(code, k) {
+    const go = code === 'Space' || code === 'Enter';
+    switch (Game.state) {
+      case 'start':
+        if (go) { this.newCareer(); return true; }
+        return false;
+      case 'dialog':
+        return DLG.onKey(code, k);
+      case 'board':
+        if (k === '1' || k === '2' || k === '3') {
+          const i = parseInt(k, 10) - 1;
+          if (Career.offers[i]) { this.showBrief(i); return true; }
+        }
+        return false;
+      case 'brief':
+        if (go) { this.dive(); return true; }
+        if (code === 'Escape') { this.showBoard(); return true; }
+        return false;
+      case 'results':
+        if (go) { this.afterResults(); return true; }
+        return false;
+      case 'shop':
+        if (go) { this.showBoard(); return true; }
+        return false;
+      case 'over': {
+        const inInput = document.activeElement && document.activeElement.tagName === 'INPUT';
+        if (inInput) { if (code === 'Enter') this.saveScore(); return true; }
+        if (k === 'r' || go) { this.newCareer(); return true; }
+        return false;
+      }
+      default:
+        return false;
+    }
+  },
+
+  /** Keep the briefing specimens spinning. */
+  tickPreviews(t) {
+    if (Game.state !== 'brief') return;
+    for (const key of ['sig', 'tgt', 'sym']) {
+      const e = preview[key];
+      if (!e) continue;
+      e.phase += 0.02;
+      e.ang += 0.004;
+    }
+    paintPreview($('cv-sig'), preview.sig, t);
+    paintPreview($('cv-tgt'), preview.tgt, t);
+    paintPreview($('cv-sym'), preview.sym, t);
+  }
+};
+
+/** Wire every button once, at boot. */
+export function wireUI() {
+  Game.ui = UI;
+
+  on('btn-play', 'click', () => UI.newCareer());
+  on('btn-continue', 'click', () => UI.continueCareer());
+
+  on('scr-dialog', 'click', () => DLG.advance());
+  on('btn-skip', 'click', stop(() => DLG.skip()));
+  on('dlg-ok', 'click', stop(() => DLG.submitName()));
+  on('dlg-input', 'click', stop(() => {}));
+  on('dlg-input', 'keydown', (e) => { if (e.key === 'Enter') { e.stopPropagation(); DLG.submitName(); } });
+
+  on('btn-shop', 'click', () => UI.showShop());
+  on('btn-retire', 'click', () => { Career.filePayroll(); UI.showOver(true); });
+
+  on('btn-dive', 'click', () => UI.dive());
+  on('btn-decline', 'click', () => UI.showBoard());
+
+  on('btn-resume', 'click', () => Game.resume());
+  on('btn-pause-abort', 'click', () => Game.abandon());
+
+  on('btn-res-next', 'click', () => UI.afterResults());
+  on('btn-shop-done', 'click', () => UI.showBoard());
+
+  on('btn-save', 'click', () => UI.saveScore());
+  on('btn-again', 'click', () => UI.newCareer());
+}

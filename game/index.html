@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0308">
+<meta name="description" content="D.I.V.E. - Division of Immunity &amp; Virus Elimination. Freelance microscopic contract work. You mark, your white cell kills everything in its path.">
+<title>D.I.V.E. - Division of Immunity &amp; Virus Elimination</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --pink:#ff5f8f; --cyan:#6fe8ff; --green:#57f2a7;
+    --amber:#ffc25a; --red:#ff4d5e; --txt:#ffe6ef; --mut:#cf93a8;
+  }
+  html,body{height:100%;background:#0b0308;overflow:hidden}
+  body{
+    font-family:"Avenir Next","Segoe UI",Roboto,system-ui,-apple-system,sans-serif;
+    color:var(--txt);
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+    touch-action:none;overscroll-behavior:none;
+  }
+  #app{position:fixed;inset:0}
+  #game{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:none}
+  #game.touchmode{cursor:auto}
+  #ui{position:absolute;inset:0;pointer-events:none}
+
+  .overlay{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    padding:14px;pointer-events:auto;
+    background:radial-gradient(ellipse at 50% 38%,rgba(84,6,32,.52),rgba(6,1,4,.93) 72%);
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    animation:fade .25s ease both;
+  }
+  .overlay.on{display:flex}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+
+  .panel{
+    position:relative;width:100%;max-width:620px;max-height:94vh;overflow-y:auto;overflow-x:hidden;
+    padding:clamp(16px,3.4vw,28px);
+    background:linear-gradient(160deg,rgba(52,10,26,.95),rgba(18,4,10,.96));
+    border:1px solid rgba(255,110,155,.30);border-radius:16px;
+    box-shadow:0 0 0 1px rgba(0,0,0,.5),0 24px 70px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,190,210,.14);
+    animation:rise .3s cubic-bezier(.2,.9,.3,1) both;
+    scrollbar-width:thin;scrollbar-color:rgba(255,110,155,.4) transparent;
+  }
+  .panel::-webkit-scrollbar{width:8px}
+  .panel::-webkit-scrollbar-thumb{background:rgba(255,110,155,.35);border-radius:8px}
+  .panel.wide{max-width:700px}
+
+  .kicker{font-size:clamp(9px,1.5vw,11px);letter-spacing:.34em;color:var(--pink);text-transform:uppercase;font-weight:700;opacity:.9}
+  h1{
+    font-size:clamp(38px,10vw,74px);line-height:.94;letter-spacing:.06em;font-weight:800;margin:.12em 0 .06em;
+    background:linear-gradient(180deg,#fff 8%,#ffa8c2 48%,#ff3f74 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 4px 26px rgba(255,60,110,.45));
+  }
+  h2{font-size:clamp(19px,4.4vw,29px);letter-spacing:.04em;font-weight:800;margin-bottom:.15em}
+  .tag{font-size:clamp(11px,2.2vw,13.5px);color:var(--mut);letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
+  .lead{font-size:clamp(12.5px,2.4vw,15px);line-height:1.55;color:#f4cdd9;margin:10px 0}
+  .lead b{color:#fff}
+  .hl-p{color:var(--red)} .hl-h{color:var(--cyan)} .hl-s{color:var(--green)} .hl-a{color:var(--amber)}
+  .rule{height:1px;background:linear-gradient(90deg,transparent,rgba(255,110,155,.42),transparent);margin:15px 0}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media (max-width:520px){.cols{grid-template-columns:1fr}}
+
+  .card{background:rgba(255,255,255,.035);border:1px solid rgba(255,140,175,.20);border-radius:12px;padding:11px;display:flex;gap:11px;align-items:center}
+  .card canvas{flex:0 0 auto;width:74px;height:74px;border-radius:10px;background:radial-gradient(circle at 50% 45%,rgba(90,10,30,.7),rgba(12,2,7,.9));border:1px solid rgba(255,140,175,.18)}
+  .card .t{font-size:clamp(12.5px,2.5vw,15px);font-weight:800;letter-spacing:.03em}
+  .card .d{font-size:11.5px;color:var(--mut);line-height:1.45;margin-top:3px}
+  .card .m{font-size:10.5px;color:#ff9db8;margin-top:5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+
+  .keys{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:center;font-size:clamp(11.5px,2.2vw,13px);color:#efc6d4}
+  kbd{display:inline-block;min-width:24px;text-align:center;padding:3px 7px;margin-right:3px;
+    background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));
+    border:1px solid rgba(255,180,205,.30);border-bottom-width:2px;border-radius:6px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#fff}
+  .keys .r{color:var(--mut)}
+
+  .btn{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;padding:14px 18px;margin-top:13px;font:inherit;font-weight:800;
+    font-size:clamp(13px,2.6vw,16px);letter-spacing:.20em;text-transform:uppercase;
+    color:#20040e;cursor:pointer;border:0;border-radius:11px;
+    background:linear-gradient(180deg,#ffd0de,#ff6f9b 46%,#ef2f66);
+    box-shadow:0 6px 0 #8d0d33,0 14px 30px rgba(255,50,100,.34);
+    transition:transform .07s ease,box-shadow .07s ease,filter .15s ease}
+  .btn:hover{filter:brightness(1.07)}
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #8d0d33,0 8px 18px rgba(255,50,100,.3)}
+  .btn.ghost{background:rgba(255,255,255,.06);color:var(--txt);border:1px solid rgba(255,150,180,.3);
+    box-shadow:none;margin-top:9px;padding:11px 16px;font-size:12px}
+  .btn.ghost:active{transform:translateY(2px)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.6)}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .btnrow .btn{margin-top:9px}
+  .hint{font-size:11px;color:var(--mut);text-align:center;margin-top:10px;letter-spacing:.09em}
+
+  /* ---------- chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+  .chip{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.1em;
+    padding:5px 9px;border-radius:99px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,150,180,.25);color:#ffd8e4;text-transform:uppercase}
+  .chip.good{border-color:rgba(87,242,167,.5);color:var(--green);background:rgba(87,242,167,.10)}
+  .chip.bad{border-color:rgba(255,77,94,.55);color:#ff8b98;background:rgba(255,77,94,.12)}
+  .chip.gold{border-color:rgba(255,194,90,.55);color:var(--amber);background:rgba(255,194,90,.12)}
+
+  /* ---------- dialogue ---------- */
+  .dlg{display:flex;gap:14px;align-items:flex-start}
+  .dlg-port{flex:0 0 auto;width:clamp(64px,15vw,96px);height:clamp(64px,15vw,96px);border-radius:13px;overflow:hidden;
+    border:1px solid rgba(255,150,180,.32);box-shadow:0 8px 26px rgba(0,0,0,.5);background:#160510}
+  .dlg-port svg{display:block;width:100%;height:100%}
+  .dlg-body{flex:1;min-width:0}
+  .dlg-name{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:800;color:var(--amber);margin-bottom:6px}
+  .dlg-name.you{color:var(--cyan)}
+  .dlg-text{font-size:clamp(13.5px,2.7vw,16.5px);line-height:1.58;color:#fff7fa;min-height:5.2em}
+  .dlg-text .em{color:var(--amber);font-style:italic}
+  .dlg-text .cy{color:var(--cyan)}
+  .caret{display:inline-block;width:.5em;height:1.05em;vertical-align:-.16em;background:var(--pink);
+    animation:blink .8s steps(1) infinite;margin-left:2px}
+  @keyframes blink{50%{opacity:0}}
+  .dlg-choices{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .choice{pointer-events:auto;width:100%;text-align:left;font:inherit;cursor:pointer;
+    font-size:clamp(12.5px,2.4vw,14.5px);line-height:1.4;padding:11px 14px;border-radius:10px;color:#fff;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,150,180,.28);
+    transition:background .12s,border-color .12s,transform .07s}
+  .choice:hover{background:rgba(255,110,155,.16);border-color:var(--pink)}
+  .choice:active{transform:translateY(2px)}
+  .choice b{color:var(--amber)}
+  .dlg-in{display:flex;gap:8px;margin-top:12px}
+  .dlg-in input{flex:1;min-width:0;background:rgba(0,0,0,.4);border:1px solid rgba(255,194,90,.45);border-radius:9px;
+    color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;letter-spacing:.2em;
+    padding:10px 12px;text-transform:uppercase;outline:none}
+  .dlg-in input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,194,90,.18)}
+  .dlg-in button{flex:0 0 auto;width:auto;margin:0;padding:10px 18px;font-size:12px}
+  .skip{position:absolute;top:10px;right:12px;font-size:10px;letter-spacing:.16em;color:#8b6272;
+    background:none;border:0;cursor:pointer;font-family:inherit;text-transform:uppercase;pointer-events:auto;padding:6px}
+  .skip:hover{color:var(--pink)}
+
+  /* ---------- invoice ---------- */
+  .inv{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;margin:4px 0 2px}
+  .inv-row{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px dotted rgba(255,255,255,.10)}
+  .inv-row .l{flex:1;color:#e7c0ce;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .inv-row .v{font-weight:700;color:#fff;white-space:nowrap}
+  .inv-row .v.plus{color:var(--green)} .inv-row .v.minus{color:var(--red)} .inv-row .v.zero{color:#7d5464}
+  .inv-row.total{border-bottom:0;border-top:2px solid rgba(255,150,180,.4);margin-top:6px;padding-top:9px;font-size:15px}
+  .inv-row.total .l{color:#fff;font-weight:800;letter-spacing:.1em}
+  .memo{margin-top:14px;padding:11px 13px;border-radius:10px;background:rgba(255,194,90,.09);
+    border-left:3px solid var(--amber);font-size:12.5px;line-height:1.5;color:#ffe3b8;font-style:italic}
+  .memo b{font-style:normal;color:var(--amber);letter-spacing:.1em;font-size:10px;display:block;margin-bottom:3px;text-transform:uppercase}
+
+  /* ---------- shop ---------- */
+  .credits{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(26px,7vw,40px);
+    font-weight:800;color:var(--amber);line-height:1;text-shadow:0 0 26px rgba(255,194,90,.45)}
+  .shop-item{display:flex;gap:12px;align-items:center;padding:11px;margin-bottom:9px;border-radius:12px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,140,175,.20)}
+  .shop-item .ico{flex:0 0 auto;width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10)}
+  .shop-item .info{flex:1;min-width:0}
+  .shop-item .n{font-size:13.5px;font-weight:800;letter-spacing:.03em}
+  .shop-item .n span{font-size:10px;color:var(--mut);font-weight:600;letter-spacing:.1em;margin-left:6px}
+  .shop-item .d{font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px}
+  .shop-item .buy{flex:0 0 auto;width:auto;margin:0;padding:10px 13px;font-size:11px;letter-spacing:.08em;border-radius:9px}
+  .owned{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--amber);margin-top:3px}
+
+  table.sc{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  table.sc th{text-align:left;font-size:9.5px;letter-spacing:.2em;color:var(--pink);text-transform:uppercase;padding-bottom:6px;font-weight:700}
+  table.sc td{padding:3.5px 0;border-top:1px solid rgba(255,255,255,.055);color:#f1cbd8}
+  table.sc td.n{color:#8b6272;width:22px}
+  table.sc td.s{text-align:right;color:#fff;font-weight:700}
+  table.sc td.w{text-align:right;color:var(--mut);width:64px}
+  table.sc tr.me td{color:var(--amber)!important;text-shadow:0 0 14px rgba(255,194,90,.5)}
+  .empty{font-size:11.5px;color:#8b6272;font-style:italic;padding:8px 0}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 2px}
+  @media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,140,175,.16);border-radius:10px;padding:9px 8px;text-align:center}
+  .stat .v{font-size:clamp(17px,4.4vw,24px);font-weight:800;line-height:1;font-family:ui-monospace,Menlo,monospace}
+  .stat .k{font-size:8.5px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-top:5px}
+
+  .nameentry{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px;border-radius:11px;
+    background:rgba(255,194,90,.09);border:1px solid rgba(255,194,90,.35)}
+  .nameentry label{font-size:10px;letter-spacing:.16em;color:var(--amber);text-transform:uppercase;font-weight:700}
+  .nameentry input{flex:1;min-width:0;background:rgba(0,0,0,.35);border:1px solid rgba(255,194,90,.4);border-radius:8px;
+    color:#fff;font-family:ui-monospace,Menlo,monospace;font-size:16px;letter-spacing:.24em;padding:8px 10px;text-transform:uppercase;outline:none}
+  .badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:9.5px;letter-spacing:.18em;font-weight:800;text-transform:uppercase}
+  .badge.new{background:var(--amber);color:#2a1500;animation:pulseb 1s ease-in-out infinite}
+  @keyframes pulseb{50%{transform:scale(1.06)}}
+
+  .corner{position:absolute;bottom:9px;right:12px;font-size:10px;color:#7d5464;letter-spacing:.13em;pointer-events:none}
+  .rot{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#0b0308;z-index:20;text-align:center;padding:24px;font-size:13px;letter-spacing:.14em;color:var(--mut)}
+  @media (max-height:430px) and (orientation:portrait){.rot{display:flex}}
+</style>
+<style>
+  /* ---- v3: job board, licence bar, briefing stats ---- */
+  .offers{display:grid;gap:10px;margin:12px 0}
+  .offer{
+    display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+    padding:11px 13px;border-radius:12px;cursor:pointer;
+    background:rgba(255,255,255,.035);border:1px solid rgba(255,120,160,.22);
+    transition:border-color .15s,background .15s,transform .12s;
+  }
+  .offer:hover,.offer:focus-visible{background:rgba(255,120,160,.10);border-color:rgba(255,140,180,.6);transform:translateY(-1px);outline:none}
+  .offer .job{font-weight:800;font-size:clamp(12.5px,2.3vw,15px);letter-spacing:.02em}
+  .offer .sub{font-size:clamp(9.5px,1.8vw,11px);color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
+  .offer .pay{text-align:right;font-weight:800;font-size:clamp(13px,2.4vw,17px);color:var(--amber);font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+  .offer .paysub{font-size:9.5px;color:var(--mut);letter-spacing:.08em;font-weight:700}
+  .offer.risky{border-color:rgba(255,90,110,.45)}
+  .offer.locked{opacity:.45;cursor:not-allowed}
+  .tierpill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:9.5px;font-weight:800;letter-spacing:.12em;
+    background:rgba(255,255,255,.10);color:#ffd7e3;margin-right:6px}
+  .tierpill.t2,.tierpill.t3,.tierpill.t4{background:rgba(255,80,110,.22);color:#ffb9c8}
+  .licence{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:9px 12px;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+  .licence b{font-family:ui-monospace,Menlo,monospace;letter-spacing:.06em}
+  .repbar{position:relative;flex:1 1 130px;height:7px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;min-width:90px}
+  .repbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ff5f8f,#ffc25a);border-radius:99px}
+  .warnline{margin:10px 0;padding:9px 12px;border-radius:10px;font-size:clamp(11px,2.1vw,12.5px);line-height:1.5;
+    background:rgba(255,77,94,.10);border:1px solid rgba(255,77,94,.35);color:#ffc2cc}
+  .okline{background:rgba(87,242,167,.09);border-color:rgba(87,242,167,.32);color:#bdf6da}
+  .mini{font-size:clamp(9.5px,1.8vw,11px);color:var(--mut);letter-spacing:.08em}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  @media (max-width:520px){.grid2{grid-template-columns:1fr}}
+</style>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+    <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="por-vax" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#1c0714"/>
+      <circle cx="50" cy="52" r="46" fill="#2b0d1e"/>
+      <path d="M10 100C13 77 30 68 50 68s37 9 40 32z" fill="#222a3d"/>
+      <path d="M40 69l10 14 10-14-5-3-5 8-5-8z" fill="#eaf1f8"/>
+      <path d="M50 83l-5 5 5 12 5-12z" fill="#e0466f"/>
+      <rect x="44" y="56" width="12" height="14" fill="#d09a7c"/>
+      <ellipse cx="50" cy="43" rx="17" ry="19.5" fill="#efbb96"/>
+      <path d="M33 40c1-16 33-16 34 0-3-8-9-11-17-10s-14 4-17 10z" fill="#2e2319"/>
+      <path d="M40.5 43.5q4-3.4 8 0M51.5 43.5q4-3.4 8 0" stroke="#2e2319" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+      <path d="M43 53.5q7 5 14 0" stroke="#b5735a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M31.5 42a18.5 18.5 0 0137 0" stroke="#3b4761" stroke-width="3.2" fill="none"/>
+      <rect x="26.5" y="39" width="7.5" height="11" rx="3.5" fill="#3b4761"/>
+      <path d="M30 50q-4 11 9 13" stroke="#3b4761" stroke-width="2.1" fill="none"/>
+      <circle cx="39.5" cy="63" r="2.6" fill="#e0466f"/>
+      <rect x="60" y="76" width="10" height="7" rx="1.5" fill="#e0466f" opacity=".85"/>
+    </symbol>
+    <symbol id="por-agent" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#08131f"/>
+      <circle cx="50" cy="52" r="46" fill="#0d2036"/>
+      <path d="M8 100C12 78 28 70 50 70s38 8 42 30z" fill="#16233a"/>
+      <circle cx="50" cy="46" r="24" fill="#122239"/>
+      <circle cx="50" cy="46" r="24" fill="none" stroke="#7fd8ff" stroke-width="2.4"/>
+      <circle cx="50" cy="46" r="18" fill="#1b4a6b" opacity=".9"/>
+      <path d="M38 38a18 18 0 0114-6" stroke="#bdefff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".75"/>
+      <circle cx="50" cy="22" r="4.6" fill="#eaffff"/>
+      <circle cx="50" cy="22" r="9" fill="#9fe9ff" opacity=".28"/>
+      <rect x="30" y="72" width="40" height="5" rx="2.5" fill="#0d1b2c"/>
+    </symbol>
+  </svg>
+
+  <div id="ui">
+
+    <!-- ============ START ============ -->
+    <div class="overlay on" id="scr-start">
+      <div class="panel">
+        <div class="kicker">Division of Immunity &amp; Virus Elimination</div>
+        <h1>D.I.V.E.</h1>
+        <div class="tag">Freelance microscopic contract work</div>
+        <p class="lead">
+          You are a licensed diver. The Division brokers the jobs; you fly the vessel, you
+          mark the targets, and your white blood cell does the rest.
+        </p>
+        <p class="lead">
+          It kills <b class="hl-p">everything on its path</b>, not just what you marked, and every
+          diagnostic scan you fire is billed to you at extraction. Take the work you can survive.
+        </p>
+        <div class="keys" id="deskhelp">
+          <span><kbd>WASD</kbd>/<kbd>ZQSD</kbd> swim</span>
+          <span><kbd>Click</kbd> mark a cell</span>
+          <span><kbd>E</kbd> fire a scan charge</span>
+          <span><kbd>Esc</kbd> pause</span>
+          <span><kbd>M</kbd> mute</span>
+        </div>
+        <div class="keys" id="touchhelp" style="display:none;margin-top:9px">
+          <span>Left thumb: swim</span>
+          <span>Tap a cell: mark</span>
+          <span>SCAN button: fire a charge</span>
+        </div>
+        <div id="scores-start"></div>
+        <div class="btnrow">
+          <button class="btn" id="btn-play">Sign on</button>
+          <button class="btn ghost" id="btn-continue" style="display:none">Continue career</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ DIALOGUE ============ -->
+    <div class="overlay" id="scr-dialog">
+      <div class="panel" id="dlg-panel">
+        <button class="skip" id="btn-skip">Skip induction &rsaquo;&rsaquo;</button>
+        <div class="dlg">
+          <div class="dlg-port"><svg><use id="dlg-use" href="#por-vax"></use></svg></div>
+          <div class="dlg-body">
+            <div class="dlg-name" id="dlg-name">David Vax</div>
+            <div class="dlg-text" id="dlg-text"></div>
+            <div class="dlg-choices" id="dlg-choices"></div>
+            <div class="dlg-in" id="dlg-in" style="display:none">
+              <input id="dlg-input" maxlength="12" placeholder="TYPE YOUR NAME" autocomplete="off" spellcheck="false">
+              <button class="btn" id="dlg-ok">OK</button>
+            </div>
+          </div>
+        </div>
+        <div class="hint" id="dlg-hint">Click or press <kbd>Space</kbd> to continue</div>
+      </div>
+    </div>
+
+    <!-- ============ JOB BOARD ============ -->
+    <div class="overlay" id="scr-board">
+      <div class="panel wide">
+        <div class="kicker" id="board-kicker">Contract board</div>
+        <h2>Available work</h2>
+        <div class="licence">
+          <span class="mini">LICENCE <b id="lic-class">PROVISIONAL</b></span>
+          <div class="repbar"><i id="lic-bar" style="width:12%"></i></div>
+          <span class="mini">REPUTATION <b id="lic-rep">12</b>/100</span>
+          <span class="mini">BANK <b id="lic-bank">0 cr</b></span>
+          <span class="mini">CHARGES <b id="lic-scans">0</b></span>
+        </div>
+        <div class="offers" id="board-offers"></div>
+        <div class="memo" id="board-memo"></div>
+        <div class="btnrow">
+          <button class="btn ghost" id="btn-shop">Requisitions</button>
+          <button class="btn ghost" id="btn-retire">Retire</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ BRIEFING ============ -->
+    <div class="overlay" id="scr-brief">
+      <div class="panel wide">
+        <div class="kicker" id="brief-num">Work order</div>
+        <h2 id="brief-client">Client</h2>
+        <div class="tag" id="brief-site">site</div>
+        <div class="chips" id="brief-chips"></div>
+        <div class="cols">
+          <div class="card">
+            <canvas id="cv-sig" width="150" height="150"></canvas>
+            <div>
+              <div class="kicker">Client signature</div>
+              <div class="d">Do not mark these</div>
+              <div class="m" id="brief-sigdesc">&mdash;</div>
+            </div>
+          </div>
+          <div class="card">
+            <canvas id="cv-tgt" width="150" height="150"></canvas>
+            <div>
+              <div class="kicker">Contract target</div>
+              <div class="d" id="brief-tgtdesc">&mdash;</div>
+              <div class="m" id="brief-tgtname">&mdash;</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:9px">
+          <canvas id="cv-sym" width="150" height="150"></canvas>
+          <div>
+            <div class="kicker">Symbiotes &mdash; twin halo</div>
+            <div class="d">Paying tenants. Killing one is litigation.</div>
+            <div class="m" id="brief-kit">KIT</div>
+          </div>
+        </div>
+        <div class="warnline" id="brief-warn"></div>
+        <div class="memo" id="brief-memo"></div>
+        <div class="btnrow">
+          <button class="btn" id="btn-dive">Dive</button>
+          <button class="btn ghost" id="btn-decline">Back to board</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PAUSE ============ -->
+    <div class="overlay" id="scr-pause">
+      <div class="panel">
+        <div class="kicker">Dive suspended</div>
+        <h2>Paused</h2>
+        <div class="stats" id="pause-stats"></div>
+        <button class="btn" id="btn-resume">Resume</button>
+        <div class="btnrow">
+          <button class="btn ghost" id="btn-pause-abort">Abort dive</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RESULTS ============ -->
+    <div class="overlay" id="scr-results">
+      <div class="panel">
+        <div class="kicker" id="res-kicker">Extraction report</div>
+        <h2 id="res-title">Contract closed</h2>
+        <div class="tag" id="res-sub">Client stable</div>
+        <div class="inv" id="res-inv"></div>
+        <div class="memo" id="res-memo"></div>
+        <button class="btn" id="btn-res-next">Continue</button>
+      </div>
+    </div>
+
+    <!-- ============ SHOP ============ -->
+    <div class="overlay" id="scr-shop">
+      <div class="panel">
+        <div class="kicker">Requisitions</div>
+        <h2>Equipment</h2>
+        <div class="tag" id="shop-bank">Balance</div>
+        <div id="shop-list"></div>
+        <div class="memo">
+          Terms: equipment is billed on requisition. Scan charges are billed again on activation.
+          The Division thanks you for your custom.
+        </div>
+        <button class="btn" id="btn-shop-done">Back to board</button>
+      </div>
+    </div>
+
+    <!-- ============ CAREER OVER ============ -->
+    <div class="overlay" id="scr-over">
+      <div class="panel">
+        <div class="kicker" id="over-kicker">Personnel file closed</div>
+        <h2 id="over-title">Licence revoked</h2>
+        <div class="tag" id="over-sub"></div>
+        <div class="stats" id="over-stats"></div>
+        <div class="nameentry" id="over-name">
+          <input id="inp-name" maxlength="12" placeholder="NAME" autocomplete="off" spellcheck="false">
+          <button class="btn" id="btn-save">File</button>
+        </div>
+        <div id="scores-over"></div>
+        <button class="btn" id="btn-again">New licence</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="corner" id="corner">v3.0</div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

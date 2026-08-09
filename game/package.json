@@ -1,0 +1,22 @@
+{
+  "name": "dive",
+  "version": "1.0.0",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "node build.mjs --test && node tests/run-all.mjs",
+    "build": "node build.mjs",
+    "build:test": "node build.mjs --test",
+    "check": "node tools/check-imports.mjs",
+    "dev": "python3 -m http.server 5173 --bind 0.0.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "D.I.V.E. - freelance microsurgery under late-stage capitalism",
+  "dependencies": {
+    "acorn": "^8.18.0",
+    "acorn-walk": "^8.3.5",
+    "esbuild": "^0.28.1",
+    "puppeteer": "^24.43.1"
+  }
+}
