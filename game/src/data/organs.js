@@ -31,6 +31,7 @@ export const ORGANS = [
 
 /** Sites appropriate to a reputation level: better licence, deeper work. */
 export function organsForRep(rep) {
-  const max = 1 + Math.floor((rep / 100) * (ORGANS.length - 1) + 1.4);
-  return ORGANS.slice(0, Math.max(2, Math.min(ORGANS.length, max)));
+  const scaled = Math.max(0, Math.min(1, (rep || 0) / 100));
+  const max = 1 + Math.floor(scaled * (ORGANS.length - 1));
+  return ORGANS.slice(0, Math.max(1, Math.min(ORGANS.length, max)));
 }

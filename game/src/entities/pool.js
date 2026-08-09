@@ -112,8 +112,8 @@ export function dressEnt(e, archId, sig, dev, o) {
  * @param {{x:number,y:number}} [away] point to keep away from (usually the diver)
  * @param {number} [awayD]  how far away
  */
-export function spawnPos(row, clearR, away, awayD) {
-  const rowsToTry = [row, row + 1, row - 1, row + 2];
+export function spawnPos(row, clearR, away, awayD, strictRow) {
+  const rowsToTry = strictRow ? [row] : [row, row + 1, row - 1, row + 2];
   for (const r of rowsToTry) {
     if (r < 0 || r >= Maze.rows) continue;
     for (let i = 0; i < 14; i++) {
@@ -125,7 +125,9 @@ export function spawnPos(row, clearR, away, awayD) {
     }
   }
   /* last resort: the entry chamber always exists and always fits */
-  return { x: Maze.entry.x, y: Maze.entry.y, row: 0 };
+  return strictRow
+    ? { ...Maze.pointInRow(row, null, clearR), row }
+    : { x: Maze.entry.x, y: Maze.entry.y, row: 0 };
 }
 
 /**
@@ -141,7 +143,7 @@ export function spawnEnt(archId, sig, dev, opts) {
   const o = opts || {};
   resetEnt(e, o.now);
   const probe = sig.r * 1.2;
-  const p = spawnPos(o.row === undefined ? 0 : o.row, probe, o.away, o.awayD);
+  const p = spawnPos(o.row === undefined ? 0 : o.row, probe, o.away, o.awayD, o.strictRow);
   e.x = p.x; e.y = p.y;
   e.row = p.row === undefined ? 0 : p.row;
   dressEnt(e, archId, sig, dev, o);

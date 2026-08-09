@@ -246,9 +246,8 @@ export function drawFiringLine(fp) {
   const cas = fp.casualties;
   for (let i = 0; i < cas.length; i++) {
     const e = cas[i];
-    const bad = !e.comp.hostile;
-    ctx.strokeStyle = bad ? 'rgba(255,90,120,0.95)' : 'rgba(120,255,205,0.55)';
-    ctx.lineWidth = bad ? 2.5 : 1.4;
+    ctx.strokeStyle = 'rgba(255,110,140,0.78)';
+    ctx.lineWidth = e.comp.hostile ? 2 : 1.4;
     ctx.beginPath();
     ctx.arc(e.x, e.y, e.r * e.elong + 9, 0, TAU);
     ctx.stroke();
