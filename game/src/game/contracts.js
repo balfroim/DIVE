@@ -89,6 +89,7 @@ export function makeContract(rep, seed, slot) {
     client: { job: 'CLIENT #' + clientCode, memo: client.memo, tier: tier.i },
     tier,
     organ,
+    map: organ.map || null,
     rows,
     /* width is capped against depth so the vessel network is always a
        descent, never a wide arena (see CFG.maze.stretch) */
@@ -165,6 +166,7 @@ export function offerSummary(c) {
     lethal: c.tier.lethal,
     memo: c.client.memo,
     note: c.organ.note,
+    map: c.organ.map || null,
     o2: c.o2Est,
     typeNote: c.typeNote
   };

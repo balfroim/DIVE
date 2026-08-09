@@ -17,6 +17,7 @@ import { Game } from '../game/state.js';
 import { Career } from '../game/career.js';
 import { offerSummary, pressureLabel, suitFor } from '../game/contracts.js';
 import { repLabel } from '../game/economy.js';
+import { mapFor } from '../data/maps.js';
 import { SHOP } from '../data/shop.js';
 import { PSPEC, NUCNAME } from '../entities/species.js';
 import { drawBody } from '../render/minimap.js';
@@ -33,7 +34,30 @@ function paintSiteMap(canvas, organ, t) {
   const S = canvas.width;
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, S, S);
-  drawBody(c, 12, 10, S - 24, S - 20, organ, 0.5 + 0.5 * Math.sin(t * 2.2));
+  const map = organ.map && mapFor(organ.map);
+  if (!map) {
+   drawBody(c, 12, 10, S - 24, S - 20, organ, 0.5 + 0.5 * Math.sin(t * 2.2));
+   return;
+  }
+  const rows = map.rows;
+  const maxCols = rows.reduce((m, row) => Math.max(m, row.length), 0);
+  const scale = Math.min((S - 18) / Math.max(1, maxCols), (S - 22) / Math.max(1, rows.length));
+  const x = (S - maxCols * scale) / 2;
+  const y = (S - rows.length * scale) / 2;
+  c.font = Math.max(8, Math.floor(scale * 0.86)) + 'px ui-monospace,SFMono-Regular,Menlo,monospace';
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillStyle = 'rgba(255,255,255,0.22)';
+  c.fillText(map.id.toUpperCase(), S * 0.5, 10);
+  for (let r = 0; r < rows.length; r++) {
+   const line = rows[r].replace(/ /g, '\u00a0');
+   c.fillStyle = rows[r].indexOf('O') >= 0
+     ? 'rgba(110,232,255,0.95)'
+     : rows[r].indexOf('E') >= 0
+     ? 'rgba(255,194,90,0.92)'
+     : 'rgba(255,230,239,0.78)';
+   c.fillText(line, x + maxCols * scale * 0.5, y + r * scale + scale * 0.5);
+  }
 }
 
 export const UI = {
@@ -155,7 +179,8 @@ export const UI = {
     $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
       (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
       (Career.stab ? ' \u00b7 STABILISER READY' : '');
-    $('brief-mapdesc').textContent = s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
+    $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
+      s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;

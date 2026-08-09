@@ -22,6 +22,18 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     await sleep(500);
 
     const brief = await page.evaluate(() => {
+      const organ = __D.ORGANS.find((o) => o.id === 'lung');
+      const offer = __D.makeContract(0, 12345, 0);
+      offer.organ = organ;
+      offer.rows = organ.depth;
+      offer.pressure = organ.pressure;
+      offer.waves = offer.rows;
+      offer.diff = 1;
+      offer.fee = 111;
+      offer.comp = 222;
+      offer.repGain = 3;
+      offer.repLoss = 1;
+      __D.Career.offers = [offer];
       __D.UI.showBrief(0);
       const canvas = document.getElementById('cv-site');
       const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
@@ -34,14 +46,30 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         chips: document.getElementById('brief-chips').textContent.length > 0,
         contract: !!__D.Career.pending,
         mapPainted: painted,
-        mapText: document.getElementById('brief-mapdesc').textContent
+        mapText: document.getElementById('brief-mapdesc').textContent,
+        mapLink: __D.Career.pending.organ.map
       };
     });
-    if (!brief.visible || !brief.chips || !brief.contract || !brief.mapPainted || !brief.mapText) {
+    if (!brief.visible || !brief.chips || !brief.contract || !brief.mapPainted ||
+      !brief.mapText || !brief.mapText.includes('LUNG MAP') || brief.mapLink !== 'lung') {
       throw new Error('briefing failed');
     }
     pass++;
 
+    await page.evaluate(() => {
+      const organ = __D.ORGANS.find((o) => !o.map);
+      const offer = __D.makeContract(0, 54321, 0);
+      offer.organ = organ;
+      offer.rows = organ.depth;
+      offer.pressure = organ.pressure;
+      offer.waves = offer.rows;
+      offer.diff = 1;
+      offer.fee = 111;
+      offer.comp = 222;
+      offer.repGain = 3;
+      offer.repLoss = 1;
+      __D.Career.pending = offer;
+    });
     await page.evaluate(() => __D.UI.dive());
     await sleep(600);
     const dive = await page.evaluate(() => ({
