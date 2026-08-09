@@ -33,6 +33,11 @@ function hover(text, tip) {
   return '<span class="hoverterm" title="' + esc(tip || '') + '">' + esc(text) + '</span>';
 }
 
+function blockedSuitCopy(s, currentSuit) {
+  return '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
+    ' pressure; yours is ' + currentSuit + '.</p>';
+}
+
 function paintSiteMap(canvas, organ, t) {
   if (!canvas || !organ || !canvas.getContext) return;
   const c = canvas.getContext('2d');
@@ -261,8 +266,7 @@ export const UI = {
 
     const under = Career.suit < s.suit;
     $('brief-warn').innerHTML = under
-      ? '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
-        ' pressure; yours is ' + Career.suit + '.</p>'
+      ? blockedSuitCopy(s, Career.suit)
       : s.lethal
         ? '<p><b>Insured client.</b> Death here voids the licence and ends the career file.</p>'
         : '<p><b>Uninsured client.</b> Casualties are billable, not terminal.</p>';
@@ -280,8 +284,7 @@ export const UI = {
       const warn = $('brief-warn');
       if (warn) {
         warn.dataset.state = 'blocked';
-        warn.innerHTML = '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' +
-          s.band.toLowerCase() + ' pressure; yours is ' + Career.suit + '.</p>';
+        warn.innerHTML = blockedSuitCopy(s, Career.suit);
       }
       return;
     }
