@@ -276,7 +276,15 @@ export const UI = {
     const offer = Career.pending;
     if (!offer) return;
     const s = offerSummary(offer);
-    if (Career.suit < s.suit) return;
+    if (Career.suit < s.suit) {
+      const warn = $('brief-warn');
+      if (warn) {
+        warn.dataset.state = 'blocked';
+        warn.innerHTML = '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' +
+          s.band.toLowerCase() + ' pressure; yours is ' + Career.suit + '.</p>';
+      }
+      return;
+    }
     Career.accept(offer);
     hideAll();
     Game.startContract(offer);

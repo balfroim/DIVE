@@ -20,6 +20,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       __D.UI.showBoard();
       __D.Career.suit = 99;
       const idx = __D.Career.offers.findIndex((offer) => __D.suitFor(offer.pressure) <= __D.Career.suit);
+      if (idx < 0) throw new Error('no suitable offer found for playthrough test');
       __D.UI.showBrief(idx >= 0 ? idx : 0);
       __D.UI.dive();
       for (let i = 0; i < 30; i++) __D.Game.step(0.016);

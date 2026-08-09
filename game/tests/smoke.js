@@ -51,6 +51,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const contract = await page.evaluate(() => {
       __D.Career.suit = 99;
       const i = __D.Career.offers.findIndex((offer) => __D.suitFor(offer.pressure) <= __D.Career.suit);
+      if (i < 0) throw new Error('no suitable offer found for smoke test');
       __D.UI.showBrief(i >= 0 ? i : 0);
       __D.UI.dive();
       return {
