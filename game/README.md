@@ -1,4 +1,4 @@
-# D.I.V.E. — Division of Immunity and Virus Elimination
+# D.I.V.E. --- Department of Intravascular Virus Eradication 
 
 A single-file browser game about being a **freelance diver** in a world where
 the patient is a client, the client is a cost centre, and your white blood cell
