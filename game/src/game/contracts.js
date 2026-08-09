@@ -85,6 +85,7 @@ export function makeContract(rep, seed, slot) {
   const targetSpecies = type.threats[(R.f() * type.threats.length) | 0] || type.threats[0];
   const deviation = clamp(1.05 - diff * 0.1 - R.range(0, 0.12), 0.28, 1);
   const repGap = Math.abs((organ.meanRep ?? rep) - rep);
+  // Steep enough that mismatched reputations matter, but still capped for outliers.
   const repScale = clamp(0.92 + repGap / 18, 0.92, 2.2) * variantMul;
 
   const c = {
