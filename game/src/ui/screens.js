@@ -17,14 +17,55 @@ import { Game } from '../game/state.js';
 import { Career } from '../game/career.js';
 import { offerSummary, pressureLabel, suitFor } from '../game/contracts.js';
 import { repLabel } from '../game/economy.js';
+import { mapFor } from '../data/maps.js';
 import { SHOP } from '../data/shop.js';
 import { PSPEC, NUCNAME } from '../entities/species.js';
+import { drawBody } from '../render/minimap.js';
 import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
 import { DLG } from './dialogue.js';
 import { previewEnt, paintPreview } from './previews.js';
 
 /** Live specimens on the briefing cards. */
 const preview = { sig: null, tgt: null, sym: null };
+
+function paintSiteMap(canvas, organ, t) {
+  if (!canvas || !organ || !canvas.getContext) return;
+  const c = canvas.getContext('2d');
+  const S = canvas.width;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, S, S);
+  const map = organ.map && mapFor(organ.map);
+  if (!map) {
+    drawBody(c, 12, 10, S - 24, S - 20, organ, 0.5 + 0.5 * Math.sin(t * 2.2));
+    return;
+  }
+  const rows = map.rows;
+  const maxCols = rows.reduce((m, row) => Math.max(m, row.length), 0);
+  const scale = Math.min((S - 18) / Math.max(1, maxCols), (S - 22) / Math.max(1, rows.length));
+  const x = (S - maxCols * scale) / 2;
+  const y = (S - rows.length * scale) / 2;
+  const labelY = Math.max(10, y - Math.max(4, Math.floor(scale * 0.3)));
+  c.font = Math.max(8, Math.floor(scale * 0.86)) + 'px ui-monospace,SFMono-Regular,Menlo,monospace';
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillStyle = 'rgba(255,255,255,0.22)';
+  c.fillText(map.id.toUpperCase(), S * 0.5, labelY);
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    for (let col = 0; col < maxCols; col++) {
+      const ch = row[col] || ' ';
+      if (ch === ' ') continue;
+      c.fillStyle = ch === 'O'
+        ? 'rgba(110,232,255,0.95)'
+        : ch === 'E'
+          ? 'rgba(255,194,90,0.92)'
+          : ch === '#'
+            ? 'rgba(255,230,239,0.80)'
+            : 'rgba(255,230,239,0.60)';
+      c.fillText(ch, x + col * scale + scale * 0.5, y + r * scale + scale * 0.5);
+    }
+  }
+}
 
 export const UI = {
   /* ---------------------------------------------------------------- */
@@ -115,7 +156,7 @@ export const UI = {
     const s = offerSummary(offer);
 
     $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
-    $('brief-client').textContent = 'CLIENT #' + (1000 + (offer.seed % 8999));
+    $('brief-client').textContent = offer.client.job;
     $('brief-site').textContent = s.job + ' \u00b7 ' + s.site;
 
     const chips = [
@@ -145,6 +186,9 @@ export const UI = {
     $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
       (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
       (Career.stab ? ' \u00b7 STABILISER READY' : '');
+    $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
+      s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
+    paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
     $('brief-warn').className = 'warnline' + (under || s.lethal ? '' : ' okline');
@@ -380,6 +424,7 @@ export const UI = {
     paintPreview($('cv-sig'), preview.sig, t);
     paintPreview($('cv-tgt'), preview.tgt, t);
     paintPreview($('cv-sym'), preview.sym, t);
+    paintSiteMap($('cv-site'), Career.pending ? Career.pending.organ : Game.contract && Game.contract.organ, t);
   }
 };
 

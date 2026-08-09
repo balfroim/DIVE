@@ -92,7 +92,57 @@ export const MAPS = [
       '    | ',
       '    O '
     ]
-  }
+  },
+  {
+  id: 'ear',
+  /* Cochlea: a tight spiral staircase. Delicate, no room to maneuver. */
+  rows: [
+    ' E  ',
+    ' |  ',
+    '#-# ',
+    '  | ',
+    '#-# ',
+    ' |  ',
+    ' O  '
+  ]
+},
+{
+  id: 'nose',
+  /* Nasal cavity: parallel filtering passages joined by cross-tunnels. Sticky. */
+  rows: [
+    ' E   ',
+    ' |   ',
+    '#-+-#',
+    '| | |',
+    '#-#-#',
+    '  |  ',
+    '  O  '
+  ]
+},
+{
+  id: 'throat',
+  /* Pharynx: the crossroads. One way down, with a side passage that rejoins. */
+  rows: [
+    '  E  ',
+    '  |  ',
+    ' #-# ',
+    ' | | ',
+    ' #-# ',
+    '   | ',
+    '   O '
+  ]
+},
+{
+  id: 'rectum',
+  /* Anal canal: a straight pipe to the exit. No branches. No dignity. */
+  rows: [
+    'E',
+    '|',
+    '#',
+    '|',
+    'O'
+  ]
+},
 ];
 
 /** The map an organ names, or null when the organ grows its vessel. */

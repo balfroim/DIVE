@@ -62,6 +62,7 @@ export function makeContract(rep, seed, slot) {
   const rows = clamp(organ.depth + (slot >= 2 ? 1 : 0) + (R.chance(0.3) ? 1 : 0), 2, 9);
   const pressure = +(organ.pressure * R.range(0.94, 1.1) + slot * 0.05).toFixed(2);
   const diff = difficultyOf(rows, pressure, tier.i, type.diffBonus);
+  const clientCode = 1000 + (seed % 8999);
 
   /* waves: one per row you must fight through, the organ chamber included */
   const waves = rows;
@@ -85,9 +86,10 @@ export function makeContract(rep, seed, slot) {
     typeBrief: type.brief,
     scanHint: type.scanHint,
     hostArch: type.hostArch,
-    client: { job: client.job, memo: client.memo, tier: tier.i },
+    client: { job: 'CLIENT #' + clientCode, memo: client.memo, tier: tier.i },
     tier,
     organ,
+    map: organ.map || null,
     rows,
     /* width is capped against depth so the vessel network is always a
        descent, never a wide arena (see CFG.maze.stretch) */
@@ -164,6 +166,7 @@ export function offerSummary(c) {
     lethal: c.tier.lethal,
     memo: c.client.memo,
     note: c.organ.note,
+    map: c.organ.map || null,
     o2: c.o2Est,
     typeNote: c.typeNote
   };

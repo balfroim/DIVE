@@ -13,23 +13,21 @@
  */
 
 export const ORGANS = [
-  { id: 'marrow',   name: 'Femoral marrow',  short: 'MARROW',  mx: 0.44, my: 0.70, depth: 3, pressure: 0.95, hue: 32,  vessel: 'femoral artery',
-    note: 'Low-pressure sponge. Cheap to insure, cheap to lose.' },
-  { id: 'gut',      name: 'Intestinal wall', short: 'GUT',     mx: 0.51, my: 0.505, depth: 3, pressure: 1.05, hue: 44, vessel: 'mesenteric arcade',
-    note: 'Crowded, damp, litigious. Mind the resident flora.' },
-  { id: 'spleen',   name: 'Splenic sinus',   short: 'SPLEEN',  mx: 0.60, my: 0.405, depth: 4, pressure: 1.15, hue: 300, vessel: 'splenic sinus',
-    note: 'The client will not miss it. Try anyway.' },
-  { id: 'liver',    name: 'Hepatic portal',  short: 'LIVER',   mx: 0.42, my: 0.395, depth: 4, pressure: 1.25, hue: 18,  vessel: 'hepatic portal',
-    note: 'Slow, dense, forgiving of mistakes. Not of invoices.' },
-  { id: 'kidney',   name: 'Renal capillary', short: 'KIDNEY',  mx: 0.58, my: 0.455, depth: 5, pressure: 1.45, hue: 350, vessel: 'renal capillary',
-    note: 'Filtration bed. Everything narrows. Everything hurries.' },
-  { id: 'lung',     name: 'Pulmonary vein',  short: 'LUNG',    mx: 0.585, my: 0.285, depth: 5, pressure: 1.55, hue: 200, vessel: 'pulmonary vein',
-    note: 'Tidal surges on a six second cycle. Bring a bigger suit.' },
-  { id: 'heart',    name: 'Aortic arch',     short: 'HEART',   mx: 0.53, my: 0.315, depth: 6, pressure: 1.95, hue: 0,   vessel: 'aortic arch',
-    note: 'Hypertensive. The walls hit back. Premiums are excellent.' },
-  { id: 'brain',    name: 'Carotid branch',  short: 'BRAIN',   mx: 0.50, my: 0.085, depth: 6, pressure: 2.25, hue: 275, vessel: 'carotid branch',
-    note: 'Zero tolerance for collateral. The client needs this one.' }
-];
+  { id: 'ear',      name: 'Cochlea',          short: 'EAR',     map: 'ear',   mx: 0.44, my: 0.115, depth: 1, pressure: 0.45, hue: 45,  vessel: 'labyrinthine artery',
+  note: 'The inner ear\'s hearing organ. Easily accessible and pressure is low.' },
+{ id: 'nose',     name: 'Nasal cavity',     short: 'NOSE',    map: 'nose',  mx: 0.50, my: 0.145, depth: 1, pressure: 0.35, hue: 90,  vessel: 'sphenopalatine artery',
+  note: 'The body\'s air filter. A maze of mucus-lined passages that traps dust, pollen and microbes before they reach the lungs. Sticky conditions, but an easy first assignment.' },
+{ id: 'throat',   name: 'Pharynx',          short: 'THROAT',  map: 'throat', mx: 0.50, my: 0.185, depth: 2, pressure: 0.60, hue: 120, vessel: 'ascending pharyngeal artery',
+  note: 'The crossroads where air and food share one passage. Constant traffic from the outside world makes it a frequent infection site. Sore throats start here.' },
+  { id: 'marrow',   name: 'Femoral marrow',  short: 'MARROW',  map: 'marrow', mx: 0.44, my: 0.70, depth: 3, pressure: 0.95, hue: 32,  vessel: 'femoral artery',
+    note: 'This is where the body makes its blood cells. Currents are gentle, so you can take your time.' },
+  { id: 'lung',     name: 'Pulmonary vein',  short: 'LUNG',    map: 'lung', mx: 0.585, my: 0.285, depth: 5, pressure: 1.55, hue: 200, vessel: 'pulmonary vein',
+    note: 'Freshly oxygenated blood on its way back from the lungs. The flow rises and falls with every breath. Lungs are also the front door for anything breathed in, so expect company.' },
+  { id: 'heart',    name: 'Aortic arch',     short: 'HEART',   map: 'heart', mx: 0.53, my: 0.315, depth: 6, pressure: 1.95, hue: 0,   vessel: 'aortic arch',
+    note: 'The body\'s main highway out of the heart. Pressure is at its highest here and the flow is rough. Anything infectious passing through reaches the entire body within minutes.' },
+    { id: 'rectum',   name: 'Anal canal',       short: 'EXIT',    map: 'rectum', mx: 0.50, my: 0.845, depth: 1, pressure: 0.30, hue: 25,  vessel: 'inferior rectal artery',
+  note: 'You probably know. Somebody has to deal with it. Disclaimer: the odor filtration inside the suit can malfunction.' }
+  ];
 
 /** Sites appropriate to a reputation level: better licence, deeper work. */
 export function organsForRep(rep) {

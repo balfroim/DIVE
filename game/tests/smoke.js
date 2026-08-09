@@ -32,9 +32,12 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const board = await page.evaluate(() => ({
       state: __D.Game.state,
       offers: __D.Career.offers.length,
-      boardVisible: document.getElementById('scr-board').classList.contains('on')
+      boardVisible: document.getElementById('scr-board').classList.contains('on'),
+      anonJob: document.getElementById('board-offers').textContent.includes('CLIENT #')
     }));
-    if (board.state !== 'board' || board.offers < 1 || !board.boardVisible) throw new Error('board did not open');
+    if (board.state !== 'board' || board.offers < 1 || !board.boardVisible || !board.anonJob) {
+      throw new Error('board did not open');
+    }
     pass++;
 
     const contract = await page.evaluate(() => {
