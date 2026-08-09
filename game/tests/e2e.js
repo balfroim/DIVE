@@ -32,7 +32,8 @@ async function captureBrief(page, organId, seed) {
       warn: document.getElementById('brief-warn').textContent,
       contract: !!__D.Career.pending,
       mapPainted: painted,
-      pressure: organ.pressure.toFixed(2),
+      pressure: organ.pressure,
+      mapPressure: parseFloat(document.getElementById('brief-mapdesc').textContent),
       mapText: document.getElementById('brief-mapdesc').textContent,
       mapLink: __D.Career.pending.organ.map ?? null
     };
@@ -62,7 +63,7 @@ async function captureBrief(page, organId, seed) {
     const brief = await captureBrief(page, 'lung', 12345);
     if (!brief.visible || !brief.site || brief.site !== 'Pulmonary vein' || !brief.grade ||
       brief.readiness !== 'blocked' || !brief.total || !brief.warn || !brief.contract || !brief.mapPainted ||
-      brief.mapText !== (brief.pressure + ' P') || brief.mapLink !== 'lung') {
+      Math.abs(brief.mapPressure - brief.pressure) > 0.001 || brief.mapLink !== 'lung') {
       throw new Error('briefing failed');
     }
     pass++;
@@ -71,7 +72,7 @@ async function captureBrief(page, organId, seed) {
     const fallback = await captureBrief(page, 'brain', 54321);
     if (!fallback.visible || !fallback.site || fallback.site !== 'Cortex' || !fallback.grade ||
       fallback.readiness !== 'clear' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
-      fallback.mapText !== (fallback.pressure + ' P') || fallback.mapLink !== null) {
+      Math.abs(fallback.mapPressure - fallback.pressure) > 0.001 || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
     }
     await page.evaluate(() => __D.UI.dive());

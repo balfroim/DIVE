@@ -280,8 +280,6 @@ export const UI = {
     const offer = Career.pending;
     if (!offer) return;
     const s = offerSummary(offer);
-    const diveBtn = $('btn-dive');
-    if (diveBtn) diveBtn.disabled = Career.suit < s.suit;
     if (Career.suit < s.suit) {
       const warn = $('brief-warn');
       if (warn) {
