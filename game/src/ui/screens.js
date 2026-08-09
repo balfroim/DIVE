@@ -36,27 +36,34 @@ function paintSiteMap(canvas, organ, t) {
   c.clearRect(0, 0, S, S);
   const map = organ.map && mapFor(organ.map);
   if (!map) {
-   drawBody(c, 12, 10, S - 24, S - 20, organ, 0.5 + 0.5 * Math.sin(t * 2.2));
-   return;
+    drawBody(c, 12, 10, S - 24, S - 20, organ, 0.5 + 0.5 * Math.sin(t * 2.2));
+    return;
   }
   const rows = map.rows;
   const maxCols = rows.reduce((m, row) => Math.max(m, row.length), 0);
   const scale = Math.min((S - 18) / Math.max(1, maxCols), (S - 22) / Math.max(1, rows.length));
   const x = (S - maxCols * scale) / 2;
   const y = (S - rows.length * scale) / 2;
+  const labelY = Math.max(10, y - Math.max(4, Math.floor(scale * 0.3)));
   c.font = Math.max(8, Math.floor(scale * 0.86)) + 'px ui-monospace,SFMono-Regular,Menlo,monospace';
   c.textAlign = 'center';
   c.textBaseline = 'middle';
   c.fillStyle = 'rgba(255,255,255,0.22)';
-  c.fillText(map.id.toUpperCase(), S * 0.5, 10);
+  c.fillText(map.id.toUpperCase(), S * 0.5, labelY);
   for (let r = 0; r < rows.length; r++) {
-   const line = rows[r].replace(/ /g, '\u00a0');
-   c.fillStyle = rows[r].indexOf('O') >= 0
-     ? 'rgba(110,232,255,0.95)'
-     : rows[r].indexOf('E') >= 0
-     ? 'rgba(255,194,90,0.92)'
-     : 'rgba(255,230,239,0.78)';
-   c.fillText(line, x + maxCols * scale * 0.5, y + r * scale + scale * 0.5);
+    const row = rows[r];
+    for (let col = 0; col < maxCols; col++) {
+      const ch = row[col] || ' ';
+      if (ch === ' ') continue;
+      c.fillStyle = ch === 'O'
+        ? 'rgba(110,232,255,0.95)'
+        : ch === 'E'
+          ? 'rgba(255,194,90,0.92)'
+          : ch === '#'
+            ? 'rgba(255,230,239,0.80)'
+            : 'rgba(255,230,239,0.60)';
+      c.fillText(ch, x + col * scale + scale * 0.5, y + r * scale + scale * 0.5);
+    }
   }
 }
 
