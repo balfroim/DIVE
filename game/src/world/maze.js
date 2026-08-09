@@ -10,10 +10,15 @@
  *   row 1..n-2       transit junctions, one wave each
  *   row n-1          the target organ chamber - the objective
  *
- * Generation is a randomised depth-first spanning tree (guarantees the organ is
- * reachable) plus a few extra "braid" links so the network loops instead of
- * being a frustrating pure tree. A seeded RNG means the briefing can promise a
- * specific depth and site and the dive delivers exactly that.
+ * The topology comes from one of two places, and both end up as the same
+ * grid of nodes and edges:
+ *
+ *   - grown: a randomised depth-first spanning tree (guarantees the organ is
+ *     reachable) plus a few extra "braid" links so the network loops instead
+ *     of being a frustrating pure tree. A seeded RNG means the briefing can
+ *     promise a specific depth and site and the dive delivers exactly that.
+ *   - drawn: an ASCII map from data/maps.js, named by `o.map`, so a vessel
+ *     can be edited by hand in a text file (and each organ can have its own).
  *
  * Corridors crossing a row boundary carry a VALVE. It stays shut until that
  * row's wave is cleared, which is what makes depth meaningful: you fight your
@@ -25,6 +30,7 @@
 import { CFG } from '../core/config.js';
 import { clamp, closestOnSegment, TAU } from '../core/math.js';
 import { rngHelpers } from '../core/rng.js';
+import { mapFor } from '../data/maps.js';
 
 const _cp = { x: 0, y: 0, t: 0 };
 
@@ -47,27 +53,134 @@ export const Maze = {
   hue: 340,
 
   /**
-   * Grow a new network.
+   * Grow a new network. When `o.map` names an ASCII vessel map (see
+   * data/maps.js) the topology is carved from the text instead of grown.
    * @param {object} o
-   * @param {number} o.seed      reproducible contract seed
+   * @param {number} o.seed      reproducible contract seed (jitter, bores)
    * @param {number} o.rows      depth of the dive (>=2); row n-1 holds the organ
    * @param {number} o.cols      lateral width of the network
+   * @param {number} [o.crop]    take only the top rows of an authored map
+   * @param {string} [o.map]     id of an authored ASCII map in data/maps.js
    * @param {number} o.bore      corridor half-width multiplier from blood pressure
    * @param {string} o.organName label for the final chamber
    * @param {number} o.hue       tissue hue for the organ chamber
    */
   build(o) {
+    if (o.map) return this.buildFrom(mapFor(o.map), o);
+
     const R = rngHelpers(o.seed >>> 0);
-    const cols = (this.cols = Math.max(2, o.cols | 0));
-    const rows = (this.rows = Math.max(2, o.rows | 0));
+    const L = this._layout(o, o.rows, o.cols);
+
+    /* ---- randomised DFS spanning tree: every chamber is reachable -------- */
+    const visited = new Uint8Array(L.cols * L.rows);
+    const startC = R.int(0, L.cols - 1);
+    const stack = [L.at(startC, 0)];
+    visited[startC] = 1;
+    while (stack.length) {
+      const n = stack[stack.length - 1];
+      const opts = [];
+      const push = (m) => { if (m && !visited[m.i]) opts.push(m); };
+      push(L.at(n.c - 1, n.r)); push(L.at(n.c + 1, n.r));
+      push(L.at(n.c, n.r - 1)); push(L.at(n.c, n.r + 1));
+      if (!opts.length) { stack.pop(); continue; }
+      /* bias downward so the network reads as a descent, not a puddle */
+      const down = opts.filter((m) => m.r > n.r);
+      const nxt = down.length && R.chance(0.62) ? R.pick(down) : R.pick(opts);
+      visited[nxt.i] = 1;
+      L.link(n, nxt);
+      stack.push(nxt);
+    }
+
+    /* ---- braid: a few extra links so it loops and breathes --------------- */
+    const braid = Math.max(1, Math.round(L.cols * L.rows * 0.16));
+    for (let k = 0; k < braid; k++) {
+      const n = this.nodes[R.int(0, this.nodes.length - 1)];
+      const cand = [L.at(n.c + 1, n.r), L.at(n.c, n.r + 1)].filter((m) => m && n.links.indexOf(m) < 0);
+      if (cand.length) L.link(n, R.pick(cand));
+    }
+
+    this._connectRows(L, false);
+    /* the organ sits on the deepest row, in a chamber the tree actually reached */
+    const deepest = this.nodes.filter((n) => n.r === L.rows - 1 && n.links.length);
+    return this._finalize(L.at(startC, 0), deepest.length ? R.pick(deepest) : L.at(0, L.rows - 1));
+  },
+
+  /**
+   * Carve a network from an ASCII vessel map (the alphabet and its invariants
+   * are documented in data/maps.js). `o.crop` takes only the top rows of the
+   * map, so one drawing can serve several contract depths; the organ is then
+   * re-seated on the deepest surviving row. A malformed map throws - better a
+   * loud boot failure than a silent procedural fallback nobody notices.
+   */
+  buildFrom(map, o) {
+    const rows = map.rows;
+    const want = Math.max(2, Math.min(rows.length, o.crop || rows.length));
+    let cols = 0;
+    for (const line of rows) cols = Math.max(cols, line.length);
+    const L = this._layout(o, want, cols);
+
+    /* ---- parse the drawing ----------------------------------------------
+     * Corridors run from a junction outward through runs of `-`/`|` and
+     * straight through `+` crossings (which carry both axes but hold no
+     * chamber) until the next junction, however far away it is. Adjacent
+     * junctions link directly.
+     */
+    const chAt = (c, r) => (c < 0 || r < 0 || c >= cols || r >= want ? ' ' : rows[r][c] || ' ');
+    const isJunction = (c, r) => '#EO'.indexOf(chAt(c, r)) >= 0;
+    const carriesH = (c, r) => '-+'.indexOf(chAt(c, r)) >= 0;  // passes a corridor horizontally
+    const carriesV = (c, r) => '|+'.indexOf(chAt(c, r)) >= 0;  // passes a corridor vertically
+
+    let entry = null, organ = null;
+    const junctions = [];
+    for (let r = 0; r < want; r++) {
+      for (let c = 0; c < cols; c++) {
+        const ch = chAt(c, r);
+        if (!isJunction(c, r)) continue;
+        const n = L.at(c, r);
+        junctions.push(n);
+        if (ch === 'E') entry = n;
+        if (ch === 'O') organ = n;
+        /* scan right / down for the far end of each corridor that starts
+           here (left / up were found by the neighbour's own scan) */
+        let k = c + 1;
+        while (carriesH(k, r)) k++;
+        if (isJunction(k, r)) L.link(n, L.at(k, r));
+        k = r + 1;
+        while (carriesV(c, k)) k++;
+        if (isJunction(c, k)) L.link(n, L.at(c, k));
+      }
+    }
+
+    const bad = (why) => { throw new Error('map "' + map.id + '": ' + why); };
+    if (!entry) bad('no entry E');
+    if (!organ) bad('no organ O');
+    if (organ.r !== L.rows - 1) bad('O must sit on the deepest drawn row (found row ' + organ.r + ' of ' + L.rows + ')');
+
+    /* a junction with no corridor at all strands a chamber mid-wall */
+    for (const n of junctions) {
+      if (!n.links.length) bad('junction at col ' + n.c + ' row ' + n.r + ' has no corridor');
+    }
+
+    this._connectRows(L, true);
+    return this._finalize(entry, organ);
+  },
+
+  /**
+   * Shared scaffolding for both generators: dimensions, the jittered node
+   * grid, and the link() that adds a corridor (valves live on corridors that
+   * cross a row boundary). Consumes the seeded RNG in grid order, so the
+   * briefed dive is reproducible either way.
+   */
+  _layout(o, rows, cols) {
+    const R = rngHelpers(o.seed >>> 0);
+    rows = this.rows = Math.max(2, rows | 0);
+    cols = this.cols = Math.max(2, cols | 0);
     const cellX = CFG.maze.cell;
     const cellY = CFG.maze.cell * CFG.maze.stretch;
     this.organName = o.organName || 'tissue';
     this.hue = o.hue === undefined ? 340 : o.hue;
 
-    /* ---- nodes on a grid, jittered so nothing looks like graph paper ---- */
     const nodes = (this.nodes = []);
-    const at = (c, r) => (c < 0 || r < 0 || c >= cols || r >= rows ? null : nodes[r * cols + c]);
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         nodes.push({
@@ -83,71 +196,56 @@ export const Maze = {
       }
     }
 
-    /* ---- randomised DFS spanning tree: every chamber is reachable -------- */
-    const visited = new Uint8Array(cols * rows);
     const edges = (this.edges = []);
-    const link = (a, b) => {
-      if (!a || !b) return;
-      if (a.links.indexOf(b) >= 0) return;
-      a.links.push(b);
-      b.links.push(a);
-      const lo = a.r <= b.r ? a : b;
-      const hi = a.r <= b.r ? b : a;
-      edges.push({
-        a: lo, b: hi,
-        /** Valves only exist where a corridor changes row. */
-        gateRow: lo.r !== hi.r ? lo.r : -1,
-        open: lo.r === hi.r,
-        pulse: R.range(0, TAU),
-        bore: (CFG.maze.bore + R.range(-CFG.maze.boreJitter, CFG.maze.boreJitter)) * (o.bore || 1)
-      });
+    return {
+      R, rows, cols, cellX, cellY,
+      at: (c, r) => (c < 0 || r < 0 || c >= cols || r >= rows ? null : nodes[r * cols + c]),
+      link: (a, b) => {
+        if (!a || !b) return;
+        if (a.links.indexOf(b) >= 0) return;
+        a.links.push(b);
+        b.links.push(a);
+        const lo = a.r <= b.r ? a : b;
+        const hi = a.r <= b.r ? b : a;
+        edges.push({
+          a: lo, b: hi,
+          /** Valves only exist where a corridor changes row. */
+          gateRow: lo.r !== hi.r ? lo.r : -1,
+          open: lo.r === hi.r,
+          pulse: R.range(0, TAU),
+          bore: (CFG.maze.bore + R.range(-CFG.maze.boreJitter, CFG.maze.boreJitter)) * (o.bore || 1)
+        });
+      }
     };
+  },
 
-    const startC = R.int(0, cols - 1);
-    const stack = [at(startC, 0)];
-    visited[startC] = 1;
-    while (stack.length) {
-      const n = stack[stack.length - 1];
-      const opts = [];
-      const push = (m) => { if (m && !visited[m.i]) opts.push(m); };
-      push(at(n.c - 1, n.r)); push(at(n.c + 1, n.r));
-      push(at(n.c, n.r - 1)); push(at(n.c, n.r + 1));
-      if (!opts.length) { stack.pop(); continue; }
-      /* bias downward so the network reads as a descent, not a puddle */
-      const down = opts.filter((m) => m.r > n.r);
-      const nxt = down.length && R.chance(0.62) ? R.pick(down) : R.pick(opts);
-      visited[nxt.i] = 1;
-      link(n, nxt);
-      stack.push(nxt);
-    }
-
-    /* ---- braid: a few extra links so it loops and breathes --------------- */
-    const braid = Math.max(1, Math.round(cols * rows * 0.16));
-    for (let k = 0; k < braid; k++) {
-      const n = nodes[R.int(0, nodes.length - 1)];
-      const cand = [at(n.c + 1, n.r), at(n.c, n.r + 1)].filter((m) => m && n.links.indexOf(m) < 0);
-      if (cand.length) link(n, R.pick(cand));
-    }
-
-    /* ---- guarantee every row is laterally connected ----------------------
-     * A wave is fought one row at a time and the valves below stay shut until
-     * that row is cleared. So if a chamber can only be reached by dropping
-     * through the row beneath it, any pathogen standing there is unreachable
-     * and the contract deadlocks - unwinnable, forever.
-     *
-     * The spanning tree alone does NOT prevent this (it happily routes
-     * (0,0) -> (0,1) -> (1,1) -> (1,0)). Union-find each row over the
-     * corridors that are open at wave time, then add the minimum number of
-     * lateral corridors needed to join the pieces.
-     */
-    for (let r = 0; r < rows; r++) {
+  /**
+   * Guarantee every row is laterally connected.
+   *
+   * A wave is fought one row at a time and the valves below stay shut until
+   * that row is cleared. So if a chamber can only be reached by dropping
+   * through the row beneath it, any pathogen standing there is unreachable
+   * and the contract deadlocks - unwinnable, forever.
+   *
+   * The spanning tree alone does NOT prevent this (it happily routes
+   * (0,0) -> (0,1) -> (1,1) -> (1,0)). Union-find each row over the
+   * corridors that are open at wave time; the grown generator then adds the
+   * minimum number of lateral corridors needed to join the pieces, while a
+   * hand-drawn map is simply rejected - the fix is one `-` in the text file.
+   */
+  _connectRows(L, strict) {
+    const bad = (r) => { throw new Error('map: row ' + r + ' is not laterally connected (join its junctions with - or +)'); };
+    for (let r = 0; r < L.rows; r++) {
       const parent = new Map();
       const find = (n) => {
         while (parent.get(n) !== n) { parent.set(n, parent.get(parent.get(n))); n = parent.get(n); }
         return n;
       };
       const rowNodes = [];
-      for (let c = 0; c < cols; c++) { const n = at(c, r); parent.set(n, n); rowNodes.push(n); }
+      for (let c = 0; c < L.cols; c++) {
+        const n = L.at(c, r);
+        if (!strict || n.links.length) { parent.set(n, n); rowNodes.push(n); }
+      }
       for (const n of rowNodes) {
         for (const m of n.links) {
           if (m.r !== r) continue;                 // only corridors open at wave time
@@ -155,21 +253,23 @@ export const Maze = {
           if (a !== b) parent.set(a, b);
         }
       }
-      for (let c = 0; c + 1 < cols; c++) {
-        const a = at(c, r), b = at(c + 1, r);
-        if (find(a) !== find(b)) { link(a, b); parent.set(find(a), find(b)); }
+      for (let i = 0; i + 1 < rowNodes.length; i++) {
+        const a = rowNodes[i], b = rowNodes[i + 1];
+        if (find(a) === find(b)) continue;
+        if (strict) bad(r);
+        L.link(a, b);
+        parent.set(find(a), find(b));
       }
     }
+  },
 
-    /* ---- entry + organ --------------------------------------------------- */
-    this.entry = at(startC, 0);
+  /** Seat the entry and organ chambers and bake the collision shapes. */
+  _finalize(entry, organ) {
+    this.entry = entry;
     this.entry.kind = 'entry';
-    /* the organ sits on the deepest row, in the column the tree actually reached */
-    const deepest = nodes.filter((n) => n.r === rows - 1 && n.links.length);
-    this.organ = deepest.length ? deepest[R.int(0, deepest.length - 1)] : at(0, rows - 1);
+    this.organ = organ;
     this.organ.kind = 'organ';
     this.organ.radius *= 1.34;
-
     this.rebuildShapes();
     return this;
   },
