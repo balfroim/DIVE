@@ -261,7 +261,7 @@ export const UI = {
     $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
       (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
       (Career.stab ? ' \u00b7 STABILISER READY' : '');
-    $('brief-mapnote').textContent = s.note;
+    $('brief-mapnote').innerHTML = '<b>Map note</b>' + esc(s.note);
     $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
       s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
     paintSiteMap($('cv-site'), offer.organ, Game.t);
@@ -316,6 +316,7 @@ export const UI = {
     const dead = Career.dead;
     const struck = Career.struckOff;
     const o2Left = Math.max(0, Math.round(result.o2Left || 0));
+    Career.lastO2Left = o2Left;
     $('res-kicker').textContent = 'Extraction report \u00b7 ' + (c ? c.id : '');
     $('res-title').textContent = dead
       ? '\u2620 Diver lost'
@@ -325,7 +326,7 @@ export const UI = {
           ? '\u2713 Contract closed'
           : 'Client lost';
     $('res-sub').textContent = dead
-      ? 'O\u2082 left 0s \u00b7 body recovery billed to the estate'
+      ? 'O\u2082 left ' + o2Left + 's \u00b7 body recovery billed to the estate'
       : struck
         ? (Career.reason === 'debt'
           ? 'O\u2082 left ' + o2Left + 's \u00b7 negative balance terminated the file'
@@ -345,7 +346,7 @@ export const UI = {
     $('res-inv').innerHTML = rows +
       '<div class="inv-row total"><span>Net</span><b class="' + (result.net < 0 ? 'neg' : '') + '">' +
       cr(result.net) + '</b></div>' + repRow +
-      '<div class="inv-row"><span>Oxygen left</span><b class="' + (o2Left <= 0 ? 'neg' : '') + '">' +
+      '<div class="inv-row"><span>Oxygen left</span><b class="' + (dead && o2Left <= 0 ? 'neg' : '') + '">' +
       o2Left + 's</b></div>' +
       '<div class="inv-row"><span>Balance</span><b>' + cr(Career.credits) + '</b></div>';
 
@@ -432,7 +433,7 @@ export const UI = {
       [String(Career.pathogens), 'Pathogens'],
       [String(Career.wrongful), 'Wrongful kills'],
       [String(Career.charges), 'Charges fired'],
-      [dead ? '0s' : '—', 'Oxygen left'],
+      [dead ? (Career.lastO2Left + 's') : '—', 'Oxygen left'],
       [cr(Career.credits), 'Final balance']
     ];
     $('over-stats').innerHTML = tiles

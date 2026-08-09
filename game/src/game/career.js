@@ -63,6 +63,7 @@ export const Career = {
   pending: null,
   struckOff: false,
   dead: false,
+  lastO2Left: 0,
   reason: '',
   devMode: false,
   dev: { ...DEV_DEFAULTS },
@@ -94,6 +95,7 @@ export const Career = {
     this.pending = null;
     this.struckOff = false;
     this.dead = false;
+    this.lastO2Left = 0;
     this.reason = '';
   },
 
