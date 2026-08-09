@@ -12,7 +12,7 @@
 import { SFX } from '../core/audio.js';
 import { Store, KEYS } from '../core/store.js';
 import { $, esc } from './dom.js';
-import { SCRIPT } from './script.js';
+import { SCRIPT } from '../data/dialogue.js';
 import { Career } from '../game/career.js';
 
 export const DLG = {
