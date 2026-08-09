@@ -193,7 +193,9 @@ export function drawHUD(t) {
     const mh = compact ? 92 : 112;
     const mx = W - mw - 12;
     const my = compact ? 58 : 62;
-    panelBox(ctx, mx - 6, my - 6, mw + 12, mh + 26, 0.42);
+    const statusY = my + mh + 22;
+    const sh = compact ? 26 : 28;
+    panelBox(ctx, mx - 6, my - 6, mw + 12, mh + sh + 22, 0.42);
     const o2Frac = clamp(run.o2 / Math.max(1, run.o2max), 0, 1);
     const o2Col = o2Frac > 0.55 ? '#4ce0a4' : o2Frac > 0.25 ? '#ffc86b' : '#ff6b7d';
     const tankW = compact ? 21 : 26;
@@ -220,17 +222,36 @@ export function drawHUD(t) {
     ctx.fillText(G.contract.organ.short + ' \u00b7 ' + G.contract.pressure.toFixed(2) + ' P',
       mx + mw / 2, my + mh + 12);
 
-    const statusY = my + mh + 22;
-    const sh = compact ? 26 : 28;
-    panelBox(ctx, mx - 6, statusY - 6, mw + 12, sh, 0.36);
     ctx.textAlign = 'left';
     ctx.font = '800 8px ui-monospace,Menlo,monospace';
     ctx.fillStyle = Career.scans <= 0 ? '#ff8095' : '#7fdcff';
     ctx.fillText('SCAN CHARGES', mx, statusY + 4);
+    const scanCount = Math.max(0, Math.round(Career.scans));
+    const scanMax = Math.max(4, Math.min(8, scanCount));
+    const diamondStart = mx + 12;
+    const diamondY = statusY + 12;
+    const diamondGap = 12;
+    for (let i = 0; i < scanMax; i++) {
+      const dx = diamondStart + i * diamondGap;
+      diamond(ctx, dx, diamondY, 5.2);
+      if (i < scanCount) {
+        ctx.fillStyle = '#ffd34d';
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(55,26,0,0.95)';
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.48)';
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+      }
+    }
     ctx.textAlign = 'right';
     ctx.font = '700 8px ui-monospace,Menlo,monospace';
     ctx.fillStyle = 'rgba(255,220,232,0.72)';
-    ctx.fillText(String(Career.scans) + ' held \u00b7 ' + G.scanPrice() + ' cr', mx + mw, statusY + 4);
+    // ctx.fillText(String(scanCount) + ' held \u00b7 ', mx + mw, statusY + 4);
   }
 
   /* ---- the buddy's firing line status, left ---------------------------- */
