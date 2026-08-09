@@ -231,11 +231,11 @@ export const UI = {
 
     $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
     $('brief-client').textContent = offer.client.job;
-    $('brief-site').innerHTML = esc(s.job) + ' \u00b7 ' + hover(s.site, s.note);
+    $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
+    $('brief-site').innerHTML = esc(s.site) + ' \u00b7 ' + hover(s.organ, s.note);
 
     const chips = [
       ['TIER', s.tier + ' \u00b7 ' + s.tierLabel],
-      ['SITE', s.organ],
       ['DEPTH', s.depth + ' rows'],
       ['WAVES', String(s.waves)],
       ['CONTRACT', s.difficulty],
@@ -258,12 +258,12 @@ export const UI = {
     $('brief-tgtdesc').textContent = spec ? spec.desc : '';
     $('brief-tgtname').textContent = (spec ? spec.name : offer.targetSpecies) +
       (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION, HARD TO CALL' : '');
-    $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
+    $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES \u00b7 ENTRY READY' +
       (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
       (Career.stab ? ' \u00b7 STABILISER READY' : '');
     $('brief-mapnote').innerHTML = '<b>Map note</b>' + esc(s.note);
     $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
-      s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
+      s.organ + ' \u00b7 ' + s.pressure + ' P';
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
