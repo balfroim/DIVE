@@ -8,8 +8,12 @@ The current release adds the oxygen clock and siphon loop, the heir/ascension
 succession path, and a data-driven ECS-friendly structure for enemies and
 conversation while keeping the build fully self-contained in one `dive.html`.
 
-The source is now organised as ES modules under `src/`; `npm run build` bundles
+The source is organised as ES modules under `src/`; `npm run build` bundles
 it into one self-contained `dive.html` with no external requests.
+
+**New here?** Read the module map below, then
+[`docs/ADDING-CONTENT.md`](docs/ADDING-CONTENT.md) for step-by-step recipes
+(new enemy, new contract type, new organ, new shop item, …).
 
 ---
 
@@ -117,12 +121,18 @@ src/
 │   └── config.js  ⭐      EVERY tunable number in the game
 │
 ├── world/
-│   └── maze.js            procedural vessels: build, resolve, lineClear, valves
+│   ├── maze.js            procedural vessels: build, resolve, lineClear, valves
+│   └── flow.js            the plasma current field everything drifts on
+│
+├── ecs/                   tiny entity-component-system kernel
+│   ├── world.js           the entity lists + component queries
+│   ├── components.js      the component registry (data + defaults)
+│   └── systems.js         the system runner and pipeline ORDER
 │
 ├── entities/
 │   ├── pool.js            fixed object pool - nothing is allocated mid-dive
-│   ├── species.js         how each species looks and moves
-│   ├── behaviour.js       per-frame AI, flow current, infection spread
+│   ├── species.js         the client cell signature the bestiary dresses against
+│   ├── systems.js         per-frame AI as systems: motion, infection, clotting
 │   ├── player.js          the diver: thrust, suit rating, pressure surge
 │   ├── buddy.js  ⭐       the white cell + the lethal lunge
 │   ├── particles.js       particle + floating-text pools
@@ -132,11 +142,16 @@ src/
 │   ├── state.js  ⭐       Game: the dive state machine and all scoring
 │   ├── career.js          Career: the persistent freelancer + save/load
 │   ├── contracts.js       contract generation from reputation
-│   └── economy.js         bounties, invoice, reputation maths
+│   ├── economy.js         bounties, invoice, reputation maths
+│   └── lineage.js         succession: heirs, estates, cause of death
 │
 ├── data/          ⭐      pure content - edit freely, no logic here
+│   ├── enemies.js         the bestiary: every cell archetype, as data
+│   ├── contract-types.js  job types: populations, objectives, setup rolls
 │   ├── organs.js          dive sites
 │   ├── clients.js         clients + tiers
+│   ├── heirs.js           succession candidates: relations, boons, flaws
+│   ├── dialogue.js        every script (induction, ascension), as data
 │   └── shop.js            requisitions
 │
 ├── render/                draw only; never mutates simulation state
@@ -149,8 +164,7 @@ src/
 │
 └── ui/
     ├── screens.js ⭐      every overlay screen + all DOM wiring
-    ├── script.js          the David Vax induction script
-    ├── dialogue.js        typewriter, choices, the name input
+    ├── dialogue.js        the typewriter engine (content lives in data/dialogue.js)
     ├── previews.js        the live cell previews on the briefing card
     └── dom.js             $, esc, on, show, hideAll helpers
 ```
@@ -160,10 +174,10 @@ src/
 ### Dependency direction
 
 ```
-core  ->  world  ->  entities  ->  game  ->  ui
-                          \          /
-                           \        v
-                            +--> render
+core  ->  world  ->  ecs  ->  entities  ->  game  ->  ui
+                             \          /
+                              \        v
+                               +--> render
 ```
 
 Nothing lower imports anything higher. The one place that would have created a
@@ -189,11 +203,16 @@ cycle — the simulation needing to tell the game "this got eaten" — goes thro
 | Retune the pay curve | `game/economy.js` → `bounty()`, `buildInvoice()` |
 | Retune reputation | `CFG.rep` + `game/economy.js` → `repDelta()` |
 | Change how far into debt you can go | `CFG.econ.debtFloor` (default −500) |
-| Rewrite the onboarding dialogue | `ui/script.js` — a plain list of nodes |
+| Rewrite the onboarding dialogue | `data/dialogue.js` — plain node lists, one per script |
 | Change a screen's layout | `index.html` for markup, `ui/screens.js` for fill logic |
 | Add a HUD element | `render/hud.js` (UI-space coords, `View.ui` scaled) |
 | Change maze topology | `world/maze.js` → `build()` (keep the row-connectivity pass!) |
-| Add an enemy species | `entities/species.js` + a draw branch in `render/cells.js` |
+| Add an enemy species | append to `data/enemies.js` + list it in `data/contract-types.js` |
+| Add a contract type | append to `data/contract-types.js` (`minRep`, `weight`, `threats`) |
+| Add a heir boon / flaw | append to `data/heirs.js` (`apply(career)` adjusts the estate) |
+
+The full step-by-step versions of these recipes live in
+[`docs/ADDING-CONTENT.md`](docs/ADDING-CONTENT.md).
 
 ### Adding a shop item, end to end
 
@@ -203,14 +222,14 @@ cycle — the simulation needing to tell the game "this got eaten" — goes thro
   id: 'thrusters',
   name: 'Auxiliary thrusters',
   desc: 'Cuts the pressure penalty. The Division bills the fuel separately.',
-  cost: (c) => Math.round(320 * (1 + c.rep / 90)),
+  cost: (c) => Math.round(320 * scale(c)),
   buy:  (c) => { c.thrust = (c.thrust || 0) + 1; },
   owned:(c) => (c.thrust || 0) + ' fitted'
 }
 ```
 
-Then persist it: add `thrust` to the object in `Career.save()` and to the defaults
-in `Career.reset()` in `game/career.js`. Read it wherever it matters
+Then persist it: add `thrust` to the `SAVED` list and to the defaults in
+`Career.reset()` in `game/career.js`. Read it wherever it matters
 (`entities/player.js`). That's the whole contract — the shop screen builds itself
 from the array.
 
@@ -285,6 +304,3 @@ premium if you're right.
 - The bundle is one file with no assets: every sprite, sound and font is generated
   at runtime (canvas + WebAudio + system monospace).
 - Object pools are sized in `CFG` and never grow; the 9,000-frame test asserts this.
-- `legacy/` holds the original v2.0 single-file sources and their old test
-  scripts, kept for reference only. Nothing imports them, they are not part of
-  the build, and they target the pre-refactor architecture.
