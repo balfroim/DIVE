@@ -47,13 +47,13 @@ export const ORGANS = [
   }
 ];
 
-function organsByMeanRep() {
+export function orderedOrgans() {
   return [...ORGANS].sort((a, b) => a.meanRep - b.meanRep || a.id.localeCompare(b.id));
 }
 
-function closestOrganIndex(rep) {
+export function closestOrganIndex(rep) {
   const currentRep = Math.max(0, Math.min(100, rep || 0));
-  const list = organsByMeanRep();
+  const list = orderedOrgans();
   let best = 0;
   let bestGap = Infinity;
   for (let i = 0; i < list.length; i++) {
@@ -67,7 +67,12 @@ function closestOrganIndex(rep) {
 }
 
 /** Site most appropriate to a reputation level: the nearest mean rep. */
-export function organsForRep(rep) {
+export function organForRep(rep) {
   const { list, best } = closestOrganIndex(rep);
-  return [list[best] || ORGANS[0]];
+  return list[best] || ORGANS[0];
+}
+
+/** Backward-compatible wrapper: returns the single best match in an array. */
+export function organsForRep(rep) {
+  return [organForRep(rep)];
 }

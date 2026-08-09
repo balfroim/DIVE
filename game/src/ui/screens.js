@@ -392,12 +392,12 @@ export const UI = {
     const struck = Career.struckOff;
     const dead = Career.dead;
     $('over-title').textContent = retired ? 'Retired' : dead ? 'Deceased' : struck ? 'Licence revoked' : 'Career closed';
-    $('over-sub').textContent = retired
-      ? 'You surfaced with the money and the badge.'
-      : dead ? 'You did not surface from the dive.'
-      : Career.reason === 'debt' ? 'Terminated for negative balance'
-      : Career.reason === 'litigation' ? 'Terminated following litigation'
-      : '';
+    let sub = '';
+    if (retired) sub = 'You surfaced with the money and the badge.';
+    else if (dead) sub = 'You did not surface from the dive.';
+    else if (Career.reason === 'debt') sub = 'Terminated for negative balance';
+    else if (Career.reason === 'litigation') sub = 'Terminated following litigation';
+    $('over-sub').textContent = sub;
     const tiles = [
       [String(Career.contracts), 'Contracts closed'],
       [String(Career.lost), 'Clients lost'],

@@ -15,7 +15,7 @@
 import { CFG, pressureProfile } from '../core/config.js';
 import { clamp } from '../core/math.js';
 import { rngHelpers } from '../core/rng.js';
-import { ORGANS } from '../data/organs.js';
+import { organForRep, closestOrganIndex } from '../data/organs.js';
 import { TIERS, clientsForRep } from '../data/clients.js';
 import { pickType, contractType } from '../data/contract-types.js';
 import { makeSignature } from '../entities/species.js';
@@ -30,28 +30,14 @@ function difficultyOf(rows, pressure, tierIdx, typeBonus) {
   return 1 + (rows - 3) * 0.55 + (pressure - 0.95) * 1.5 + tierIdx * 0.35 + (typeBonus || 0);
 }
 
-function orderedOrgans() {
-  return [...ORGANS].sort((a, b) => (a.meanRep - b.meanRep) || a.id.localeCompare(b.id));
-}
-
-function organForRep(rep, slot) {
-  const list = orderedOrgans();
-  const currentRep = Math.max(0, Math.min(100, rep || 0));
-  let best = 0;
-  let bestGap = Infinity;
-  for (let i = 0; i < list.length; i++) {
-    const gap = Math.abs((list[i].meanRep ?? currentRep) - currentRep);
-    if (gap < bestGap || (gap === bestGap && (list[i].meanRep ?? 0) > (list[best].meanRep ?? 0))) {
-      best = i;
-      bestGap = gap;
-    }
-  }
+function organForSlot(rep, slot) {
+  const { list, best } = closestOrganIndex(rep);
   const variants = [
     list[Math.max(0, best - 1)],
     list[best],
     list[Math.min(list.length - 1, best + 1)]
   ];
-  return variants[clamp(slot, 0, variants.length - 1)] || list[best] || ORGANS[0];
+  return variants[clamp(slot, 0, variants.length - 1)] || organForRep(rep);
 }
 
 /**
@@ -75,7 +61,7 @@ export function makeContract(rep, seed, slot) {
   const clients = clientsForRep(rep);
   const variant = slot <= 0 ? 'easy' : slot >= 2 ? 'hard' : 'normal';
   const variantMul = variant === 'easy' ? 0.82 : variant === 'hard' ? 1.18 : 1;
-  const organ = organForRep(rep, slot);
+  const organ = organForSlot(rep, slot);
   const type = pickType(rep, R, variant === 'easy' ? 0 : slot);
 
   const ci = clamp(Math.floor(clients.length * (0.2 + slot * 0.3) + R.range(0, 1.4)), 0, clients.length - 1);
@@ -114,7 +100,6 @@ export function makeContract(rep, seed, slot) {
     client: { job: 'CLIENT #' + clientCode, memo: client.memo, tier: tier.i },
     tier,
     variant,
-    variantLabel: variant.toUpperCase(),
     difficulty: variant.toUpperCase(),
     organ,
     map: organ.map || null,
@@ -176,7 +161,7 @@ export function offerSummary(c) {
     job: c.client.job,
     tier: c.tier.name,
     tierLabel: c.tier.label,
-    difficulty: c.variantLabel,
+    difficulty: c.difficulty,
     type: c.type,
     typeName: c.typeName,
     typeShort: c.typeShort,
