@@ -207,11 +207,7 @@ export const Career = {
     this.credits += result.net;
     this.gross += Math.max(0, result.gross);
     const nextRep = this.rep + result.repDelta;
-    if (nextRep < 0) {
-      this.rep = 0;
-    } else {
-      this.rep = clamp(nextRep, 0, CFG.rep.max);
-    }
+    this.rep = clamp(nextRep, 0, CFG.rep.max);
     this.pathogens += result.pathKills;
     this.wrongful += result.innocent;
     this.charges += result.scansUsed;

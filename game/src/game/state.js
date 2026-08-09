@@ -247,6 +247,7 @@ export const Game = {
     if (this.state === 'results' || this._settled) return;
     const c = this.contract;
     const run = this.run;
+    /* settle() mutates Career.rep, so the bribe has to be priced first. */
     const repSwing = repDelta(c, run, success, Career);
     const repShortfall = Math.max(0, -(Career.rep + repSwing));
     run.repBribe = repShortfall ? Math.ceil(repShortfall * CFG.rep.bribeCost) : 0;

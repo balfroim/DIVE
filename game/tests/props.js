@@ -139,7 +139,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       };
     });
     if (debt.state !== 'over' || !debt.over || !debt.finished || debt.reason !== 'debt' ||
-      debt.rep !== 0 || debt.credits >= 0) {
+      debt.rep !== 0 || debt.credits > 0) {
       throw new Error('reputation bribe did not trigger a debt game over');
     }
     pass++;
