@@ -244,7 +244,6 @@ export const UI = {
     $('brief-tgtname').innerHTML = '<span>Primary target</span><span>' +
       esc((spec ? spec.name : offer.targetSpecies) + (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION' : '')) + '</span>';
     $('brief-tgtdesc').textContent = s.objective + (offer.deviation < 0.55 ? ' The shape is noisy, so trust the scan.' : '');
-    $('brief-kit').textContent = 'Penalty: killing a symbiote triggers litigation. Keep the halo intact.';
     $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
     $('brief-grade').textContent = s.difficulty;
     $('brief-tiernote').textContent = s.band + ' pressure \u00b7 suit ' + s.suit + ' required';

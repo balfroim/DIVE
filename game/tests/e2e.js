@@ -57,6 +57,7 @@ async function captureBrief(page, organId, seed) {
     await sleep(500);
     await page.evaluate(() => __D.DLG.skip());
     await sleep(500);
+    await page.evaluate(() => { __D.Career.suit = 0; });
 
     const brief = await captureBrief(page, 'lung', 12345);
     if (!brief.visible || !brief.site || brief.site !== 'Pulmonary vein' || !brief.grade ||
