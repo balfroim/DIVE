@@ -60,7 +60,7 @@ async function captureBrief(page, organId, seed) {
     }
     pass++;
 
-    const fallback = await captureBrief(page, 'gut', 54321);
+    const fallback = await captureBrief(page, 'brain', 54321);
     if (!fallback.visible || !fallback.chips || !fallback.contract || !fallback.mapPainted ||
       fallback.mapText.includes('MAP') || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
