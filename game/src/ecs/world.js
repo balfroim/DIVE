@@ -82,8 +82,3 @@ export const World = {
 export function has(e, name) {
   return !!(e && e.comp && e.comp[name]);
 }
-
-/** Read a component, or undefined. */
-export function get(e, name) {
-  return e && e.comp ? e.comp[name] : undefined;
-}

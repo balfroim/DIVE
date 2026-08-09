@@ -38,5 +38,3 @@ export function hideAll() {
 export function cr(n) {
   return (n < 0 ? '\u2212' : '') + Math.abs(Math.round(n)) + ' cr';
 }
-
-export function pad2(n) { return (n < 10 ? '0' : '') + n; }

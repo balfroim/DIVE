@@ -25,7 +25,7 @@
 import { rr, ri, pick, sgn, clamp, wrapHue } from '../core/math.js';
 
 /** Antigen stud counts. This is the tell the player has to read. */
-export const ABO_STUDS = { O: 0, A: 4, B: 8, AB: 12 };
+const ABO_STUDS = { O: 0, A: 4, B: 8, AB: 12 };
 export const ABO_TYPES = ['O', 'A', 'B', 'AB'];
 /** Which donor groups are a reaction for a given client group. */
 export const ABO_INCOMPATIBLE = {
@@ -298,11 +298,6 @@ export const ENEMIES = {
 /** Look up an archetype, with a safe fallback so bad data cannot brick a dive. */
 export function archetype(id) {
   return ENEMIES[id] || ENEMIES.host;
-}
-
-/** Every archetype of a given broad class. */
-export function archetypesOfKind(kind) {
-  return Object.keys(ENEMIES).filter((k) => ENEMIES[k].kind === kind).map((k) => ENEMIES[k]);
 }
 
 /** A random symbiote archetype id. */

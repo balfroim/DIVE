@@ -37,8 +37,8 @@ function bootBackdrop() {
   buddyReset();
   cam.x = player.x;
   cam.y = player.y;
-  for (let i = 0; i < 9; i++) spawnEnt('healthy', sig, 1, null, { row: i % 3 });
-  for (let i = 0; i < 2; i++) spawnEnt('pathogen', sig, 0.9, 'influenza', { row: 1 + (i % 2) });
+  for (let i = 0; i < 9; i++) spawnEnt('host', sig, 1, { row: i % 3 });
+  for (let i = 0; i < 2; i++) spawnEnt('influenza', sig, 0.9, { row: 1 + (i % 2) });
 }
 
 function boot() {

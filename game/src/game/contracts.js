@@ -18,7 +18,6 @@ import { rngHelpers } from '../core/rng.js';
 import { organsForRep } from '../data/organs.js';
 import { TIERS, clientsForRep } from '../data/clients.js';
 import { pickType, contractType } from '../data/contract-types.js';
-import { archetype } from '../data/enemies.js';
 import { makeSignature } from '../entities/species.js';
 
 let seedCounter = 1;
@@ -35,7 +34,7 @@ function difficultyOf(rows, pressure, tierIdx, typeBonus) {
  * Rough gas budget for a contract, in seconds. The briefing compares it against
  * the tank you actually own, because running out is fatal, not merely a fail.
  */
-export function o2Estimate(rows, diff, pressure) {
+function o2Estimate(rows, diff, pressure) {
   const perRow = 26 + diff * 5;
   const rate = CFG.o2.idle + CFG.o2.pressure * Math.max(0, pressure - 1) + CFG.o2.thrust * 0.5;
   return Math.round(rows * perRow * rate);
@@ -138,12 +137,6 @@ export function pressureLabel(p) {
 /** Suit rating the Division recommends for a pressure band. */
 export function suitFor(p) {
   return Math.max(1, Math.ceil((p - 0.6) / 0.45));
-}
-
-/** Short description of the objective archetype, for the briefing card. */
-export function targetBlurb(c) {
-  const spec = archetype(c.targetSpecies);
-  return spec ? spec.desc : '';
 }
 
 /** Everything the board needs to render one offer, as plain strings. */

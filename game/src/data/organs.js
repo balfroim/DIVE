@@ -31,11 +31,6 @@ export const ORGANS = [
     note: 'Zero tolerance for collateral. The client needs this one.' }
 ];
 
-/** Look up by id, with a safe fallback so bad saves cannot brick the game. */
-export function organById(id) {
-  return ORGANS.find((o) => o.id === id) || ORGANS[0];
-}
-
 /** Sites appropriate to a reputation level: better licence, deeper work. */
 export function organsForRep(rep) {
   const max = 1 + Math.floor((rep / 100) * (ORGANS.length - 1) + 1.4);

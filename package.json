@@ -1,1 +1,10 @@
-{}
+{
+  "name": "dive",
+  "private": true,
+  "description": "D.I.V.E. - freelance microsurgery under late-stage capitalism",
+  "scripts": {
+    "build": "npm --prefix game run build",
+    "check": "npm --prefix game run check",
+    "test": "npm --prefix game test"
+  }
+}

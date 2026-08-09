@@ -58,7 +58,7 @@ export function buddyReset() {
 }
 
 /** Where it likes to sit when idle: over your left shoulder. */
-export function buddyFollowPoint(t) {
+function buddyFollowPoint(t) {
   const a = player.ang + 2.35;
   const off = 52 + Math.sin(t * 1.3) * 5;
   return {

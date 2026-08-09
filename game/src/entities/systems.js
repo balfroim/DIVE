@@ -28,7 +28,6 @@ import { TAU, PI, rr, lerp, clamp } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { currentAt } from '../world/flow.js';
 import { defineSystem, ORDER } from '../ecs/systems.js';
-import { has } from '../ecs/world.js';
 import { ents } from './pool.js';
 import { burst } from './particles.js';
 import { Rules } from './hooks.js';
@@ -36,7 +35,7 @@ import { player, updatePlayer } from './player.js';
 import { buddy, updateBuddy } from './buddy.js';
 
 /** Nearest entity the client owns - what a `seek` pathogen hunts. */
-export function nearestProperty(e, maxD) {
+function nearestProperty(e, maxD) {
   let best = null, bd = maxD * maxD;
   for (let i = 0; i < ents.length; i++) {
     const o = ents[i];
@@ -319,7 +318,7 @@ defineSystem({
  * Corrupted cells are the slow bleed on client integrity, which is what stops
  * the player from simply parking in a corner and waiting the timer out.
  */
-export function infectStep(p, h, dt, ctx) {
+function infectStep(p, h, dt, ctx) {
   const inf = p.comp.infects;
   h.infect += dt * (inf.rate + inf.scale * (ctx ? ctx.diff : 1));
   h.infBy = p;

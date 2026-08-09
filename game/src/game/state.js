@@ -4,7 +4,7 @@
  *
  * Screen flow
  *   start -> dialog -> board -> brief -> play -> results -> shop -> board ...
- *   ...and when the diver does not come back up: -> ascension -> board
+ *   ...and when the diver does not come back up: -> over (the career closes)
  *
  * Wave model
  *   Each maze row holds one wave. Entering a row's chamber for the first time
@@ -25,7 +25,6 @@ import { Input, pollHold } from '../core/input.js';
 import { Maze } from '../world/maze.js';
 import { hashSeed } from '../core/rng.js';
 import { runSystems } from '../ecs/systems.js';
-import { World } from '../ecs/world.js';
 import { ents, spawnEnt, morphEnt, clearEnts, countEnts } from '../entities/pool.js';
 import '../entities/systems.js';   // registers the pipeline
 import { player, playerReset } from '../entities/player.js';
@@ -37,7 +36,7 @@ import { burst, ringPart, popup, updateParts } from '../entities/particles.js';
 import { contractType } from '../data/contract-types.js';
 import { Career } from './career.js';
 import { bounty, buildInvoice, repDelta, scanPrice, tierMul, siphonRepCost } from './economy.js';
-import { scatter } from '../render/ambience.js';
+import { scatter, updateBG } from '../render/ambience.js';
 
 /** Fresh per-dive tallies. */
 function blankRun() {
@@ -101,7 +100,7 @@ export const Game = {
 
   diff() { return this.contract ? this.contract.diff : 1; },
   tierMul() { return this.contract ? tierMul(this.contract.tier.i) : 1; },
-  scanPrice() { return scanPrice(this.tierMul(), Career.mods.scanCost); },
+  scanPrice() { return scanPrice(this.tierMul(), 0); },
   env() { return this.contract ? this.contract.env : pressureProfile(1); },
   type() { return contractType(this.contract ? this.contract.type : 'purge'); },
 
@@ -255,7 +254,7 @@ export const Game = {
     result.scansUsed = run.scansUsed;
     result.integrity = run.integrity;
     result.siphons = run.siphons;
-    result.siphonRep = siphonRepCost(run.siphons, c.tier.i, Career.mods.siphonRep);
+    result.siphonRep = siphonRepCost(run.siphons, c.tier.i, 0);
     result.died = run.died;
     result.o2Left = Math.max(0, Math.round(run.o2));
     this.result = result;
@@ -397,7 +396,7 @@ export const Game = {
   /** Reputation this dive's siphoning will cost at extraction. */
   siphonRepPending() {
     if (!this.contract) return 0;
-    return siphonRepCost(this.run.siphons, this.contract.tier.i, Career.mods.siphonRep);
+    return siphonRepCost(this.run.siphons, this.contract.tier.i, 0);
   },
 
   /* ---------------------------------------------------------------- */
@@ -620,6 +619,7 @@ export const Game = {
     this.updateAim();
     runSystems(dt, ctx);
     updateParts(dt);
+    updateBG(dt, this.t, ctx.env ? ctx.env.flow : 1);
     this.updateScan(dt, live);
     this.updateFire(dt, live);
     this.updateO2(dt, live);
@@ -711,5 +711,3 @@ export function firingPreview() {
     collateral
   };
 }
-
-export { World };

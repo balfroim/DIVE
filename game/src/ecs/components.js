@@ -43,10 +43,6 @@ export function attach(e, name, data, ctx) {
   return inst;
 }
 
-export function detach(e, name) {
-  delete e.comp[name];
-}
-
 /* ------------------------------------------------------------------ */
 /* the standard library of components                                  */
 /* ------------------------------------------------------------------ */

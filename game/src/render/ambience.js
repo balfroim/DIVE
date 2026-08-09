@@ -11,10 +11,10 @@ import { CFG } from '../core/config.js';
 import { TAU, rr, ri } from '../core/math.js';
 import { View, cam, Q } from '../core/view.js';
 import { Maze } from '../world/maze.js';
-import { currentAt } from '../entities/behaviour.js';
+import { currentAt } from '../world/flow.js';
 import { tissueSprite } from './sprites.js';
 
-export const BG = { layers: [], rbc: [], motes: [], span: { w: 2000, h: 2000, x: 0, y: 0 } };
+const BG = { layers: [], rbc: [], motes: [], span: { w: 2000, h: 2000, x: 0, y: 0 } };
 
 export function initBG() {
   const mk = (hue, sat, lit, a, n) => {
