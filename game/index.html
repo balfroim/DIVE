@@ -202,20 +202,24 @@
     .item__tile{aspect-ratio:16 / 9}
   }
 
-  table.sc{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
-  table.sc th{text-align:left;font-size:9.5px;letter-spacing:.2em;color:var(--pink);text-transform:uppercase;padding-bottom:6px;font-weight:700}
-  table.sc td{padding:3.5px 0;border-top:1px solid rgba(255,255,255,.055);color:#f1cbd8}
-  table.sc td.n{color:#8b6272;width:22px}
-  table.sc td.s{text-align:right;color:#fff;font-weight:700}
-  table.sc td.w{text-align:right;color:var(--mut);width:64px}
-  table.sc tr.me td{color:var(--amber)!important;text-shadow:0 0 14px rgba(255,194,90,.5)}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  table.board{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  table.board caption{caption-side:top;text-align:left}
+  table.board th{text-align:left;font-size:9.5px;letter-spacing:.2em;color:var(--pink);text-transform:uppercase;padding-bottom:6px;font-weight:700}
+  table.board td{padding:3.5px 0;border-top:1px solid rgba(255,255,255,.055);color:#f1cbd8}
+  table.board td.n{color:#8b6272;width:22px}
+  table.board td.w,table.board td.s{text-align:right;font-variant-numeric:tabular-nums}
+  table.board td.s{color:var(--accent-reward);font-weight:700}
+  table.board tr[data-self="true"] td{color:var(--accent-reward)!important}
+  table.board td:last-child[data-negative]{color:var(--accent-threat)!important}
   .empty{font-size:11.5px;color:#8b6272;font-style:italic;padding:8px 0}
 
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 2px}
-  @media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
-  .stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,140,175,.16);border-radius:10px;padding:9px 8px;text-align:center}
-  .stat .v{font-size:clamp(17px,4.4vw,24px);font-weight:800;line-height:1;font-family:ui-monospace,Menlo,monospace}
-  .stat .k{font-size:8.5px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-top:5px}
+  #scr-over .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap-sm);list-style:none;padding:0;margin:0}
+  @media (max-width:480px){#scr-over .stats{grid-template-columns:repeat(2,1fr)}}
+  #scr-over .stat{display:flex;flex-direction:column;gap:4px;padding:var(--gap-sm) var(--gap-md);background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius)}
+  #scr-over .stat__value{font:600 18px/1 var(--font-mono);color:var(--text-primary);font-variant-numeric:tabular-nums}
+  #scr-over .stat__label{color:var(--text-secondary)}
+  #scr-over .section-label{font:600 10px/1 var(--font-sans);letter-spacing:.18em;text-transform:uppercase;color:var(--accent-brand);margin:var(--gap-lg) 0 var(--gap-sm)}
 
   .nameentry{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px;border-radius:11px;
     background:rgba(255,194,90,.09);border:1px solid rgba(255,194,90,.35)}
@@ -631,11 +635,8 @@
         <div class="kicker" id="over-kicker">Personnel file closed</div>
         <h2 id="over-title">Licence revoked</h2>
         <div class="tag" id="over-sub"></div>
-        <div class="stats" id="over-stats"></div>
-        <div class="nameentry" id="over-name">
-          <input id="inp-name" maxlength="12" placeholder="NAME" autocomplete="off" spellcheck="false">
-          <button class="btn" id="btn-save">File</button>
-        </div>
+        <ul id="over-stats" class="stats"></ul>
+        <h2 class="label section-label">File</h2>
         <div id="scores-over"></div>
         <button class="btn" id="btn-again">New licence</button>
       </div>
