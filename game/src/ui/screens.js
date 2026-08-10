@@ -275,8 +275,8 @@ export const UI = {
     $('brief-depth').textContent = s.depth;
     $('brief-waves').textContent = String(s.waves);
     $('brief-mapnote').textContent = s.note;
-    $('brief-site').textContent = offer.organ.name;
-    $('brief-mapdesc').textContent = offer.pressure.toFixed(2);
+    $('brief-site').textContent = offer.organ.name + ' (' + offer.organ.short + ')';
+    $('brief-mapdesc').textContent = s.band;
     $('brief-tgtname').textContent = `${spec.name}`;
     $('brief-tgtdesc').textContent = `${spec.desc}`;
     $('brief-goal-label').textContent = esc(s.typeShort);
@@ -296,15 +296,9 @@ export const UI = {
     $('brief-total-note').textContent = s.tierNote;
     $('brief-rep-gain').textContent = '+' + s.rep;
     $('brief-rep-loss').textContent = '\u2212' + s.risk;
-    $('brief-insurance-tier').textContent = s.tier.label + ' \u00b7 ' + s.tier.name;
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
-    $('brief-insurance-note').textContent = under
-      ? blockedSuitCopy(s, Career.suit)
-      : s.lethal
-        ? 'Insured client. Death here voids the licence and ends the career file.'
-        : 'Uninsured client. Casualties are billable, not terminal.';
     const diveBtn = $('btn-dive');
     if (diveBtn) diveBtn.disabled = under;
 

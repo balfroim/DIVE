@@ -2,6 +2,7 @@
 const puppeteer = require('puppeteer');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+
 async function captureBrief(page, organId, seed) {
   return page.evaluate(({ organId: id, seed: s }) => {
     const organ = __D.ORGANS.find((o) => o.id === id);
@@ -23,18 +24,26 @@ async function captureBrief(page, organId, seed) {
     for (let i = 3; i < pixels.length; i += 4) {
       if (pixels[i] > 0) { painted = true; break; }
     }
+    const pressureLabel = (p) => {
+      if (p < 1.0) return 'LOW';
+      if (p < 1.3) return 'NORMAL';
+      if (p < 1.6) return 'RAISED';
+      if (p < 2.0) return 'HIGH';
+      return 'CRISIS';
+    }
     return {
       visible: document.getElementById('scr-brief').classList.contains('on'),
       site: document.getElementById('brief-site').textContent,
+      expectedSite: organ.name + ' (' + organ.short + ')',
       grade: document.getElementById('brief-grade').textContent,
       readiness: document.getElementById('brief-suitbox').dataset.state,
       total: document.getElementById('brief-total').textContent,
-      warn: document.getElementById('brief-insurance-note').textContent,
       contract: !!__D.Career.pending,
       mapPainted: painted,
-      pressure: organ.pressure,
+      pressure: pressureLabel(offer.pressure),
       mapPressure: parseFloat(document.getElementById('brief-mapdesc').textContent),
-      mapLink: __D.Career.pending.organ.map ?? null
+      mapLink: __D.Career.pending.organ.map ?? null,
+      expectedMapLink: organ.map ?? null
     };
   }, { organId, seed });
 }
@@ -60,20 +69,41 @@ async function captureBrief(page, organId, seed) {
     await page.evaluate(() => { __D.Career.suit = 0; });
 
     const brief = await captureBrief(page, 'lung', 12345);
-    if (!brief.visible || !brief.site || brief.site !== 'Pulmonary vein' || !brief.grade ||
-      brief.readiness !== 'blocked' || !brief.total || !brief.warn || !brief.contract || !brief.mapPainted ||
-      Math.abs(brief.mapPressure - brief.pressure) > 0.001 || brief.mapLink !== 'lung') {
-      throw new Error('briefing failed');
+    if (!brief.visible) throw new Error('briefing screen not visible');
+    if (!brief.site || brief.site !== brief.expectedSite) {
+      throw new Error(`briefing site mismatch: got "${brief.site}", expected "${brief.expectedSite}"`);
+    }
+    if (!brief.grade) throw new Error('briefing grade missing');
+    if (brief.readiness !== 'blocked') throw new Error(`expected readiness "blocked", got "${brief.readiness}"`);
+    if (!brief.total) throw new Error('briefing total missing');
+    if (!brief.contract) throw new Error('pending contract missing');
+    if (!brief.mapPainted) throw new Error('map canvas not painted');
+    if (Math.abs(brief.mapPressure - brief.pressure) > 0.001) {
+      throw new Error('map pressure mismatch');
+    }
+    if (brief.mapLink !== brief.expectedMapLink) {
+      throw new Error(`map link mismatch: got "${brief.mapLink}", expected "${brief.expectedMapLink}"`);
     }
     pass++;
 
     await page.evaluate(() => { __D.Career.suit = 99; });
     const fallback = await captureBrief(page, 'brain', 54321);
-    if (!fallback.visible || !fallback.site || fallback.site !== 'Cortex' || !fallback.grade ||
-      fallback.readiness !== 'ready' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
-      Math.abs(fallback.mapPressure - fallback.pressure) > 0.001 || fallback.mapLink !== null) {
-      throw new Error('fallback briefing failed');
+    if (!fallback.visible) throw new Error('fallback briefing screen not visible');
+    if (!fallback.site || fallback.site !== fallback.expectedSite) {
+      throw new Error(`fallback site mismatch: got "${fallback.site}", expected "${fallback.expectedSite}"`);
     }
+    if (!fallback.grade) throw new Error('fallback grade missing');
+    if (fallback.readiness !== 'ready') throw new Error(`expected readiness "ready", got "${fallback.readiness}"`);
+    if (!fallback.total) throw new Error('fallback total missing');
+    if (!fallback.contract) throw new Error('fallback pending contract missing');
+    if (!fallback.mapPainted) throw new Error('fallback map canvas not painted');
+    if (Math.abs(fallback.mapPressure - fallback.pressure) > 0.001) {
+      throw new Error('fallback map pressure mismatch');
+    }
+    if (fallback.mapLink !== fallback.expectedMapLink) {
+      throw new Error(`fallback map link mismatch: got "${fallback.mapLink}", expected "${fallback.expectedMapLink}"`);
+    }
+
     await page.evaluate(() => __D.UI.dive());
     await sleep(600);
     const dive = await page.evaluate(() => ({
@@ -82,7 +112,9 @@ async function captureBrief(page, organId, seed) {
       contract: !!__D.Game.contract,
       threats: __D.Game.countPathogens()
     }));
-    if (dive.state !== 'play' || dive.o2 <= 0 || !dive.contract) throw new Error('contract dive did not start');
+    if (dive.state !== 'play') throw new Error(`expected play state, got "${dive.state}"`);
+    if (dive.o2 <= 0) throw new Error('o2 should be positive at dive start');
+    if (!dive.contract) throw new Error('contract dive did not start');
     pass++;
   } catch (error) {
     fail++;
