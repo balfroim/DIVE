@@ -459,6 +459,8 @@ export const UI = {
       const cost = item.cost(Career);
       const afford = Career.credits >= cost;
       const shortfall = cost - Career.credits;
+      const held = item.held || item.owned || (() => '—');
+      const heldLabel = item.heldLabel || item.ownedLabel || 'Held';
       const li = document.createElement('li');
       const article = document.createElement('article');
       article.className = 'item';
@@ -473,8 +475,8 @@ export const UI = {
         '<h3 class="item__name">' + esc(item.name) + '</h3>' +
         '<p class="item__desc prose">' + esc(item.desc) + '</p>' +
         '<dl class="item__held">' +
-          '<dt class="label">' + esc(item.heldLabel) + '</dt>' +
-          '<dd class="value">' + esc(item.held(Career)) + '</dd>' +
+          '<dt class="label">' + esc(heldLabel) + '</dt>' +
+          '<dd class="value">' + esc(held(Career)) + '</dd>' +
         '</dl>' +
         (!afford ? '<p class="item__short label">Need ' + esc(cr(shortfall)) + ' more</p>' : '') +
         '<footer class="item__foot">' +

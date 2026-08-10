@@ -105,16 +105,16 @@ export const SCRIPTS = {
       o2: {
         who: 'vax',
         text: 'We are also providing you with a basic ~oxygen tank~. You can still buy better one later. No need to tell you that when it empties, you *die* in it, and the Department bills your estate for the recovery.',
-        next: 'siphon'
-      },
-
-
-
-      siphon: {
-        who: 'vax',
-        text: 'However, if you run low, you can still use the ~siphon~. It takes oxygen *out of the client* and puts it into you in exchange for a reputation hit.',
         next: 'corrupt'
       },
+
+
+
+      // siphon: {
+      //   who: 'vax',
+      //   text: 'However, if you run low, you can still use the ~siphon~. It takes oxygen *out of the client* and puts it into you in exchange for a reputation hit.',
+      //   next: 'corrupt'
+      // },
 
       corrupt: {
         who: 'vax',
