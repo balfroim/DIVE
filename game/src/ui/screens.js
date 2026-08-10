@@ -254,7 +254,7 @@ export const UI = {
       ? `TYPE ${offer.donorAbo} · DONOR CELL`
       : `${spec.name}`;
     $('brief-tgtdesc').textContent = offer.type === 'transfusion' && offer.typeNote
-      ? `${spec.desc} ${offer.typeNote}`
+      ? `${spec.desc} CLIENT GROUP ${offer.abo} · DONOR GROUP ${offer.donorAbo}`
       : `${spec.desc}`;
     $('brief-goal-label').textContent = esc(s.typeShort);
     $('brief-goal').textContent = s.objective;
@@ -273,7 +273,6 @@ export const UI = {
     $('brief-total-note').textContent = s.tierNote;
     $('brief-rep-gain').textContent = '+' + s.rep;
     $('brief-rep-loss').textContent = '\u2212' + s.risk;
-    $('brief-insurance-tier').textContent = s.tier.label + ' \u00b7 ' + s.tier.name;
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
@@ -483,9 +482,12 @@ export const UI = {
     el.innerHTML = '<table class="sc"><thead><tr><th>#</th><th>Agent</th><th>Tier</th><th>Rep</th><th>Credits</th></tr></thead><tbody>' +
       list.map((s, i) =>
         '<tr' + (s.name === Career.agent ? ' class="me"' : '') + '>' +
-        '<td class="n">' + (i + 1) + '</td><td>' + esc(s.name) + '</td><td>' +
-        esc(s.tier || 'D') + '</td><td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td><td class="s">' +
-        cr(s.cr) + '</td></tr>').join('') + '</tbody></table>';
+        '<td class="n">' + (i + 1) + '</td>' +
+        '<td>' + esc(s.name) + '</td>' +
+        '<td>' + esc(s.tier || 'D') + '</td>' +
+        '<td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td>' +
+        '<td class="s">' + cr(s.cr) + '</td>' +
+        '</tr>').join('') + '</tbody></table>';
   },
 
   /* ---------------------------------------------------------------- */

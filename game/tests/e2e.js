@@ -1,6 +1,7 @@
 /* End-to-end flow checks for onboarding, contract selection, and dive start. */
 const puppeteer = require('puppeteer');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const pressureLabel = (p) => (p < 1.0 ? 'LOW' : p < 1.3 ? 'NORMAL' : p < 1.6 ? 'RAISED' : p < 2.0 ? 'HIGH' : 'CRISIS');
 
 async function captureBrief(page, organId, seed) {
   return page.evaluate(({ organId: id, seed: s }) => {
@@ -35,7 +36,7 @@ async function captureBrief(page, organId, seed) {
       contract: !!__D.Career.pending,
       mapPainted: painted,
       pressure: organ.pressure,
-      mapPressure: parseFloat(document.getElementById('brief-mapdesc').textContent),
+      mapDesc: document.getElementById('brief-mapdesc').textContent,
       mapLink: __D.Career.pending.organ.map ?? null
     };
   }, { organId, seed });
@@ -43,17 +44,21 @@ async function captureBrief(page, organId, seed) {
 
 async function captureTransfusionBrief(page) {
   return page.evaluate(() => {
-  const offer = __D.generateOffers(30, 8).find((o) => o.type === 'transfusion');
-  if (!offer) throw new Error('no transfusion offer');
-  __D.Career.offers = [offer];
-  __D.UI.showBrief(0);
-  return {
-    tgtName: document.getElementById('brief-tgtname').textContent,
-    tgtDesc: document.getElementById('brief-tgtdesc').textContent,
-    note: offer.typeNote,
-    abo: offer.abo,
-    donorAbo: offer.donorAbo
-  };
+    let offer = null;
+    for (let seed = 9000; seed < 10000; seed++) {
+      const candidate = __D.makeContract(30, seed, 1);
+      if (candidate.type === 'transfusion') { offer = candidate; break; }
+    }
+    if (!offer) throw new Error('no transfusion offer');
+    __D.Career.offers = [offer];
+    __D.UI.showBrief(0);
+    return {
+      tgtName: document.getElementById('brief-tgtname').textContent,
+      tgtDesc: document.getElementById('brief-tgtdesc').textContent,
+      note: offer.typeNote,
+      abo: offer.abo,
+      donorAbo: offer.donorAbo
+    };
   });
 }
 
@@ -78,22 +83,24 @@ async function captureTransfusionBrief(page) {
     await page.evaluate(() => { __D.Career.suit = 0; });
 
     const brief = await captureBrief(page, 'lung', 12345);
-    if (!brief.visible || !brief.site || brief.site !== 'Pulmonary vein' || !brief.grade ||
+    if (!brief.visible || !brief.site || !brief.site.includes('Pulmonary vein') || !brief.site.includes('LUNG') || !brief.grade ||
       brief.readiness !== 'blocked' || !brief.total || !brief.warn || !brief.contract || !brief.mapPainted ||
-      Math.abs(brief.mapPressure - brief.pressure) > 0.001 || brief.mapLink !== 'lung') {
+      brief.mapDesc !== pressureLabel(brief.pressure) || brief.mapLink !== 'lung') {
       throw new Error('briefing failed');
     }
     pass++;
 
     await page.evaluate(() => { __D.Career.suit = 99; });
     const fallback = await captureBrief(page, 'brain', 54321);
-    if (!fallback.visible || !fallback.site || fallback.site !== 'Cortex' || !fallback.grade ||
+    if (!fallback.visible || !fallback.site || !fallback.site.includes('Cortex') || !fallback.site.includes('BRAIN') || !fallback.grade ||
       fallback.readiness !== 'ready' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
-      Math.abs(fallback.mapPressure - fallback.pressure) > 0.001 || fallback.mapLink !== null) {
+      fallback.mapDesc !== pressureLabel(fallback.pressure) || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
     }
     const transfusion = await captureTransfusionBrief(page);
-    if (!transfusion.tgtName.includes(transfusion.donorAbo) || !transfusion.tgtDesc.includes(transfusion.note)) {
+    if (!transfusion.note || !transfusion.tgtName.includes(transfusion.donorAbo) ||
+      !transfusion.tgtDesc.includes(transfusion.abo) ||
+      !transfusion.tgtDesc.includes(transfusion.donorAbo)) {
       throw new Error('transfusion briefing did not show the contract blood types');
     }
 
@@ -115,7 +122,7 @@ async function captureTransfusionBrief(page) {
 
     const scanBilling = await page.evaluate(() => {
       __D.Career.scans = 3;
-      __D.SHOP[0].buy(__D.Career);
+      __D.SHOP.find((item) => item.id === 'scans').buy(__D.Career);
       const invoice = __D.buildInvoice({
         bounty: 0, integrity: 100, scansUsed: 2, siphons: 0, repBribe: 0, damages: 0, died: false
       }, { tier: { i: 0, payMult: 1 }, fee: 0, comp: 0 }, { payBoost: 0 }, true);
