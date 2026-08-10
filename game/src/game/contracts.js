@@ -166,6 +166,7 @@ export function offerSummary(c) {
     job: c.client.job,
     tier: c.tier.name,
     tierLabel: c.tier.label,
+    tierNote: c.tier.note,
     difficulty: c.difficulty,
     difficultyKey: c.difficultyKey,
     type: c.type,

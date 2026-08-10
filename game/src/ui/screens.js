@@ -261,9 +261,9 @@ export const UI = {
       : suitState === 'marginal'
         ? '<span>\u26a0</span><span>' + s.suit + '</span>'
         : '<span>\u2716</span><span>' + s.suit + '</span>';
-    $('brief-fee').textContent = cr(s.fee);
-    $('brief-comp').textContent = cr(s.comp);
     $('brief-total').textContent = cr(s.fee + s.comp);
+    $('brief-total-tier').textContent = s.tier + ' \u00b7 ' + s.tierLabel;
+    $('brief-total-note').textContent = s.tierNote;
     $('brief-rep-gain').textContent = '+' + s.rep;
     $('brief-rep-loss').textContent = '\u2212' + s.risk;
     $('brief-insurance-tier').textContent = s.tier.label + ' \u00b7 ' + s.tier.name;
