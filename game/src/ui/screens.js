@@ -235,22 +235,19 @@ export const UI = {
 
     $('brief-num').textContent = 'Work order ' + offer.id;
     $('brief-client').textContent = offer.client.job;
-    $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
-    $('brief-site').textContent = s.site;
+    // $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
 
     /* specimens */
-    preview.sig = previewEnt(offer.hostArch, offer.sig, 1);
     preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation);
-    preview.sym = previewEnt(anySymbiote(), offer.sig, 1);
     const spec = PSPEC[offer.targetSpecies];
-    $('brief-depth').textContent = s.depth + ' rows';
+    $('brief-depth').textContent = s.depth;
     $('brief-waves').textContent = String(s.waves);
     $('brief-mapnote').textContent = s.note;
-    $('brief-mapdesc').textContent = s.pressure + ' P';
-    $('brief-sigdesc').textContent = NUCNAME[offer.sig.nuc] + ' nucleus \u00b7 ' + Math.round(offer.sig.hue) + '\u00b0 hue';
-    $('brief-tgtname').innerHTML = '<span>Primary target</span><span>' +
-      esc((spec ? spec.name : offer.targetSpecies) + (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION' : '')) + '</span>';
-    $('brief-tgtdesc').textContent = s.objective + (offer.deviation < 0.55 ? ' The shape is noisy, so trust the scan.' : '');
+    $('brief-mapnote-label').textContent = `${offer.organ.name} (${offer.organ.short})`
+    $('brief-mapdesc').textContent = s.pressure;
+    $('brief-contract').textContent = `Contract: ${esc(s.typeShort)}`;
+    $('brief-tgtname').textContent = `Target: ${spec.name}`;
+    $('brief-tgtdesc').textContent = `Goal: ${s.objective}`;
     $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
     $('brief-grade').textContent = s.difficulty;
     $('brief-tiernote').textContent = s.band + ' pressure \u00b7 suit ' + s.suit + ' required';

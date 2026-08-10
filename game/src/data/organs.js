@@ -15,7 +15,7 @@
 export const ORGANS = [
   {
     id: 'rectum', name: 'Anal canal', short: 'ANUS', map: 'rectum', meanRep: 8, mx: 0.50, my: 0.845, depth: 1, pressure: 0.30, hue: 25, vessel: 'inferior rectal artery',
-    note: 'You probably know. Somebody has to deal with it. Disclaimer: the odor filtration inside the suit can malfunction.'
+    note: 'Somebody has to deal with it. Disclaimer: the odor filtration inside the suit can malfunction.'
   },
   {
     id: 'marrow', name: 'Femoral marrow', short: 'MARROW', map: 'marrow', meanRep: 0, mx: 0.44, my: 0.70, depth: 3, pressure: 0.95, hue: 32, vessel: 'femoral artery',

@@ -442,8 +442,6 @@
       <div class="panel wide briefing">
         <div class="kicker" id="brief-num">Work order</div>
         <h2 id="brief-client">Client</h2>
-        <div class="prose" id="brief-title">title</div>
-        <div class="value" id="brief-site">site</div>
         <section class="act">
           <h2 class="act__title">Deployment</h2>
           <div class="site-banner">
@@ -451,7 +449,7 @@
               <canvas id="cv-site" width="150" height="150"></canvas>
             </figure>
             <div>
-              <div class="label">Site note</div>
+              <div class="label" id="brief-mapnote-label">Site note</div>
               <div class="prose" id="brief-mapnote">&mdash;</div>
               <dl class="metric-row">
                 <div><dt class="label">Depth</dt><dd class="value" id="brief-depth">&mdash;</dd></div>
@@ -466,7 +464,7 @@
           <div class="threat-bar">
             <div class="threat-bar__readiness" id="brief-readiness" data-state="clear"><span>&check;</span><span>Cleared</span></div>
             <div class="threat-bar__tier" id="brief-tier" data-severity="mid">
-              <div class="threat-bar__grade" id="brief-grade">NORMAL</div>
+              <div class="threat-bar__grade" id="brief-grade">MANAGEABLE</div>
               <div class="threat-bar__tier-note" id="brief-tiernote">&mdash;</div>
             </div>
           </div>
@@ -474,25 +472,9 @@
             <article class="card card--primary">
               <canvas id="cv-tgt" width="150" height="150"></canvas>
               <div>
-                <div class="card__title">Contract target</div>
+                <div class="card__title" id="brief-contract">Contract target</div>
                 <div class="card__rule" id="brief-tgtname">&mdash;</div>
                 <div class="prose card__behavior" id="brief-tgtdesc">&mdash;</div>
-              </div>
-            </article>
-            <article class="card card--warning">
-              <canvas id="cv-sym" width="150" height="150"></canvas>
-              <div>
-                <div class="card__title">Symbiotes</div>
-                <div class="card__rule">TWIN HALO</div>
-                <div class="prose card__behavior" id="brief-kit">Penalty: killing a symbiote triggers litigation. Keep the halo intact.</div>
-              </div>
-            </article>
-            <article class="card card--info">
-              <canvas id="cv-sig" width="150" height="150"></canvas>
-              <div>
-                <div class="card__title">Client signature</div>
-                <div class="card__rule">NUC · HUE</div>
-                <div class="prose card__behavior" id="brief-sigdesc">&mdash;</div>
               </div>
             </article>
           </div>
