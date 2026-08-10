@@ -40,6 +40,12 @@ function organForSlot(rep, slot) {
   return variants[clamp(slot, 0, variants.length - 1)] || organForRep(rep);
 }
 
+function difficultyLabel(key) {
+  if (key === 'EASY') return 'Routine';
+  if (key === 'HARD') return 'Ambitious';
+  return 'Manageable';
+}
+
 /**
  * Rough gas budget for a contract, in seconds. The briefing compares it against
  * the tank you actually own, because running out is fatal, not merely a fail.
@@ -84,6 +90,7 @@ export function makeContract(rep, seed, slot) {
   const targetSpecies = type.threats[(R.f() * type.threats.length) | 0] || type.threats[0];
   const deviation = clamp(1.05 - diff * 0.1 - R.range(0, 0.12), 0.28, 1);
   const repScale = organ.meanRep / rep;
+  const difficultyKey = variant.toUpperCase();
   const c = {
     id: 'C' + String(seed % 9973).padStart(4, '0'),
     seed,
@@ -98,7 +105,8 @@ export function makeContract(rep, seed, slot) {
     client: { job: 'CLIENT #' + clientCode, memo: client.memo, tier: tier.i },
     tier,
     variant,
-    difficulty: variant.toUpperCase(),
+    difficultyKey,
+    difficulty: difficultyLabel(difficultyKey),
     organ,
     map: organ.map || null,
     rows,
@@ -159,6 +167,7 @@ export function offerSummary(c) {
     tier: c.tier.name,
     tierLabel: c.tier.label,
     difficulty: c.difficulty,
+    difficultyKey: c.difficultyKey,
     type: c.type,
     typeName: c.typeName,
     typeShort: c.typeShort,

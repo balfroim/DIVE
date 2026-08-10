@@ -251,7 +251,7 @@ export const UI = {
     $('brief-tgtdesc').textContent = `${spec.desc}`;
     $('brief-goal-label').textContent = esc(s.typeShort);
     $('brief-goal').textContent = s.objective;
-    $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
+    $('brief-tier').dataset.severity = s.difficultyKey === 'HARD' ? 'high' : s.difficultyKey === 'EASY' ? 'low' : 'mid';
     $('brief-grade').textContent = s.difficulty;
     const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
     const suitBox = $('brief-suitbox');
