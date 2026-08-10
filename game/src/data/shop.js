@@ -34,6 +34,16 @@ export const SHOP = [
     heldLabel: 'Rating'
   },
   {
+    id: 'tank',
+    category: 'upgrade',
+    name: 'O\u2082 tank upgrade +' + CFG.o2.tankStep + 's',
+    desc: 'Extended-capacity oxygen tank. Adds ' + CFG.o2.tankStep + ' seconds to your dive clock. Permanent.',
+    cost: (c) => Math.round((180 + c.tankLv * 130) * scale(c)),
+    buy: (c) => { c.tankLv += 1; },
+    held: (c) => Math.round(CFG.o2.tank + c.tankLv * CFG.o2.tankStep) + 's',
+    heldLabel: 'Capacity'
+  },
+  {
     id: 'stab',
     category: 'consumable',
     name: 'Plasma stabiliser',

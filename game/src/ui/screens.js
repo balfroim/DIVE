@@ -97,6 +97,13 @@ const SIGILS = {
   boost: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
     '<polyline points="12,34 24,22 36,34"/>' +
     '<polyline points="12,26 24,14 36,26"/>' +
+    '</svg>',
+  tank: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<rect x="16" y="8" width="16" height="28" rx="8"/>' +
+    '<line x1="24" y1="36" x2="24" y2="42"/>' +
+    '<line x1="20" y1="42" x2="28" y2="42"/>' +
+    '<line x1="20" y1="16" x2="28" y2="16"/>' +
+    '<line x1="20" y1="22" x2="28" y2="22"/>' +
     '</svg>'
 };
 
@@ -223,6 +230,8 @@ export const UI = {
     box.innerHTML = '';
     Career.offers.forEach((offer, i) => {
       const s = offerSummary(offer);
+      const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
+      const suitIcon = suitState === 'ready' ? '\u2713' : suitState === 'marginal' ? '\u26a0' : '\u2716';
       const el = document.createElement('div');
       el.className = 'offer' + (s.lethal ? ' risky' : '');
       el.tabIndex = 0;
@@ -232,7 +241,9 @@ export const UI = {
         '<div>' +
           '<div class="job"><span class="tierpill t' + offer.tier.i + '">TIER ' + s.tier + '</span>' + esc(s.job) + '</div>' +
           '<div class="sub">' + esc(s.site) + ' \u00b7 depth ' + s.depth + ' \u00b7 ' + s.waves + ' waves \u00b7 ' +
-            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + ' \u00b7 ' + esc(s.difficulty) + '</div>' +
+            s.band + ' pressure ' + s.pressure + ' \u00b7 ' +
+            '<span class="suitpill suitpill--' + suitState + '">' + suitIcon + ' suit\u00a0' + s.suit + '</span>' +
+            ' \u00b7 ' + esc(s.difficulty) + '</div>' +
         '</div>' +
         '<div>' +
           '<div class="pay">' + (s.fee + s.comp) + ' cr</div>' +
@@ -248,6 +259,22 @@ export const UI = {
     $('board-memo').innerHTML = worst
       ? '<b>Vax:</b> Note the insured names on today\u2019s board. If one of them dies down there, the claim outlives your licence.'
       : '<b>Vax:</b> Nothing on the board today would be missed. Ideal conditions for building a reputation.';
+
+    const kitPanel = $('board-kit');
+    if (kitPanel) {
+      const o2Capacity = Career.o2Max();
+      const boostPct = Career.payBoost > 0 ? '+' + Math.round(Career.payBoost * 100) + '%' : '\u2014';
+      kitPanel.innerHTML =
+        '<div class="kit-heading">Your kit</div>' +
+        '<dl class="kit-list">' +
+          '<div class="kit-row"><dt>Suit</dt><dd class="kit-val">' + Career.suit + '</dd></div>' +
+          '<div class="kit-row"><dt>O\u2082 tank</dt><dd class="kit-val">' + o2Capacity + 's</dd></div>' +
+          '<div class="kit-row"><dt>Scans</dt><dd class="kit-val">' + Career.scans + '</dd></div>' +
+          '<div class="kit-row"><dt>Stabilisers</dt><dd class="kit-val">' + Career.stab + '</dd></div>' +
+          '<div class="kit-row"><dt>Waivers</dt><dd class="kit-val">' + Career.waiver + '</dd></div>' +
+          '<div class="kit-row"><dt>Pay boost</dt><dd class="kit-val">' + boostPct + '</dd></div>' +
+        '</dl>';
+    }
   },
 
   /* ---------------------------------------------------------------- */

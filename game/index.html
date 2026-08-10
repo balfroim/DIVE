@@ -252,6 +252,20 @@
 <style>
   /* ---- v3: job board, licence bar, briefing stats ---- */
   .offers{display:grid;gap:10px;margin:12px 0}
+  .board-body{display:grid;grid-template-columns:1fr 172px;gap:14px;align-items:start}
+  .board-main{min-width:0}
+  .board-kit{padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,120,160,.22);font-size:12px}
+  .kit-heading{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:8px}
+  .kit-list{display:grid;gap:6px;list-style:none;margin:0;padding:0}
+  .kit-row{display:flex;justify-content:space-between;align-items:baseline;gap:6px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:5px}
+  .kit-row:last-child{border-bottom:0;padding-bottom:0}
+  .kit-row dt{color:var(--mut);font-size:10.5px;letter-spacing:.05em}
+  .kit-val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:#fff;font-size:11px;white-space:nowrap}
+  .suitpill{display:inline-block;padding:0 5px;border-radius:99px;font-size:9px;font-weight:800;letter-spacing:.08em}
+  .suitpill--ready{background:rgba(95,227,161,.18);color:var(--accent-ready)}
+  .suitpill--marginal{background:rgba(255,178,71,.18);color:var(--accent-caution)}
+  .suitpill--blocked{background:rgba(255,77,94,.18);color:var(--accent-threat)}
+  @media (max-width:520px){.board-body{grid-template-columns:1fr}.board-kit{margin-top:0}}
   .offer{
     display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
     padding:11px 13px;border-radius:12px;cursor:pointer;
@@ -463,8 +477,13 @@
           <span class="mini">BANK <b id="lic-bank">0 cr</b></span>
           <span class="mini">CHARGES <b id="lic-scans">0</b></span>
         </div>
-        <div class="offers" id="board-offers"></div>
-        <div class="memo" id="board-memo"></div>
+        <div class="board-body">
+          <div class="board-main">
+            <div class="offers" id="board-offers"></div>
+            <div class="memo" id="board-memo"></div>
+          </div>
+          <aside class="board-kit" id="board-kit"></aside>
+        </div>
         <div class="btnrow">
           <button class="btn ghost" id="btn-shop">Shop</button>
           <button class="btn ghost" id="btn-retire">Retire</button>
