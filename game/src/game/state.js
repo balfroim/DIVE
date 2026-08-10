@@ -48,6 +48,8 @@ function blankRun() {
     o2: CFG.o2.tank, o2max: CFG.o2.tank,
     /** How many times the client was drained. */
     siphons: 0, siphonO2: 0, siphonDamage: 0,
+    /** Reputation points bought back with money if the licence would go negative. */
+    repBribe: 0,
     /** Set when the diver suffocated. */
     died: false
   };
@@ -152,15 +154,6 @@ export const Game = {
     cam.y = player.y;
     scatter();
 
-    /* the client's own cells, scattered through the network to be protected */
-    const T = this.type();
-    const hosts = T.hostCount(contract.diff);
-    for (let r = 0; r < Maze.rows; r++) {
-      for (let i = 0; i < Math.ceil(hosts / Maze.rows) + 1; i++) {
-        spawnEnt(contract.hostArch, contract.sig, 1, { ...this.spawnOpts(r), strictRow: true });
-      }
-    }
-
     this.run.o2max = Career.o2Max();
     this.run.o2 = this.run.o2max;
     this.run.integrity = clamp(100 + (Career.stab > 0 ? 20 : 0), 0, 120);
@@ -187,6 +180,12 @@ export const Game = {
     this.wave = Math.max(this.wave, r + 1);
     const c = this.contract;
     const T = this.type();
+
+    /* the client's own cells arrive with the wave, so they are not signposted */
+    const hosts = T.hostCount(c.diff);
+    for (let i = 0; i < Math.ceil(hosts / Maze.rows) + 1; i++) {
+      spawnEnt(c.hostArch, c.sig, 1, { ...this.spawnOpts(r), strictRow: true });
+    }
 
     const n = T.threatCount(c.diff, r);
     for (let i = 0; i < n; i++) {
@@ -248,9 +247,14 @@ export const Game = {
     if (this.state === 'results' || this._settled) return;
     const c = this.contract;
     const run = this.run;
+    /* settle() mutates Career.rep, so the bribe has to be priced first. */
+    const repSwing = repDelta(c, run, success, Career);
+    const repShortfall = Math.max(0, -(Career.rep + repSwing));
+    run.repBribe = repShortfall ? Math.ceil(repShortfall * CFG.rep.bribeCost) : 0;
     const result = buildInvoice(run, c, Career, success);
     result.success = success;
-    result.repDelta = repDelta(c, run, success, Career);
+    result.repDelta = repSwing;
+    result.repBribe = run.repBribe;
     result.pathKills = run.pathKills;
     result.innocent = run.innocent;
     result.scansUsed = run.scansUsed;
@@ -267,6 +271,7 @@ export const Game = {
     if (run.died) Career.die('asphyxia');
     if (!success && c.tier.lethal && !run.died) Career.strikeOff('litigation');
     if (run.symKills > 0 && c.tier.lethal) Career.strikeOff('litigation');
+    if (result.repBribe && Career.credits < 0) Career.strikeOff('debt');
     if (Career.credits < CFG.econ.debtFloor) Career.strikeOff('debt');
     Career.save();
 

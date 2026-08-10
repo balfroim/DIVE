@@ -63,6 +63,7 @@ export const Career = {
   pending: null,
   struckOff: false,
   dead: false,
+  lastO2Left: 0,
   reason: '',
   devMode: false,
   dev: { ...DEV_DEFAULTS },
@@ -94,6 +95,7 @@ export const Career = {
     this.pending = null;
     this.struckOff = false;
     this.dead = false;
+    this.lastO2Left = 0;
     this.reason = '';
   },
 
@@ -206,7 +208,8 @@ export const Career = {
   settle(result) {
     this.credits += result.net;
     this.gross += Math.max(0, result.gross);
-    this.rep = clamp(this.rep + result.repDelta, 0, CFG.rep.max);
+    const nextRep = this.rep + result.repDelta;
+    this.rep = clamp(nextRep, 0, CFG.rep.max);
     this.pathogens += result.pathKills;
     this.wrongful += result.innocent;
     this.charges += result.scansUsed;

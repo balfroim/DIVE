@@ -1,6 +1,7 @@
 /* A short simulated pass through a dive frame-loop. */
 const puppeteer = require('puppeteer');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const { findSuitableOfferIdx } = require('./test-helpers');
 
 (async () => {
   let pass = 0;
@@ -16,9 +17,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     await page.goto('file:///tmp/dive_test.html', { waitUntil: 'load' });
     await sleep(1000);
 
-    const started = await page.evaluate(() => {
-      __D.UI.showBoard();
-      __D.UI.showBrief(0);
+    await page.evaluate(() => __D.UI.showBoard());
+    const suitableIdx = await findSuitableOfferIdx(page);
+    const started = await page.evaluate((idx) => {
+      __D.UI.showBrief(idx);
       __D.UI.dive();
       for (let i = 0; i < 30; i++) __D.Game.step(0.016);
       return {
@@ -27,9 +29,26 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         row: __D.Game.row,
         finite: Number.isFinite(__D.Game.run.o2)
       };
-    });
+    }, suitableIdx);
 
     if (started.state !== 'play' || !started.finite || !Number.isFinite(started.row)) throw new Error('sim loop broke');
+    pass++;
+
+    const over = await page.evaluate(() => {
+      __D.Career.dead = true;
+      __D.Career.reason = 'asphyxia';
+      __D.Game.state = 'results';
+      __D.UI.afterResults();
+      return {
+        state: __D.Game.state,
+        visible: document.getElementById('scr-over').classList.contains('on'),
+        title: document.getElementById('over-title').textContent,
+        sub: document.getElementById('over-sub').textContent
+      };
+    });
+    if (over.state !== 'over' || !over.visible || over.title !== 'Deceased' || !over.sub.includes('surface')) {
+      throw new Error('career over screen did not open for a dead diver');
+    }
     pass++;
   } catch (error) {
     fail++;

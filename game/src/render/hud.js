@@ -18,7 +18,7 @@ import { buddy } from '../entities/buddy.js';
 import { Game } from '../game/state.js';
 import { Career } from '../game/career.js';
 import { roundRect } from './cells.js';
-import { drawBody, drawDepthGauge, drawNetwork } from './minimap.js';
+import { drawBody, drawNetwork } from './minimap.js';
 
 function panelBox(ctx, x, y, w, h, a) {
   roundRect(ctx, x, y, w, h, 8);
@@ -50,6 +50,59 @@ function diamond(ctx, x, y, r) {
   ctx.lineTo(x, y + r);
   ctx.lineTo(x - r, y);
   ctx.closePath();
+}
+
+/** Larger oxygen tank icon drawn as a vertical cylinder. */
+function tankIcon(ctx, x, y, w, h, frac, col) {
+  const bodyX = x + w * 0.16;
+  const bodyY = y + h * 0.12;
+  const bodyW = w * 0.68;
+  const bodyH = h * 0.74;
+  const bodyR = Math.min(bodyW, bodyH) * 0.38;
+  ctx.save();
+
+  // Valve and top cap.
+  ctx.fillStyle = 'rgba(220,235,240,0.92)';
+  roundRect(ctx, x + w * 0.34, y, w * 0.32, h * 0.14, w * 0.08);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + w * 0.5, y + h * 0.04, w * 0.17, 0, TAU);
+  ctx.fill();
+  ctx.fillRect(x + w * 0.44, y + h * 0.11, w * 0.12, h * 0.08);
+
+  // Tank body.
+  roundRect(ctx, bodyX, bodyY, bodyW, bodyH, bodyR);
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.fill();
+  ctx.save();
+  roundRect(ctx, bodyX, bodyY, bodyW, bodyH, bodyR);
+  ctx.clip();
+  const fh = bodyH * clamp(frac, 0, 1);
+  ctx.fillStyle = col;
+  ctx.fillRect(bodyX, bodyY + bodyH - fh, bodyW, fh);
+  ctx.fillStyle = 'rgba(255,255,255,0.11)';
+  ctx.fillRect(bodyX + bodyW * 0.13, bodyY, bodyW * 0.14, bodyH);
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fillRect(bodyX + bodyW * 0.68, bodyY, bodyW * 0.08, bodyH);
+  ctx.restore();
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(255,255,255,0.46)';
+  roundRect(ctx, bodyX, bodyY, bodyW, bodyH, bodyR);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.24)';
+  ctx.beginPath();
+  ctx.moveTo(bodyX + bodyW * 0.18, bodyY + bodyH * 0.18);
+  ctx.lineTo(bodyX + bodyW * 0.18, bodyY + bodyH * 0.86);
+  ctx.moveTo(bodyX + bodyW * 0.82, bodyY + bodyH * 0.18);
+  ctx.lineTo(bodyX + bodyW * 0.82, bodyY + bodyH * 0.86);
+  ctx.stroke();
+
+  // Base feet.
+  ctx.fillStyle = 'rgba(180,200,210,0.8)';
+  ctx.fillRect(x + w * 0.30, y + h * 0.86, w * 0.40, h * 0.06);
+  ctx.fillRect(x + w * 0.24, y + h * 0.92, w * 0.52, h * 0.04);
+  ctx.restore();
 }
 
 /** The scan pulse, drawn in world space. */
@@ -136,20 +189,69 @@ export function drawHUD(t) {
 
   /* ---- body chart + network map, right ---------------------------------- */
   if (!compact || H > 520) {
-    const mw = compact ? 96 : 118;
+    const mw = compact ? 112 : 136;
     const mh = compact ? 92 : 112;
     const mx = W - mw - 12;
     const my = compact ? 58 : 62;
-    panelBox(ctx, mx - 6, my - 6, mw + 12, mh + 26, 0.42);
-    drawBody(ctx, mx, my, mw * 0.44, mh, G.contract.organ, 0.5 + 0.5 * Math.sin(t * 2.4));
-    drawDepthGauge(ctx, mx + mw * 0.47, my + 4, 5, mh - 8,
-      Maze.depthFrac(player.y), G.row, Maze.rows - 1);
-    drawNetwork(ctx, mx + mw * 0.56, my, mw * 0.44, mh, player.x, player.y);
+    const statusY = my + mh + 22;
+    const sh = compact ? 26 : 28;
+    panelBox(ctx, mx - 6, my - 6, mw + 12, mh + sh + 22, 0.42);
+    const o2Frac = clamp(run.o2 / Math.max(1, run.o2max), 0, 1);
+    const o2Col = o2Frac > 0.55 ? '#4ce0a4' : o2Frac > 0.25 ? '#ffc86b' : '#ff6b7d';
+    const tankW = compact ? 21 : 26;
+    const tankH = mh - 6;
+    const tankX = mx + 1;
+    const tankY = my + 3;
+    const bodyX = tankX + tankW + 8;
+    const bodyW = mw * 0.33;
+    const networkX = mx + mw * 0.62;
+    const networkW = mw - (networkX - mx);
+    tankIcon(ctx, tankX, tankY, tankW, tankH, o2Frac, o2Col);
+    ctx.textAlign = 'center';
+    ctx.font = '800 7px ui-monospace,Menlo,monospace';
+    ctx.fillStyle = '#000';
+    ctx.fillText('O2', tankX + tankW / 2, tankY + tankH + 8);
+    ctx.font = '700 7px ui-monospace,Menlo,monospace';
+    ctx.fillStyle = '#000';
+    ctx.fillText(Math.max(0, Math.round(run.o2)) + 's', tankX + tankW / 2, tankY + tankH / 2);
+    drawBody(ctx, bodyX, my, bodyW, mh, G.contract.organ, 0.5 + 0.5 * Math.sin(t * 2.4));
+    drawNetwork(ctx, networkX, my, networkW, mh, player.x, player.y);
     ctx.textAlign = 'center';
     ctx.font = '700 8px ui-monospace,Menlo,monospace';
     ctx.fillStyle = 'rgba(255,220,232,0.6)';
     ctx.fillText(G.contract.organ.short + ' \u00b7 ' + G.contract.pressure.toFixed(2) + ' P',
       mx + mw / 2, my + mh + 12);
+
+    ctx.textAlign = 'left';
+    ctx.font = '800 8px ui-monospace,Menlo,monospace';
+    ctx.fillStyle = Career.scans <= 0 ? '#ff8095' : '#7fdcff';
+    ctx.fillText('SCAN CHARGES', mx, statusY + 4);
+    const scanCount = Math.max(0, Math.round(Career.scans));
+    const scanMax = Math.max(4, Math.min(8, scanCount));
+    const diamondStart = mx + 12;
+    const diamondY = statusY + 12;
+    const diamondGap = 12;
+    for (let i = 0; i < scanMax; i++) {
+      const dx = diamondStart + i * diamondGap;
+      diamond(ctx, dx, diamondY, 5.2);
+      if (i < scanCount) {
+        ctx.fillStyle = '#ffd34d';
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(55,26,0,0.95)';
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.48)';
+        ctx.lineWidth = 1.1;
+        ctx.stroke();
+      }
+    }
+    ctx.textAlign = 'right';
+    ctx.font = '700 8px ui-monospace,Menlo,monospace';
+    ctx.fillStyle = 'rgba(255,220,232,0.72)';
+    // ctx.fillText(String(scanCount) + ' held \u00b7 ', mx + mw, statusY + 4);
   }
 
   /* ---- the buddy's firing line status, left ---------------------------- */
@@ -160,38 +262,6 @@ export function drawHUD(t) {
     const blocked = buddy.blocked > 0.2;
     ctx.fillStyle = blocked ? 'rgba(255,140,160,0.9)' : 'rgba(140,255,205,0.75)';
     ctx.fillText(blocked ? '\u2716 NO FIRING LINE \u2014 REPOSITION' : '\u25b6 LINE CLEAR', 12, 30);
-  }
-
-  /* ---- scan charges, bottom left --------------------------------------- */
-  ctx.textAlign = 'left';
-  const sx = 12;
-  const sy = H - 26;
-  const dry = Career.scans <= 0;
-  ctx.font = '800 8.5px ui-monospace,Menlo,monospace';
-  ctx.fillStyle = dry ? '#ff8095' : '#7fdcff';
-  ctx.fillText(
-    dry ? 'NO SCAN CHARGES \u2014 GUESS OR BUY'
-        : 'SCAN CHARGES  [' + (Input.touch.enabled ? 'SCAN' : 'E') + ']  \u00b7  ' + G.scanPrice() + ' cr',
-    sx, sy - 8
-  );
-  const shown = Math.min(Career.scans, 8);
-  for (let i = 0; i < Math.max(shown, 3); i++) {
-    const x = sx + 7 + i * 17;
-    const y = sy + 4;
-    diamond(ctx, x, y, 6);
-    if (i < shown) {
-      ctx.fillStyle = G.scanning && i === shown - 1 ? '#ffffff' : '#5ad2f5';
-      ctx.fill();
-    } else {
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
-      ctx.stroke();
-    }
-  }
-  if (Career.scans > 8) {
-    ctx.font = '800 10px ui-monospace,Menlo,monospace';
-    ctx.fillStyle = '#5ad2f5';
-    ctx.fillText('\u00d7' + Career.scans, sx + 7 + 8 * 17, sy + 8);
   }
 
   /* ---- marks, bottom centre -------------------------------------------- */
@@ -214,6 +284,8 @@ export function drawHUD(t) {
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.fillText('MUTED  [M]', W - 12, H - 8);
   }
+
+  const dry = Career.scans <= 0;
 
   /* ---- touch controls --------------------------------------------------- */
   if (Input.touch.enabled && playing) {

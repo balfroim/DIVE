@@ -70,6 +70,8 @@ export function buildInvoice(run, contract, career, success) {
       run.siphons + ' unauthorised draw' + (run.siphons > 1 ? 's' : ''));
   }
 
+  if (run.repBribe) add('Reputation bribe', -run.repBribe, 'negative licence balance');
+
   if (run.damages) add('Damages and settlements', -run.damages);
 
   if (run.died) add('Body recovery and cleaning', -Math.round(e.recovery * tm), 'billed to the estate');

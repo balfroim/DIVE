@@ -20,6 +20,7 @@ import { repLabel } from '../game/economy.js';
 import { mapFor } from '../data/maps.js';
 import { SHOP } from '../data/shop.js';
 import { PSPEC, NUCNAME } from '../entities/species.js';
+import { anySymbiote } from '../data/enemies.js';
 import { drawBody } from '../render/minimap.js';
 import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
 import { DLG } from './dialogue.js';
@@ -27,6 +28,15 @@ import { previewEnt, paintPreview } from './previews.js';
 
 /** Live specimens on the briefing cards. */
 const preview = { sig: null, tgt: null, sym: null };
+
+function hover(text, tip) {
+  return '<span class="hoverterm" title="' + esc(tip || '') + '">' + esc(text) + '</span>';
+}
+
+function blockedSuitCopy(s, currentSuit) {
+  return 'Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
+    ' pressure; yours is ' + currentSuit + '.';
+}
 
 function paintSiteMap(canvas, organ, t) {
   if (!canvas || !organ || !canvas.getContext) return;
@@ -44,12 +54,9 @@ function paintSiteMap(canvas, organ, t) {
   const scale = Math.min((S - 18) / Math.max(1, maxCols), (S - 22) / Math.max(1, rows.length));
   const x = (S - maxCols * scale) / 2;
   const y = (S - rows.length * scale) / 2;
-  const labelY = Math.max(10, y - Math.max(4, Math.floor(scale * 0.3)));
   c.font = Math.max(8, Math.floor(scale * 0.86)) + 'px ui-monospace,SFMono-Regular,Menlo,monospace';
   c.textAlign = 'center';
   c.textBaseline = 'middle';
-  c.fillStyle = 'rgba(255,255,255,0.22)';
-  c.fillText(map.id.toUpperCase(), S * 0.5, labelY);
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     for (let col = 0; col < maxCols; col++) {
@@ -141,7 +148,7 @@ export const UI = {
     this.syncDevTools();
     const saved = Store.getJSON(KEYS.career, null);
     const cont = $('btn-continue');
-    if (cont) cont.style.display = saved && !saved.struckOff ? '' : 'none';
+    if (cont) cont.style.display = saved && !saved.struckOff && !saved.dead ? '' : 'none';
     this.paintScores('scores-start');
   },
 
@@ -156,6 +163,7 @@ export const UI = {
 
   continueCareer() {
     if (!Career.load()) { this.newCareer(); return; }
+    if (Career.finished()) { this.showOver(false); return; }
     this.showBoard();
   },
 
@@ -165,7 +173,8 @@ export const UI = {
 
   showBoard() {
     Game.state = 'board';
-    if (Career.struckOff) { this.showOver(); return; }
+    if (Career.finished()) { this.showOver(false); return; }
+    Career.pendingSummary = null;
     if (!Career.offers.length) Career.refreshBoard();
     show('board');
     this.syncDevTools();
@@ -193,7 +202,7 @@ export const UI = {
         '<div>' +
           '<div class="job"><span class="tierpill t' + offer.tier.i + '">TIER ' + s.tier + '</span>' + esc(s.job) + '</div>' +
           '<div class="sub">' + esc(s.site) + ' \u00b7 depth ' + s.depth + ' \u00b7 ' + s.waves + ' waves \u00b7 ' +
-            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + '</div>' +
+            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + ' \u00b7 ' + esc(s.difficulty) + '</div>' +
         '</div>' +
         '<div>' +
           '<div class="pay">' + (s.fee + s.comp) + ' cr</div>' +
@@ -222,58 +231,64 @@ export const UI = {
     Game.state = 'brief';
     show('brief');
     const s = offerSummary(offer);
+    Career.pendingSummary = s;
 
-    $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
+    $('brief-num').textContent = 'Work order ' + offer.id;
     $('brief-client').textContent = offer.client.job;
-    $('brief-site').textContent = s.job + ' \u00b7 ' + s.site;
-
-    const chips = [
-      ['TIER', s.tier + ' \u00b7 ' + s.tierLabel],
-      ['SITE', s.organ],
-      ['DEPTH', s.depth + ' rows'],
-      ['WAVES', String(s.waves)],
-      ['PRESSURE', s.band + ' ' + s.pressure],
-      ['SUIT', 'rating ' + s.suit + (Career.suit >= s.suit ? ' \u2713' : ' \u2717 yours ' + Career.suit)],
-      ['ADVANCE', s.fee + ' cr'],
-      ['COMPLETION', s.comp + ' cr'],
-      ['REPUTATION', '+' + s.rep + ' / \u2212' + s.risk]
-    ];
-    $('brief-chips').innerHTML = chips
-      .map((c) => '<span class="chip"><b>' + c[0] + '</b> ' + esc(c[1]) + '</span>')
-      .join('');
+    // $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
 
     /* specimens */
-    preview.sig = previewEnt('healthy', offer.sig, 1);
-    preview.tgt = previewEnt('pathogen', offer.sig, offer.deviation, offer.targetSpecies);
-    preview.sym = previewEnt('symbiote', offer.sig, 1);
+    preview.sig = previewEnt('host', offer.sig, offer.deviation);
+    preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation);
+    preview.sym = previewEnt(anySymbiote(), offer.sig, offer.deviation);
     const spec = PSPEC[offer.targetSpecies];
-    $('brief-sigdesc').textContent = NUCNAME[offer.sig.nuc] + ' \u00b7 ' + Math.round(offer.sig.hue) + '\u00b0 hue';
-    $('brief-tgtdesc').textContent = spec ? spec.desc : '';
-    $('brief-tgtname').textContent = (spec ? spec.name : offer.targetSpecies) +
-      (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION, HARD TO CALL' : '');
-    $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES ON ENTRY' +
-      (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
-      (Career.stab ? ' \u00b7 STABILISER READY' : '');
-    $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
-      s.site + ' \u00b7 ' + s.depth + ' rows \u00b7 ' + s.pressure + ' P';
+    $('brief-depth').textContent = s.depth;
+    $('brief-waves').textContent = String(s.waves);
+    $('brief-mapnote').textContent = s.note;
+    $('brief-site').textContent = offer.organ.name + ' (' + offer.organ.short + ')';
+    $('brief-mapdesc').textContent = s.band;
+    $('brief-tgtname').textContent = `${spec.name}`;
+    $('brief-tgtdesc').textContent = `${spec.desc}`;
+    $('brief-goal-label').textContent = esc(s.typeShort);
+    $('brief-goal').textContent = s.objective;
+    $('brief-tier').dataset.severity = s.difficultyKey === 'HARD' ? 'high' : s.difficultyKey === 'EASY' ? 'low' : 'mid';
+    $('brief-grade').textContent = s.difficulty;
+    const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
+    const suitBox = $('brief-suitbox');
+    suitBox.dataset.state = suitState;
+    $('brief-suit').innerHTML = suitState === 'ready'
+      ? '<span>\u2713</span><span>' + s.suit + '</span>'
+      : suitState === 'marginal'
+        ? '<span>\u26a0</span><span>' + s.suit + '</span>'
+        : '<span>\u2716</span><span>' + s.suit + '</span>';
+    $('brief-total').textContent = cr(s.fee + s.comp);
+    $('brief-total-tier').textContent = s.tier + ' \u00b7 ' + s.tierLabel;
+    $('brief-total-note').textContent = s.tierNote;
+    $('brief-rep-gain').textContent = '+' + s.rep;
+    $('brief-rep-loss').textContent = '\u2212' + s.risk;
+    $('brief-insurance-tier').textContent = s.tier.label + ' \u00b7 ' + s.tier.name;
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
-    $('brief-warn').className = 'warnline' + (under || s.lethal ? '' : ' okline');
-    $('brief-warn').innerHTML = under
-      ? '<b>SUIT UNDER-RATED.</b> Your shell is rating ' + Career.suit + ' against ' + s.band.toLowerCase() +
-        ' pressure. You will be shoved downstream and the corridors will squeeze. You may dive anyway. Many do.'
+    $('brief-insurance-note').textContent = under
+      ? blockedSuitCopy(s, Career.suit)
       : s.lethal
-        ? '<b>INSURED CLIENT.</b> If this one dies, Legal terminates your licence. The white cell kills everything on its path \u2014 mind your angles.'
-        : '<b>UNINSURED CLIENT.</b> A casualty here is billable, not terminal. Good conditions to learn the vessel.';
+        ? 'Insured client. Death here voids the licence and ends the career file.'
+        : 'Uninsured client. Casualties are billable, not terminal.';
+    const diveBtn = $('btn-dive');
+    if (diveBtn) diveBtn.disabled = under;
 
-    $('brief-memo').innerHTML = '<b>Vax:</b> ' + esc(s.memo) + ' <i>' + esc(s.note) + '</i>';
   },
 
   dive() {
     const offer = Career.pending;
     if (!offer) return;
+    const s = Career.pendingSummary || offerSummary(offer);
+    if (Career.suit < s.suit) {
+      return;
+    }
     Career.accept(offer);
+    Career.pendingSummary = null;
     hideAll();
     Game.startContract(offer);
   },
@@ -306,11 +321,27 @@ export const UI = {
     show('results');
     const c = Game.contract || Career.pending;
     const good = result.success;
+    const dead = Career.dead;
+    const struck = Career.struckOff;
+    const o2Left = Math.max(0, Math.round(result.o2Left || 0));
+    Career.lastO2Left = o2Left;
     $('res-kicker').textContent = 'Extraction report \u00b7 ' + (c ? c.id : '');
-    $('res-title').textContent = good ? 'Contract closed' : 'Client lost';
-    $('res-sub').textContent = good
-      ? 'Client viable at ' + Math.round(result.integrity) + '%'
-      : 'Integrity zero \u00b7 extraction under protest';
+    $('res-title').textContent = dead
+      ? '\u2620 Diver lost'
+      : struck
+        ? '\u26a0 Licence revoked'
+        : good
+          ? '\u2713 Contract closed'
+          : 'Client lost';
+    $('res-sub').textContent = dead
+      ? 'O\u2082 left ' + o2Left + 's \u00b7 body recovery billed to the estate'
+      : struck
+        ? (Career.reason === 'debt'
+          ? 'O\u2082 left ' + o2Left + 's \u00b7 negative balance terminated the file'
+          : 'O\u2082 left ' + o2Left + 's \u00b7 the licence was removed')
+        : good
+          ? 'O\u2082 left ' + o2Left + 's \u00b7 client viable at ' + Math.round(result.integrity) + '%'
+          : 'O\u2082 left ' + o2Left + 's \u00b7 extraction under protest';
 
     const rows = result.lines
       .map((l) => '<div class="inv-row"><span>' + esc(l.label) +
@@ -323,10 +354,14 @@ export const UI = {
     $('res-inv').innerHTML = rows +
       '<div class="inv-row total"><span>Net</span><b class="' + (result.net < 0 ? 'neg' : '') + '">' +
       cr(result.net) + '</b></div>' + repRow +
+      '<div class="inv-row"><span>Oxygen left</span><b class="' + (dead && o2Left <= 0 ? 'neg' : '') + '">' +
+      o2Left + 's</b></div>' +
       '<div class="inv-row"><span>Balance</span><b>' + cr(Career.credits) + '</b></div>';
 
     let memo;
-    if (Career.struckOff) {
+    if (dead) {
+      memo = '<b>Vax:</b> You did not surface. The tank hit zero, the body was bagged, and Accounts has already opened the estate.';
+    } else if (struck) {
       memo = Career.reason === 'debt'
         ? '<b>Vax:</b> Your balance is negative and your licence is collateral. The Division has exercised its option. Badge, please.'
         : '<b>Vax:</b> The claim has been filed. I did warn you about the insured ones. Your licence is suspended pending a hearing you will not be invited to.';
@@ -341,7 +376,7 @@ export const UI = {
       memo = '<b>Vax:</b> Clean work. The board will reflect your standing shortly.';
     }
     $('res-memo').innerHTML = memo;
-    $('btn-res-next').textContent = Career.struckOff ? 'Collect your badge' : 'Requisitions';
+    $('btn-res-next').textContent = Career.finished() ? 'Collect your badge' : 'Requisitions';
   },
 
   /* ---------------------------------------------------------------- */
@@ -384,12 +419,20 @@ export const UI = {
     show('over');
     this.syncDevTools();
     const struck = Career.struckOff;
-    $('over-title').textContent = retired ? 'Retired' : struck ? 'Licence revoked' : 'Career closed';
-    $('over-sub').textContent = retired
-      ? 'You surfaced with the money and the badge.'
-      : Career.reason === 'debt' ? 'Terminated for negative balance'
-      : Career.reason === 'litigation' ? 'Terminated following litigation'
-      : '';
+    const dead = Career.dead;
+    $('over-title').textContent = dead
+      ? 'Deceased'
+      : retired
+        ? '\u25c7 Retired'
+        : struck
+          ? '\u26a0 Licence revoked'
+          : 'Career closed';
+    let sub = '';
+    if (dead) sub = 'O\u2082 exhausted \u00b7 did not surface from the dive.';
+    else if (retired) sub = 'You surfaced with the money and the badge.';
+    else if (Career.reason === 'debt') sub = 'Negative balance \u00b7 licence surrendered.';
+    else if (Career.reason === 'litigation') sub = 'Insured casualty \u00b7 licence revoked.';
+    $('over-sub').textContent = sub;
     const tiles = [
       [String(Career.contracts), 'Contracts closed'],
       [String(Career.lost), 'Clients lost'],
@@ -398,6 +441,7 @@ export const UI = {
       [String(Career.pathogens), 'Pathogens'],
       [String(Career.wrongful), 'Wrongful kills'],
       [String(Career.charges), 'Charges fired'],
+      [dead ? (Career.lastO2Left + 's') : '—', 'Oxygen left'],
       [cr(Career.credits), 'Final balance']
     ];
     $('over-stats').innerHTML = tiles
@@ -440,7 +484,7 @@ export const UI = {
   /* ---------------------------------------------------------------- */
 
   afterResults() {
-    if (Career.struckOff) { this.showOver(false); return; }
+    if (Career.finished()) { this.showOver(false); return; }
     Career.refreshBoard();
     this.showShop();
   },
