@@ -17,11 +17,10 @@ export const SHOP = [
     id: 'scans',
     category: 'consumable',
     name: 'Scan charges \u00d7' + CFG.econ.scanBuyN,
-    desc: 'Diagnostic pulses. Billed again on activation, naturally.',
+    desc: 'Diagnostic pulses. Buy a pack when you need them.',
     cost: (c) => Math.round(CFG.econ.scanBuy * scale(c)),
-    buy: (c) => { c.scans += CFG.econ.scanBuyN; },
-    held: (c) => String(c.scans),
-    heldLabel: 'Held'
+    buy: (c) => { c.scans = Math.min(CFG.econ.scanMax, c.scans + CFG.econ.scanBuyN); },
+    owned: (c) => c.scans + ' held'
   },
   {
     id: 'suit',

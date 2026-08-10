@@ -1,6 +1,7 @@
 /* End-to-end flow checks for onboarding, contract selection, and dive start. */
 const puppeteer = require('puppeteer');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const pressureLabel = (p) => (p < 1.0 ? 'LOW' : p < 1.3 ? 'NORMAL' : p < 1.6 ? 'RAISED' : p < 2.0 ? 'HIGH' : 'CRISIS');
 
 
 async function captureBrief(page, organId, seed) {
@@ -37,6 +38,8 @@ async function captureBrief(page, organId, seed) {
       expectedSite: organ.name + ' (' + organ.short + ')',
       grade: document.getElementById('brief-grade').textContent,
       readiness: document.getElementById('brief-suitbox').dataset.state,
+      tgtName: document.getElementById('brief-tgtname').textContent,
+      tgtDesc: document.getElementById('brief-tgtdesc').textContent,
       total: document.getElementById('brief-total').textContent,
       contract: !!__D.Career.pending,
       mapPainted: painted,
@@ -46,6 +49,26 @@ async function captureBrief(page, organId, seed) {
       expectedMapLink: organ.map ?? null
     };
   }, { organId, seed });
+}
+
+async function captureTransfusionBrief(page) {
+  return page.evaluate(() => {
+    let offer = null;
+    for (let seed = 9000; seed < 10000; seed++) {
+      const candidate = __D.makeContract(30, seed, 1);
+      if (candidate.type === 'transfusion') { offer = candidate; break; }
+    }
+    if (!offer) throw new Error('no transfusion offer');
+    __D.Career.offers = [offer];
+    __D.UI.showBrief(0);
+    return {
+      tgtName: document.getElementById('brief-tgtname').textContent,
+      tgtDesc: document.getElementById('brief-tgtdesc').textContent,
+      note: offer.typeNote,
+      abo: offer.abo,
+      donorAbo: offer.donorAbo
+    };
+  });
 }
 
 (async () => {

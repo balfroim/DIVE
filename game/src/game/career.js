@@ -198,8 +198,7 @@ export const Career = {
     this.contract = offer;
     offer.accepted = true;
     this.credits += offer.fee;
-    /* the Division issues a statutory minimum of charges, and bills the rest */
-    this.scans += CFG.econ.issue;
+    this.scans = Math.min(CFG.econ.scanMax, this.scans + CFG.econ.issue);
     if (this.stab > 0) this.stab--;
     return offer;
   },
@@ -257,6 +256,7 @@ export const Career = {
     if (!s) return false;
     /* a save written by an older build may carry fields we no longer use */
     for (const k of SAVED) if (s[k] !== undefined) this[k] = s[k];
+    this.scans = Math.min(CFG.econ.scanMax, Math.max(0, Math.round(this.scans || 0)));
     return true;
   },
 

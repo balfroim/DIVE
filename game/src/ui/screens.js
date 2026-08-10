@@ -299,8 +299,11 @@ export const UI = {
     // $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
 
     /* specimens */
-    preview.sig = previewEnt('host', offer.sig, offer.deviation);
-    preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation);
+    const ctx = offer.type === 'transfusion'
+      ? { abo: offer.abo, donorAbo: offer.donorAbo }
+      : null;
+    preview.sig = previewEnt('host', offer.sig, offer.deviation, ctx);
+    preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation, ctx);
     preview.sym = previewEnt(anySymbiote(), offer.sig, offer.deviation);
     const spec = PSPEC[offer.targetSpecies];
     $('brief-depth').textContent = s.depth;
@@ -308,8 +311,12 @@ export const UI = {
     $('brief-mapnote').textContent = s.note;
     $('brief-site').textContent = offer.organ.name + ' (' + offer.organ.short + ')';
     $('brief-mapdesc').textContent = s.band;
-    $('brief-tgtname').textContent = `${spec.name}`;
-    $('brief-tgtdesc').textContent = `${spec.desc}`;
+    $('brief-tgtname').textContent = offer.type === 'transfusion' && offer.donorAbo
+      ? `TYPE ${offer.donorAbo} · DONOR CELL`
+      : `${spec.name}`;
+    $('brief-tgtdesc').textContent = offer.type === 'transfusion' && offer.typeNote
+      ? `${spec.desc} CLIENT GROUP ${offer.abo} · DONOR GROUP ${offer.donorAbo}`
+      : `${spec.desc}`;
     $('brief-goal-label').textContent = esc(s.typeShort);
     $('brief-goal').textContent = s.objective;
     $('brief-tier').dataset.severity = s.difficultyKey === 'HARD' ? 'high' : s.difficultyKey === 'EASY' ? 'low' : 'mid';
@@ -551,10 +558,15 @@ export const UI = {
       el.innerHTML = '<div class="empty">No payroll records on file.</div>';
       return;
     }
-    el.innerHTML = '<table class="scores"><tbody>' + list.map((s, i) =>
-      '<tr><td>' + (i + 1) + '</td><td>' + esc(s.name) + '</td><td>' +
-      (s.tier || 'D') + '</td><td>' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td><td>' +
-      cr(s.cr) + '</td></tr>').join('') + '</tbody></table>';
+    el.innerHTML = '<table class="sc"><thead><tr><th>#</th><th>Agent</th><th>Tier</th><th>Rep</th><th>Credits</th></tr></thead><tbody>' +
+      list.map((s, i) =>
+        '<tr' + (s.name === Career.agent ? ' class="me"' : '') + '>' +
+        '<td class="n">' + (i + 1) + '</td>' +
+        '<td>' + esc(s.name) + '</td>' +
+        '<td>' + esc(s.tier || 'D') + '</td>' +
+        '<td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td>' +
+        '<td class="s">' + cr(s.cr) + '</td>' +
+        '</tr>').join('') + '</tbody></table>';
   },
 
   /* ---------------------------------------------------------------- */

@@ -24,6 +24,7 @@ import { ents, spawnEnt } from './entities/pool.js';
 import { player } from './entities/player.js';
 import { buddy, hasFiringLine, lungeCasualties } from './entities/buddy.js';
 import { makeContract, generateOffers, offerSummary, suitFor, pressureLabel } from './game/contracts.js';
+import { buildInvoice } from './game/economy.js';
 import { ENEMIES, archetype } from './data/enemies.js';
 import { organsForRep } from './data/organs.js';
 
@@ -31,5 +32,6 @@ window.__D = {
   Game, Career, UI, DLG, SCRIPT, SCRIPTS, getScript, SHOP, TIERS, ORGANS, CFG, View, cam, Input, Maze,
   ents, spawnEnt, player, buddy, hasFiringLine, lungeCasualties, firingPreview,
   makeContract, generateOffers, offerSummary, suitFor, pressureLabel, organsForRep, ENEMIES, archetype,
+  buildInvoice,
   getZoom: () => View.zoom
 };
