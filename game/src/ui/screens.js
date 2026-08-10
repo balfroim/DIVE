@@ -578,7 +578,7 @@ export const UI = {
           '<td class="n">' + (i + 1) + '</td>' +
           '<td>' + (self ? '<span aria-hidden="true">&#9656; </span>' + esc(s.name) + '<span class="sr-only"> (this run)</span>' : esc(s.name)) + '</td>' +
           '<td>' + esc(s.tier || 'D') + '</td>' +
-          '<td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td>' +
+          '<td class="w">' + (s.rep === undefined ? '' : s.rep) + '</td>' +
           '<td>' + esc(endReasonLabel(s.reason)) + '</td>' +
           '<td class="s"' + (s.cr < 0 ? ' data-negative="true"' : '') + '>' + cr(s.cr) + '</td>' +
           '</tr>';
