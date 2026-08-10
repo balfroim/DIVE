@@ -436,7 +436,7 @@ export const Game = {
     if (this.scanning) return;
     if (Career.scans <= 0) {
       SFX.unmark();
-      popup(player.x, player.y - 46, 'NO CHARGES', '#ff8095', 15, 'REQUISITION AT EXTRACTION');
+      popup(player.x, player.y - 46, 'NO CHARGES', '#ff8095', 15, 'BUY AT EXTRACTION');
       return;
     }
     Career.scans--;

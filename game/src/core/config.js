@@ -61,9 +61,9 @@ export const CFG = {
   /* ---- the oxygen tank: the dive clock -------------------------------- */
   o2: {
     /** Seconds of gas in a standard-issue tank at rating 1. */
-    tank: 170,
+    tank: 60,
     /** Per-upgrade capacity bonus, seconds. */
-    tankStep: 55,
+    tankStep: 30,
     /** Baseline consumption, seconds of gas per second of dive. */
     idle: 1,
     /** Extra consumption at full thrust. */
@@ -99,7 +99,7 @@ export const CFG = {
 
   /* ---- the Division's ledger. Every verb has a price. ----------------- */
   econ: {
-    scanCost: 0,      // scan charges are bought up front, not billed on use
+    scanCost: 0,      // scan charges
     scanBuy: 60,      // requisition price for a pack of charges
     scanBuyN: 3,
     scanMax: 4,

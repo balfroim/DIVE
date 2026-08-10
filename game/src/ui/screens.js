@@ -74,6 +74,43 @@ function paintSiteMap(canvas, organ, t) {
   }
 }
 
+const SIGILS = {
+  scans: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<circle cx="24" cy="24" r="3"/>' +
+    '<path d="M16 24a8 8 0 0 1 8-8"/>' +
+    '<path d="M12 24a12 12 0 0 1 12-12"/>' +
+    '<path d="M8 24a16 16 0 0 1 16-16"/>' +
+    '</svg>',
+  suit: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<polygon points="24,6 39,15 39,33 24,42 9,33 9,15" stroke-width="2.5"/>' +
+    '<polygon points="24,13 33,18.5 33,29.5 24,35 15,29.5 15,18.5" stroke-width="1.5"/>' +
+    '</svg>',
+  stab: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<path d="M18 10h12v6a6 6 0 0 1 0 12v10H18V28a6 6 0 0 1 0-12z"/>' +
+    '<line x1="21" y1="28" x2="27" y2="38"/>' +
+    '<line x1="24" y1="28" x2="30" y2="38"/>' +
+    '</svg>',
+  waiver: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<path d="M24 6l16 8v12c0 9-7 16-16 18C15 42 8 35 8 26V14z"/>' +
+    '<line x1="16" y1="32" x2="32" y2="16"/>' +
+    '</svg>',
+  boost: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<polyline points="12,34 24,22 36,34"/>' +
+    '<polyline points="12,26 24,14 36,26"/>' +
+    '</svg>',
+  tank: '<svg class="item__sigil" aria-hidden="true" viewBox="0 0 48 48">' +
+    '<rect x="16" y="8" width="16" height="28" rx="8"/>' +
+    '<line x1="24" y1="36" x2="24" y2="42"/>' +
+    '<line x1="20" y1="42" x2="28" y2="42"/>' +
+    '<line x1="20" y1="16" x2="28" y2="16"/>' +
+    '<line x1="20" y1="22" x2="28" y2="22"/>' +
+    '</svg>'
+};
+
+function shopSigil(id) {
+  return SIGILS[id] || '';
+}
+
 export const UI = {
   devMode: false,
 
@@ -193,6 +230,10 @@ export const UI = {
     box.innerHTML = '';
     Career.offers.forEach((offer, i) => {
       const s = offerSummary(offer);
+      const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
+      const suitIcon = suitState === 'ready' ? '\u2713' : suitState === 'marginal' ? '\u26a0' : '\u2716';
+      const pressureClass = 'pressurepill--' + s.band.toLowerCase();
+      const difficultyClass = 'diffpill--' + s.difficultyKey.toLowerCase();
       const el = document.createElement('div');
       el.className = 'offer' + (s.lethal ? ' risky' : '');
       el.tabIndex = 0;
@@ -202,7 +243,11 @@ export const UI = {
         '<div>' +
           '<div class="job"><span class="tierpill t' + offer.tier.i + '">TIER ' + s.tier + '</span>' + esc(s.job) + '</div>' +
           '<div class="sub">' + esc(s.site) + ' \u00b7 depth ' + s.depth + ' \u00b7 ' + s.waves + ' waves \u00b7 ' +
-            s.band + ' pressure ' + s.pressure + ' \u00b7 suit ' + s.suit + ' \u00b7 ' + esc(s.difficulty) + '</div>' +
+            '<span class="pressurepill ' + pressureClass + '">pressure ' + esc(s.band.toLowerCase()) + '</span>' +
+            ' \u00b7 ' +
+            '<span class="suitpill suitpill--' + suitState + '">' + suitIcon + ' suit\u00a0' + s.suit + '</span>' +
+            ' \u00b7 ' +
+            '<span class="diffpill ' + difficultyClass + '">' + esc(s.difficulty.toLowerCase()) + '</span></div>' +
         '</div>' +
         '<div>' +
           '<div class="pay">' + (s.fee + s.comp) + ' cr</div>' +
@@ -218,6 +263,22 @@ export const UI = {
     $('board-memo').innerHTML = worst
       ? '<b>Vax:</b> Note the insured names on today\u2019s board. If one of them dies down there, the claim outlives your licence.'
       : '<b>Vax:</b> Nothing on the board today would be missed. Ideal conditions for building a reputation.';
+
+    const kitPanel = $('board-kit');
+    if (kitPanel) {
+      const o2Capacity = Career.o2Max();
+      const boostPct = Career.payBoost > 0 ? '+' + Math.round(Career.payBoost * 100) + '%' : '\u2014';
+      kitPanel.innerHTML =
+        '<div class="kit-heading">Your kit</div>' +
+        '<dl class="kit-list">' +
+          '<div class="kit-row"><dt>Suit</dt><dd class="kit-val">' + Career.suit + '</dd></div>' +
+          '<div class="kit-row"><dt>O\u2082 tank</dt><dd class="kit-val">' + o2Capacity + 's</dd></div>' +
+          '<div class="kit-row"><dt>Scans</dt><dd class="kit-val">' + Career.scans + '</dd></div>' +
+          '<div class="kit-row"><dt>Stabilisers</dt><dd class="kit-val">' + Career.stab + '</dd></div>' +
+          '<div class="kit-row"><dt>Waivers</dt><dd class="kit-val">' + Career.waiver + '</dd></div>' +
+          '<div class="kit-row"><dt>Pay boost</dt><dd class="kit-val">' + boostPct + '</dd></div>' +
+        '</dl>';
+    }
   },
 
   /* ---------------------------------------------------------------- */
@@ -276,11 +337,6 @@ export const UI = {
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
-    $('brief-insurance-note').textContent = under
-      ? blockedSuitCopy(s, Career.suit)
-      : s.lethal
-        ? 'Insured client. Death here voids the licence and ends the career file.'
-        : 'Uninsured client. Casualties are billable, not terminal.';
     const diveBtn = $('btn-dive');
     if (diveBtn) diveBtn.disabled = under;
 
@@ -382,29 +438,51 @@ export const UI = {
       memo = '<b>Vax:</b> Clean work. The board will reflect your standing shortly.';
     }
     $('res-memo').innerHTML = memo;
-    $('btn-res-next').textContent = Career.finished() ? 'Collect your badge' : 'Requisitions';
+    $('btn-res-next').textContent = Career.finished() ? 'Collect your badge' : 'Back to shop';
   },
 
   /* ---------------------------------------------------------------- */
   /* shop                                                              */
   /* ---------------------------------------------------------------- */
 
+  /* shop                                                              */
+  /* ---------------------------------------------------------------- */
+
   showShop() {
     Game.state = 'shop';
     show('shop');
-    $('shop-bank').textContent = 'Balance ' + cr(Career.credits) + ' \u00b7 licence ' + repLabel(Career.rep);
+    $('shop-balance').textContent = cr(Career.credits);
+    $('shop-licence').textContent = repLabel(Career.rep);
     const box = $('shop-list');
     box.innerHTML = '';
     SHOP.forEach((item) => {
       const cost = item.cost(Career);
       const afford = Career.credits >= cost;
-      const el = document.createElement('div');
-      el.className = 'shop-item';
-      el.innerHTML =
-        '<div><b>' + esc(item.name) + '</b><span>' + esc(item.desc) + '</span>' +
-        '<span class="owned">' + esc(item.owned(Career)) + '</span></div>' +
-        '<button class="btn ghost" ' + (afford ? '' : 'disabled') + '>' + cost + ' cr</button>';
-      el.querySelector('button').addEventListener('click', () => {
+      const shortfall = cost - Career.credits;
+      const li = document.createElement('li');
+      const article = document.createElement('article');
+      article.className = 'item';
+      article.dataset.category = item.category;
+      article.dataset.state = afford ? 'available' : 'unaffordable';
+      const catLabel = item.category.charAt(0).toUpperCase() + item.category.slice(1);
+      article.innerHTML =
+        '<div class="item__tile">' +
+          shopSigil(item.id) +
+          '<span class="item__tag">' + esc(catLabel) + '</span>' +
+        '</div>' +
+        '<h3 class="item__name">' + esc(item.name) + '</h3>' +
+        '<p class="item__desc prose">' + esc(item.desc) + '</p>' +
+        '<dl class="item__held">' +
+          '<dt class="label">' + esc(item.heldLabel) + '</dt>' +
+          '<dd class="value">' + esc(item.held(Career)) + '</dd>' +
+        '</dl>' +
+        (!afford ? '<p class="item__short label">Need ' + esc(cr(shortfall)) + ' more</p>' : '') +
+        '<footer class="item__foot">' +
+          '<span class="item__price value">' + esc(cr(cost)) + '</span>' +
+          '<button class="btn btn--primary btn--sm" type="button"' +
+            (afford ? '' : ' disabled') + '>Buy</button>' +
+        '</footer>';
+      article.querySelector('button').addEventListener('click', () => {
         if (Career.credits < cost) return;
         Career.credits -= cost;
         item.buy(Career);
@@ -412,7 +490,8 @@ export const UI = {
         SFX.ui();
         UI.showShop();
       });
-      box.appendChild(el);
+      li.appendChild(article);
+      box.appendChild(li);
     });
   },
 

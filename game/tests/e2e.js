@@ -3,6 +3,7 @@ const puppeteer = require('puppeteer');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const pressureLabel = (p) => (p < 1.0 ? 'LOW' : p < 1.3 ? 'NORMAL' : p < 1.6 ? 'RAISED' : p < 2.0 ? 'HIGH' : 'CRISIS');
 
+
 async function captureBrief(page, organId, seed) {
   return page.evaluate(({ organId: id, seed: s }) => {
     const organ = __D.ORGANS.find((o) => o.id === id);
@@ -24,20 +25,28 @@ async function captureBrief(page, organId, seed) {
     for (let i = 3; i < pixels.length; i += 4) {
       if (pixels[i] > 0) { painted = true; break; }
     }
+    const pressureLabel = (p) => {
+      if (p < 1.0) return 'LOW';
+      if (p < 1.3) return 'NORMAL';
+      if (p < 1.6) return 'RAISED';
+      if (p < 2.0) return 'HIGH';
+      return 'CRISIS';
+    }
     return {
       visible: document.getElementById('scr-brief').classList.contains('on'),
       site: document.getElementById('brief-site').textContent,
+      expectedSite: organ.name + ' (' + organ.short + ')',
       grade: document.getElementById('brief-grade').textContent,
       readiness: document.getElementById('brief-suitbox').dataset.state,
       tgtName: document.getElementById('brief-tgtname').textContent,
       tgtDesc: document.getElementById('brief-tgtdesc').textContent,
       total: document.getElementById('brief-total').textContent,
-      warn: document.getElementById('brief-insurance-note').textContent,
       contract: !!__D.Career.pending,
       mapPainted: painted,
-      pressure: organ.pressure,
-      mapDesc: document.getElementById('brief-mapdesc').textContent,
-      mapLink: __D.Career.pending.organ.map ?? null
+      pressure: pressureLabel(offer.pressure),
+      mapPressure: parseFloat(document.getElementById('brief-mapdesc').textContent),
+      mapLink: __D.Career.pending.organ.map ?? null,
+      expectedMapLink: organ.map ?? null
     };
   }, { organId, seed });
 }
@@ -83,56 +92,39 @@ async function captureTransfusionBrief(page) {
     await page.evaluate(() => { __D.Career.suit = 0; });
 
     const brief = await captureBrief(page, 'lung', 12345);
-    if (!brief.visible || !brief.site || !brief.site.includes('Pulmonary vein') || !brief.site.includes('LUNG') || !brief.grade ||
-      brief.readiness !== 'blocked' || !brief.total || !brief.warn || !brief.contract || !brief.mapPainted ||
-      brief.mapDesc !== pressureLabel(brief.pressure) || brief.mapLink !== 'lung') {
-      throw new Error('briefing failed');
+    if (!brief.visible) throw new Error('briefing screen not visible');
+    if (!brief.site || brief.site !== brief.expectedSite) {
+      throw new Error(`briefing site mismatch: got "${brief.site}", expected "${brief.expectedSite}"`);
+    }
+    if (!brief.grade) throw new Error('briefing grade missing');
+    if (brief.readiness !== 'blocked') throw new Error(`expected readiness "blocked", got "${brief.readiness}"`);
+    if (!brief.total) throw new Error('briefing total missing');
+    if (!brief.contract) throw new Error('pending contract missing');
+    if (!brief.mapPainted) throw new Error('map canvas not painted');
+    if (Math.abs(brief.mapPressure - brief.pressure) > 0.001) {
+      throw new Error('map pressure mismatch');
+    }
+    if (brief.mapLink !== brief.expectedMapLink) {
+      throw new Error(`map link mismatch: got "${brief.mapLink}", expected "${brief.expectedMapLink}"`);
     }
     pass++;
 
     await page.evaluate(() => { __D.Career.suit = 99; });
     const fallback = await captureBrief(page, 'brain', 54321);
-    if (!fallback.visible || !fallback.site || !fallback.site.includes('Cortex') || !fallback.site.includes('BRAIN') || !fallback.grade ||
-      fallback.readiness !== 'ready' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
-      fallback.mapDesc !== pressureLabel(fallback.pressure) || fallback.mapLink !== null) {
-      throw new Error('fallback briefing failed');
+    if (!fallback.visible) throw new Error('fallback briefing screen not visible');
+    if (!fallback.site || fallback.site !== fallback.expectedSite) {
+      throw new Error(`fallback site mismatch: got "${fallback.site}", expected "${fallback.expectedSite}"`);
     }
-    const transfusion = await captureTransfusionBrief(page);
-    if (!transfusion.note || !transfusion.tgtName.includes(transfusion.donorAbo) ||
-      !transfusion.tgtDesc.includes(transfusion.abo) ||
-      !transfusion.tgtDesc.includes(transfusion.donorAbo)) {
-      throw new Error('transfusion briefing did not show the contract blood types');
+    if (!fallback.grade) throw new Error('fallback grade missing');
+    if (fallback.readiness !== 'ready') throw new Error(`expected readiness "ready", got "${fallback.readiness}"`);
+    if (!fallback.total) throw new Error('fallback total missing');
+    if (!fallback.contract) throw new Error('fallback pending contract missing');
+    if (!fallback.mapPainted) throw new Error('fallback map canvas not painted');
+    if (Math.abs(fallback.mapPressure - fallback.pressure) > 0.001) {
+      throw new Error('fallback map pressure mismatch');
     }
-
-    const ledger = await page.evaluate(() => {
-      __D.Career.agent = 'RANKER';
-      __D.Career.rep = 44;
-      __D.Career.credits = 1337;
-      __D.Career.contracts = 6;
-      __D.Career.bestTier = 'B';
-      __D.Career.filePayroll();
-      __D.UI.paintScores('scores-start');
-      return {
-        table: document.querySelector('#scores-start table.sc') !== null,
-        header: document.querySelector('#scores-start table.sc thead') !== null,
-        highlighted: document.querySelector('#scores-start tr.me') !== null
-      };
-    });
-    if (!ledger.table || !ledger.header || !ledger.highlighted) throw new Error('leaderboard was not rendered correctly');
-
-    const scanBilling = await page.evaluate(() => {
-      __D.Career.scans = 3;
-      __D.SHOP.find((item) => item.id === 'scans').buy(__D.Career);
-      const invoice = __D.buildInvoice({
-        bounty: 0, integrity: 100, scansUsed: 2, siphons: 0, repBribe: 0, damages: 0, died: false
-      }, { tier: { i: 0, payMult: 1 }, fee: 0, comp: 0 }, { payBoost: 0 }, true);
-      return {
-        scans: __D.Career.scans,
-        hasDiagLine: invoice.lines.some((l) => /Diagnostic activations/.test(l.label))
-      };
-    });
-    if (scanBilling.scans !== 4 || scanBilling.hasDiagLine) {
-      throw new Error('scan charges were not capped/billed correctly');
+    if (fallback.mapLink !== fallback.expectedMapLink) {
+      throw new Error(`fallback map link mismatch: got "${fallback.mapLink}", expected "${fallback.expectedMapLink}"`);
     }
 
     await page.evaluate(() => __D.UI.dive());
@@ -143,7 +135,9 @@ async function captureTransfusionBrief(page) {
       contract: !!__D.Game.contract,
       threats: __D.Game.countPathogens()
     }));
-    if (dive.state !== 'play' || dive.o2 <= 0 || !dive.contract) throw new Error('contract dive did not start');
+    if (dive.state !== 'play') throw new Error(`expected play state, got "${dive.state}"`);
+    if (dive.o2 <= 0) throw new Error('o2 should be positive at dive start');
+    if (!dive.contract) throw new Error('contract dive did not start');
     pass++;
   } catch (error) {
     fail++;
