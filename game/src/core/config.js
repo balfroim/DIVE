@@ -55,7 +55,7 @@ export const CFG = {
     windR: 34       // how far it rears back before firing
   },
 
-  /* ---- scanning (a consumable, billed per activation) ----------------- */
+  /* ---- scanning (a consumable) ---------------------------------------- */
   scan: { maxR: 540, time: 1.0, idTime: 7.5 },
 
   /* ---- the oxygen tank: the dive clock -------------------------------- */
@@ -99,10 +99,11 @@ export const CFG = {
 
   /* ---- the Division's ledger. Every verb has a price. ----------------- */
   econ: {
-    scanCost: 25,     // billed per charge ACTIVATED, settled at extraction
+    scanCost: 0,      // scan charges are bought up front, not billed on use
     scanBuy: 60,      // requisition price for a pack of charges
     scanBuyN: 3,
-    issue: 2,         // "statutory minimum" charges issued free per contract
+    scanMax: 4,
+    issue: 0,         // scan charges are requisitioned, not issued free
     killBase: 18,     // base elimination bounty (scales with difficulty/tier/combo)
     quarantine: 35,   // culling a corrupting host cell before it flips
     deductHost: 90,   // damages for destroying client property

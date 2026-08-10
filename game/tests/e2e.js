@@ -28,6 +28,8 @@ async function captureBrief(page, organId, seed) {
       site: document.getElementById('brief-site').textContent,
       grade: document.getElementById('brief-grade').textContent,
       readiness: document.getElementById('brief-suitbox').dataset.state,
+      tgtName: document.getElementById('brief-tgtname').textContent,
+      tgtDesc: document.getElementById('brief-tgtdesc').textContent,
       total: document.getElementById('brief-total').textContent,
       warn: document.getElementById('brief-insurance-note').textContent,
       contract: !!__D.Career.pending,
@@ -37,6 +39,22 @@ async function captureBrief(page, organId, seed) {
       mapLink: __D.Career.pending.organ.map ?? null
     };
   }, { organId, seed });
+}
+
+async function captureTransfusionBrief(page) {
+  return page.evaluate(() => {
+  const offer = __D.generateOffers(30, 8).find((o) => o.type === 'transfusion');
+  if (!offer) throw new Error('no transfusion offer');
+  __D.Career.offers = [offer];
+  __D.UI.showBrief(0);
+  return {
+    tgtName: document.getElementById('brief-tgtname').textContent,
+    tgtDesc: document.getElementById('brief-tgtdesc').textContent,
+    note: offer.typeNote,
+    abo: offer.abo,
+    donorAbo: offer.donorAbo
+  };
+  });
 }
 
 (async () => {
@@ -74,6 +92,42 @@ async function captureBrief(page, organId, seed) {
       Math.abs(fallback.mapPressure - fallback.pressure) > 0.001 || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
     }
+    const transfusion = await captureTransfusionBrief(page);
+    if (!transfusion.tgtName.includes(transfusion.donorAbo) || !transfusion.tgtDesc.includes(transfusion.note)) {
+      throw new Error('transfusion briefing did not show the contract blood types');
+    }
+
+    const ledger = await page.evaluate(() => {
+      __D.Career.agent = 'RANKER';
+      __D.Career.rep = 44;
+      __D.Career.credits = 1337;
+      __D.Career.contracts = 6;
+      __D.Career.bestTier = 'B';
+      __D.Career.filePayroll();
+      __D.UI.paintScores('scores-start');
+      return {
+        table: document.querySelector('#scores-start table.sc') !== null,
+        header: document.querySelector('#scores-start table.sc thead') !== null,
+        highlighted: document.querySelector('#scores-start tr.me') !== null
+      };
+    });
+    if (!ledger.table || !ledger.header || !ledger.highlighted) throw new Error('leaderboard was not rendered correctly');
+
+    const scanBilling = await page.evaluate(() => {
+      __D.Career.scans = 3;
+      __D.SHOP[0].buy(__D.Career);
+      const invoice = __D.buildInvoice({
+        bounty: 0, integrity: 100, scansUsed: 2, siphons: 0, repBribe: 0, damages: 0, died: false
+      }, { tier: { i: 0, payMult: 1 }, fee: 0, comp: 0 }, { payBoost: 0 }, true);
+      return {
+        scans: __D.Career.scans,
+        hasDiagLine: invoice.lines.some((l) => /Diagnostic activations/.test(l.label))
+      };
+    });
+    if (scanBilling.scans !== 4 || scanBilling.hasDiagLine) {
+      throw new Error('scan charges were not capped/billed correctly');
+    }
+
     await page.evaluate(() => __D.UI.dive());
     await sleep(600);
     const dive = await page.evaluate(() => ({
