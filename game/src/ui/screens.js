@@ -245,23 +245,22 @@ export const UI = {
     $('brief-depth').textContent = s.depth;
     $('brief-waves').textContent = String(s.waves);
     $('brief-mapnote').textContent = s.note;
-    $('brief-site').textContent = offer.organ.name;
-    $('brief-mapdesc').textContent = s.pressure;
-    $('brief-contract').textContent = `Contract: ${esc(s.typeShort)}`;
-    $('brief-tgtname').textContent = `Target: ${spec.name}`;
-    $('brief-tgtdesc').textContent = `Tactics: ${s.objective}`;
+    $('brief-site').textContent = offer.organ.name + ' (' + offer.organ.short + ')';
+    $('brief-mapdesc').textContent = s.band;
+    $('brief-tgtname').textContent = `${spec.name}`;
+    $('brief-tgtdesc').textContent = `${spec.desc}`;
+    $('brief-goal-label').textContent = esc(s.typeShort);
     $('brief-goal').textContent = s.objective;
     $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
     $('brief-grade').textContent = s.difficulty;
-    $('brief-tiernote').textContent = s.band + ' pressure \u00b7 ' + s.pressure + ' bar';
     const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
     const suitBox = $('brief-suitbox');
     suitBox.dataset.state = suitState;
     $('brief-suit').innerHTML = suitState === 'ready'
-      ? '<span>\u2713</span><span>' + s.suit + ' required / ' + Career.suit + ' owned</span>'
+      ? '<span>\u2713</span><span>' + s.suit + '</span>'
       : suitState === 'marginal'
-        ? '<span>\u26a0</span><span>' + s.suit + ' required / ' + Career.suit + ' owned</span>'
-        : '<span>\u2716</span><span>' + s.suit + ' required / ' + Career.suit + ' owned</span>';
+        ? '<span>\u26a0</span><span>' + s.suit + '</span>'
+        : '<span>\u2716</span><span>' + s.suit + '</span>';
     $('brief-fee').textContent = cr(s.fee);
     $('brief-comp').textContent = cr(s.comp);
     $('brief-total').textContent = cr(s.fee + s.comp);

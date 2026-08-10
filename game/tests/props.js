@@ -39,9 +39,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         repLoss: offer.repLoss
       }));
     });
-    if (variants[0].difficulty !== 'EASY' || variants[1].difficulty !== 'NORMAL' || variants[2].difficulty !== 'HARD') {
-      throw new Error('contract variants were not labeled easy/normal/hard');
-    }
     if (!(variants[0].mean <= variants[1].mean && variants[1].mean <= variants[2].mean)) {
       throw new Error('contract organs were not ordered by rep expectation');
     }

@@ -293,8 +293,8 @@
   .briefing .card__title{font:600 12px/1.2 var(--font-sans);letter-spacing:.1em;text-transform:uppercase;margin:0 0 var(--gap-xs)}
   .briefing .card--primary .card__title{color:var(--accent-brand)}
   .briefing .card--warning .card__title{color:var(--accent-caution)}
-  .briefing .card__rule{display:flex;gap:var(--gap-sm);font:600 13px/1.4 var(--font-sans);color:var(--accent-caution);margin:0 0 var(--gap-sm)}
-  .briefing .card--primary .card__rule{color:var(--accent-brand)}
+  .briefing .card__rule{display:flex;gap:var(--gap-sm);font:600 13px/1.4 var(--font-sans);color:var(--text-secondary);margin:0 0 var(--gap-sm)}
+  .briefing .card--primary .card__rule{color:var(--text-secondary)}
   .briefing .card--info .card__rule{color:var(--text-secondary)}
   .briefing .card__behavior{margin:var(--gap-sm) 0 0}
   .briefing .terms{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-lg);padding:var(--gap-lg);background:var(--bg-card);border:1px solid var(--border-card);border-radius:var(--radius)}
@@ -455,15 +455,13 @@
               <canvas id="cv-site" width="150" height="150"></canvas>
             </figure>
             <div>
-              <div class="label">Site</div>
-              <div class="value" id="brief-site">&mdash;</div>
-              <div class="label" id="brief-mapnote-label">Map note</div>
+              <div class="label" id="brief-site">&mdash;</div>
               <div class="prose" id="brief-mapnote">&mdash;</div>
               <dl class="metric-row">
                 <div><dt class="label">Depth</dt><dd class="value" id="brief-depth">&mdash;</dd></div>
                 <div><dt class="label">Waves</dt><dd class="value" id="brief-waves">&mdash;</dd></div>
                 <div><dt class="label">Pressure</dt><dd class="value" id="brief-mapdesc">&mdash;</dd></div>
-                <div data-state="ready" id="brief-suitbox"><dt class="label">Deployment</dt><dd class="value" id="brief-suit"><span>✓</span><span>&mdash;</span></dd></div>
+                <div data-state="ready" id="brief-suitbox"><dt class="label">Suit</dt><dd class="value" id="brief-suit"></dd></div>
               </dl>
             </div>
           </div>
@@ -472,21 +470,19 @@
           <h2 class="act__title">Threat assessment</h2>
           <div class="threat-bar">
             <div class="threat-bar__goal">
-              <div class="label">Goal</div>
+              <div class="label" id="brief-goal-label">Goal</div>
               <div class="prose" id="brief-goal">&mdash;</div>
             </div>
             <div class="threat-bar__tier" id="brief-tier" data-severity="mid">
               <div class="threat-bar__grade" id="brief-grade">MANAGEABLE</div>
-              <div class="threat-bar__tier-note" id="brief-tiernote">&mdash;</div>
             </div>
           </div>
           <div class="threat-grid">
             <article class="card card--primary">
               <canvas id="cv-tgt" width="150" height="150"></canvas>
               <div>
-                <div class="card__title" id="brief-contract">Contract target</div>
-                <div class="card__rule" id="brief-tgtname">&mdash;</div>
-                <div class="prose card__behavior" id="brief-tgtdesc">&mdash;</div>
+                <div class="card__title" id="brief-tgtname">Contract target</div>
+                <div class="card__rule" id="brief-tgtdesc">&mdash;</div>
               </div>
             </article>
             <div hidden>
