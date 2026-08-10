@@ -34,8 +34,8 @@ function hover(text, tip) {
 }
 
 function blockedSuitCopy(s, currentSuit) {
-  return '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
-    ' pressure; yours is ' + currentSuit + '.</p>';
+  return 'Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
+    ' pressure; yours is ' + currentSuit + '.';
 }
 
 function paintSiteMap(canvas, organ, t) {
@@ -238,38 +238,44 @@ export const UI = {
     // $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
 
     /* specimens */
+    preview.sig = previewEnt('host', offer.sig, offer.deviation);
     preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation);
+    preview.sym = previewEnt(anySymbiote(), offer.sig, offer.deviation);
     const spec = PSPEC[offer.targetSpecies];
     $('brief-depth').textContent = s.depth;
     $('brief-waves').textContent = String(s.waves);
     $('brief-mapnote').textContent = s.note;
-    $('brief-mapnote-label').textContent = `${offer.organ.name} (${offer.organ.short})`
+    $('brief-site').textContent = offer.organ.name;
     $('brief-mapdesc').textContent = s.pressure;
     $('brief-contract').textContent = `Contract: ${esc(s.typeShort)}`;
     $('brief-tgtname').textContent = `Target: ${spec.name}`;
-    $('brief-tgtdesc').textContent = `Goal: ${s.objective}`;
+    $('brief-tgtdesc').textContent = `Tactics: ${s.objective}`;
+    $('brief-goal').textContent = s.objective;
     $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
     $('brief-grade').textContent = s.difficulty;
-    $('brief-tiernote').textContent = s.band + ' pressure \u00b7 suit ' + s.suit + ' required';
-    const readiness = $('brief-readiness');
-    readiness.dataset.state = Career.suit >= s.suit ? 'clear' : 'blocked';
-    readiness.innerHTML = Career.suit >= s.suit
-      ? '<span>\u2713</span><span>Cleared</span>'
-      : '<span>\u26a0</span><span>Blocked</span>';
+    $('brief-tiernote').textContent = s.band + ' pressure \u00b7 ' + s.pressure + ' bar';
+    const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
+    const suitBox = $('brief-suitbox');
+    suitBox.dataset.state = suitState;
+    $('brief-suit').innerHTML = suitState === 'ready'
+      ? '<span>\u2713</span><span>' + s.suit + ' required / ' + Career.suit + ' owned</span>'
+      : suitState === 'marginal'
+        ? '<span>\u26a0</span><span>' + s.suit + ' required / ' + Career.suit + ' owned</span>'
+        : '<span>\u2716</span><span>' + s.suit + ' required / ' + Career.suit + ' owned</span>';
     $('brief-fee').textContent = cr(s.fee);
     $('brief-comp').textContent = cr(s.comp);
     $('brief-total').textContent = cr(s.fee + s.comp);
     $('brief-rep-gain').textContent = '+' + s.rep;
     $('brief-rep-loss').textContent = '\u2212' + s.risk;
+    $('brief-insurance-tier').textContent = s.tier.label + ' \u00b7 ' + s.tier.name;
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
-    $('brief-warn').innerHTML = under
+    $('brief-insurance-note').textContent = under
       ? blockedSuitCopy(s, Career.suit)
       : s.lethal
-        ? '<p><b>Insured client.</b> Death here voids the licence and ends the career file.</p>'
-        : '<p><b>Uninsured client.</b> Casualties are billable, not terminal.</p>';
-    $('brief-warn').dataset.state = under ? 'blocked' : 'clear';
+        ? 'Insured client. Death here voids the licence and ends the career file.'
+        : 'Uninsured client. Casualties are billable, not terminal.';
     const diveBtn = $('btn-dive');
     if (diveBtn) diveBtn.disabled = under;
 

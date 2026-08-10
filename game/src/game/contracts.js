@@ -59,8 +59,7 @@ function o2Estimate(rows, diff, pressure) {
 export function makeContract(rep, seed, slot) {
   const R = rngHelpers(seed);
   const clients = clientsForRep(rep);
-  const variant = slot <= 0 ? 'basic' : slot >= 2 ? 'ambitious' : 'manageable';
-  const variantMul = variant === 'easy' ? 0.82 : variant === 'hard' ? 1.18 : 1;
+  const variant = slot <= 0 ? 'easy' : slot >= 2 ? 'hard' : 'normal';
   const organ = organForSlot(rep, slot);
   const type = pickType(rep, R, clamp(slot, 0, 2));
 

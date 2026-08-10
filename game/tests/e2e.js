@@ -27,9 +27,9 @@ async function captureBrief(page, organId, seed) {
       visible: document.getElementById('scr-brief').classList.contains('on'),
       site: document.getElementById('brief-site').textContent,
       grade: document.getElementById('brief-grade').textContent,
-      readiness: document.getElementById('brief-readiness').dataset.state,
+      readiness: document.getElementById('brief-suitbox').dataset.state,
       total: document.getElementById('brief-total').textContent,
-      warn: document.getElementById('brief-warn').textContent,
+      warn: document.getElementById('brief-insurance-note').textContent,
       contract: !!__D.Career.pending,
       mapPainted: painted,
       pressure: organ.pressure,
@@ -70,7 +70,7 @@ async function captureBrief(page, organId, seed) {
     await page.evaluate(() => { __D.Career.suit = 99; });
     const fallback = await captureBrief(page, 'brain', 54321);
     if (!fallback.visible || !fallback.site || fallback.site !== 'Cortex' || !fallback.grade ||
-      fallback.readiness !== 'clear' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
+      fallback.readiness !== 'ready' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
       Math.abs(fallback.mapPressure - fallback.pressure) > 0.001 || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
     }
