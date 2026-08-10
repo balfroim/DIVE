@@ -124,15 +124,15 @@ export const SCRIPTS = {
 
       scan: {
         who: 'vax',
-        text: 'You carry a ~scan pulse~. It identifies whatever it touches, it does not see through tissue, and it is a *consumable*. Every activation is billed to your contract.',
-        next: 'succession'
-      },
-
-      succession: {
-        who: 'vax',
-        text: 'One last thing: if you happen to die on the job, one of your relatives can ~inherit~ your license. In addition to your credits (we don\'t take a cut, unlike the government), they\'ll inherit a portion of your reputation.',
+        text: 'You carry a ~scan pulse~. It identifies whatever it touches, it does not see through tissue, and it is a *consumable*.',
         next: 'end'
       },
+
+      // succession: {
+      //   who: 'vax',
+      //   text: 'One last thing: if you happen to die on the job, one of your relatives can ~inherit~ your license. In addition to your credits (we don\'t take a cut, unlike the government), they\'ll inherit a portion of your reputation.',
+      //   next: 'end'
+      // },
 
       end: {
         who: 'vax',
