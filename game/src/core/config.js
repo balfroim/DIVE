@@ -100,7 +100,7 @@ export const CFG = {
   /* ---- the Division's ledger. Every verb has a price. ----------------- */
   econ: {
     scanCost: 25,     // billed per charge ACTIVATED, settled at extraction
-    scanBuy: 60,      // requisition price for a pack of charges
+    scanBuy: 60,      // shop price for a pack of charges
     scanBuyN: 3,
     issue: 2,         // "statutory minimum" charges issued free per contract
     killBase: 18,     // base elimination bounty (scales with difficulty/tier/combo)

@@ -252,11 +252,11 @@
 <style>
   /* ---- v3: job board, licence bar, briefing stats ---- */
   .offers{display:grid;gap:10px;margin:12px 0}
-  .board-body{display:grid;grid-template-columns:1fr 172px;gap:14px;align-items:start}
+  .board-body{display:grid;gap:14px;align-items:start}
   .board-main{min-width:0}
-  .board-kit{padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,120,160,.22);font-size:12px}
+  .board-kit{padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,120,160,.22);font-size:12px;width:100%}
   .kit-heading{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:8px}
-  .kit-list{display:grid;gap:6px;list-style:none;margin:0;padding:0}
+  .kit-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px;list-style:none;margin:0;padding:0}
   .kit-row{display:flex;justify-content:space-between;align-items:baseline;gap:6px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:5px}
   .kit-row:last-child{border-bottom:0;padding-bottom:0}
   .kit-row dt{color:var(--mut);font-size:10.5px;letter-spacing:.05em}
@@ -282,6 +282,15 @@
   .tierpill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:9.5px;font-weight:800;letter-spacing:.12em;
     background:rgba(255,255,255,.10);color:#ffd7e3;margin-right:6px}
   .tierpill.t2,.tierpill.t3,.tierpill.t4{background:rgba(255,80,110,.22);color:#ffb9c8}
+  .pressurepill,.diffpill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+  .pressurepill--low{background:rgba(95,227,161,.16);color:var(--accent-ready)}
+  .pressurepill--normal{background:rgba(110,232,255,.14);color:var(--cyan)}
+  .pressurepill--raised{background:rgba(255,194,90,.16);color:var(--accent-caution)}
+  .pressurepill--high{background:rgba(255,91,71,.16);color:var(--accent-threat)}
+  .pressurepill--crisis{background:rgba(255,77,94,.22);color:#ffd2d8}
+  .diffpill--easy{background:rgba(95,227,161,.16);color:var(--accent-ready)}
+  .diffpill--manageable{background:rgba(255,194,90,.14);color:var(--accent-caution)}
+  .diffpill--hard{background:rgba(255,91,71,.16);color:var(--accent-threat)}
   .licence{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
     padding:9px 12px;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:12px}
   .licence b{font-family:ui-monospace,Menlo,monospace;letter-spacing:.06em}
@@ -477,12 +486,12 @@
           <span class="mini">BANK <b id="lic-bank">0 cr</b></span>
           <span class="mini">CHARGES <b id="lic-scans">0</b></span>
         </div>
+        <aside class="board-kit" id="board-kit"></aside>
         <div class="board-body">
           <div class="board-main">
             <div class="offers" id="board-offers"></div>
             <div class="memo" id="board-memo"></div>
           </div>
-          <aside class="board-kit" id="board-kit"></aside>
         </div>
         <div class="btnrow">
           <button class="btn ghost" id="btn-shop">Shop</button>

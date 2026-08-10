@@ -1,5 +1,5 @@
 /**
- * Requisitions.
+ * Shop inventory.
  *
  * Each item is `{ id, name, desc, cost(career), buy(career), owned(career) }`.
  * Prices rise with reputation, because the Division prices to what it thinks

@@ -232,6 +232,8 @@ export const UI = {
       const s = offerSummary(offer);
       const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
       const suitIcon = suitState === 'ready' ? '\u2713' : suitState === 'marginal' ? '\u26a0' : '\u2716';
+      const pressureClass = 'pressurepill--' + s.band.toLowerCase();
+      const difficultyClass = 'diffpill--' + s.difficultyKey.toLowerCase();
       const el = document.createElement('div');
       el.className = 'offer' + (s.lethal ? ' risky' : '');
       el.tabIndex = 0;
@@ -241,9 +243,11 @@ export const UI = {
         '<div>' +
           '<div class="job"><span class="tierpill t' + offer.tier.i + '">TIER ' + s.tier + '</span>' + esc(s.job) + '</div>' +
           '<div class="sub">' + esc(s.site) + ' \u00b7 depth ' + s.depth + ' \u00b7 ' + s.waves + ' waves \u00b7 ' +
-            s.band + ' pressure ' + s.pressure + ' \u00b7 ' +
+            '<span class="pressurepill ' + pressureClass + '">pressure ' + esc(s.band.toLowerCase()) + '</span>' +
+            ' \u00b7 ' +
             '<span class="suitpill suitpill--' + suitState + '">' + suitIcon + ' suit\u00a0' + s.suit + '</span>' +
-            ' \u00b7 ' + esc(s.difficulty) + '</div>' +
+            ' \u00b7 ' +
+            '<span class="diffpill ' + difficultyClass + '">' + esc(s.difficulty.toLowerCase()) + '</span></div>' +
         '</div>' +
         '<div>' +
           '<div class="pay">' + (s.fee + s.comp) + ' cr</div>' +
@@ -427,7 +431,7 @@ export const UI = {
       memo = '<b>Vax:</b> Clean work. The board will reflect your standing shortly.';
     }
     $('res-memo').innerHTML = memo;
-    $('btn-res-next').textContent = Career.finished() ? 'Collect your badge' : 'Requisitions';
+    $('btn-res-next').textContent = Career.finished() ? 'Collect your badge' : 'Back to shop';
   },
 
   /* ---------------------------------------------------------------- */
@@ -469,7 +473,7 @@ export const UI = {
         '<footer class="item__foot">' +
           '<span class="item__price value">' + esc(cr(cost)) + '</span>' +
           '<button class="btn btn--primary btn--sm" type="button"' +
-            (afford ? '' : ' disabled') + '>Requisition</button>' +
+            (afford ? '' : ' disabled') + '>Buy</button>' +
         '</footer>';
       article.querySelector('button').addEventListener('click', () => {
         if (Career.credits < cost) return;
