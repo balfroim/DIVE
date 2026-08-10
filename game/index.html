@@ -206,9 +206,11 @@
   table.board{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
   table.board caption{caption-side:top;text-align:left}
   table.board th{text-align:left;font-size:9.5px;letter-spacing:.2em;color:var(--pink);text-transform:uppercase;padding-bottom:6px;font-weight:700}
+  table.board th.w{text-align:center}
   table.board td{padding:3.5px 0;border-top:1px solid rgba(255,255,255,.055);color:#f1cbd8}
   table.board td.n{color:#8b6272;width:22px}
-  table.board td.w,table.board td.s{text-align:right;font-variant-numeric:tabular-nums}
+  table.board td.w{text-align:center;font-variant-numeric:tabular-nums}
+  table.board td.s{text-align:right;font-variant-numeric:tabular-nums}
   table.board td.s{color:var(--accent-reward);font-weight:700}
   table.board tr[data-self="true"] td{color:var(--accent-reward)!important}
   table.board td:last-child[data-negative]{color:var(--accent-threat)!important}
