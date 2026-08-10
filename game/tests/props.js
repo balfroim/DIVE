@@ -114,7 +114,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       __D.Game.contract = contract;
       __D.Career.contract = contract;
       __D.Career.rep = 1;
-      __D.Career.credits = 10;
+      __D.Career.credits = -509;
       __D.Career.struckOff = false;
       __D.Career.dead = false;
       __D.Game.run = {
@@ -138,6 +138,53 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (debt.state !== 'over' || !debt.over || !debt.finished || debt.reason !== 'debt' ||
       debt.rep !== 0 || debt.credits > 0) {
       throw new Error('reputation bribe did not trigger a debt game over');
+    }
+    const over = await page.evaluate(() => {
+      const stats = [...document.querySelectorAll('#over-stats .stat')].map((el) => ({
+        value: el.querySelector('.stat__value')?.textContent || '',
+        label: el.querySelector('.stat__label')?.textContent || '',
+        title: el.querySelector('.stat__value')?.getAttribute('title') || ''
+      }));
+      const table = document.querySelector('#scores-over table');
+      const selfRow = document.querySelector('#scores-over tr[data-self="true"]');
+      const selfReason = selfRow && selfRow.querySelector('td:nth-child(5)');
+      const selfCredits = selfRow && selfRow.querySelector('td:last-child');
+      return {
+        section: document.querySelector('#scr-over .section-label')?.textContent || '',
+        hasSave: !!document.getElementById('btn-save'),
+        hasNameEntry: !!document.getElementById('over-name'),
+        stats,
+        caption: table && table.querySelector('caption') ? table.querySelector('caption').textContent : '',
+        headers: table ? [...table.querySelectorAll('th')].map((th) => th.textContent) : [],
+        scopes: table ? [...table.querySelectorAll('th')].every((th) => th.getAttribute('scope') === 'col') : false,
+        selfRow: !!selfRow,
+        selfMarker: selfRow ? selfRow.querySelector('td:nth-child(2)').textContent : '',
+        selfReasonText: selfReason ? selfReason.textContent : '',
+        selfCreditsText: selfCredits ? selfCredits.textContent : '',
+        selfCreditsNegative: !!(selfCredits && selfCredits.hasAttribute('data-negative'))
+      };
+    });
+    if (over.section !== 'File') throw new Error('file heading missing');
+    if (over.hasSave || over.hasNameEntry) throw new Error('file button block was not removed');
+    if (over.stats.length !== 9) throw new Error('wrong number of over stats');
+    if (over.stats[0].value === '' || over.stats[0].label === '') throw new Error('stat value/label were not split');
+    if (over.stats[7].value !== '—' || over.stats[7].title !== 'Not applicable') {
+      throw new Error('oxygen left fallback did not keep its accessibility title');
+    }
+    if (over.caption !== 'Agent standings, current run highlighted' || !over.scopes) {
+      throw new Error('leaderboard caption or scope attributes missing');
+    }
+    if (!over.headers.includes('End reason')) {
+      throw new Error('leaderboard end reason column missing');
+    }
+    if (!over.selfRow || !over.selfMarker.includes('this run')) {
+      throw new Error('current run row was not marked');
+    }
+    if (!over.selfReasonText) {
+      throw new Error('current run end reason was not rendered');
+    }
+    if (!over.selfCreditsText || !over.selfCreditsNegative) {
+      throw new Error('negative credits were not marked');
     }
     pass++;
   } catch (error) {

@@ -38,6 +38,16 @@ function blockedSuitCopy(s, currentSuit) {
     ' pressure; yours is ' + currentSuit + '.';
 }
 
+function endReasonLabel(reason) {
+  switch (reason) {
+    case 'debt': return 'Debt';
+    case 'litigation': return 'Litigation';
+    case 'asphyxia': return 'Asphyxia';
+    case 'retired': return 'Retired';
+    default: return reason ? reason.replace(/^\w/, (c) => c.toUpperCase()) : 'Retired';
+  }
+}
+
 function paintSiteMap(canvas, organ, t) {
   if (!canvas || !organ || !canvas.getContext) return;
   const c = canvas.getContext('2d');
@@ -505,6 +515,8 @@ export const UI = {
     Game.state = 'over';
     show('over');
     this.syncDevTools();
+    if (retired && !Career.reason) Career.reason = 'retired';
+    Career.filePayroll();
     const struck = Career.struckOff;
     const dead = Career.dead;
     $('over-title').textContent = dead
@@ -528,11 +540,11 @@ export const UI = {
       [String(Career.pathogens), 'Pathogens'],
       [String(Career.wrongful), 'Wrongful kills'],
       [String(Career.charges), 'Charges fired'],
-      [dead ? (Career.lastO2Left + 's') : '—', 'Oxygen left'],
+      [dead ? (Career.lastO2Left + 's') : '—', 'Oxygen left', dead ? '' : 'Not applicable'],
       [cr(Career.credits), 'Final balance']
     ];
     $('over-stats').innerHTML = tiles
-      .map((t) => '<div class="stat"><b>' + esc(t[0]) + '</b><span>' + esc(t[1]) + '</span></div>')
+      .map((t) => '<li class="stat"><span class="stat__value value"' + (t[2] ? ' title="' + esc(t[2]) + '"' : '') + '>' + esc(t[0]) + '</span><span class="stat__label label">' + esc(t[1]) + '</span></li>')
       .join('');
     const inp = $('inp-name');
     if (inp) inp.value = Career.agent;
@@ -547,7 +559,6 @@ export const UI = {
     }
     Career.filePayroll();
     Store.set(KEYS.name, Career.agent);
-    $('over-name').style.display = 'none';
     this.paintScores('scores-over');
     SFX.ui();
   },
@@ -560,15 +571,18 @@ export const UI = {
       el.innerHTML = '<div class="empty">No payroll records on file.</div>';
       return;
     }
-    el.innerHTML = '<table class="sc"><thead><tr><th>#</th><th>Agent</th><th>Tier</th><th>Rep</th><th>Credits</th></tr></thead><tbody>' +
-      list.map((s, i) =>
-        '<tr' + (s.name === Career.agent ? ' class="me"' : '') + '>' +
-        '<td class="n">' + (i + 1) + '</td>' +
-        '<td>' + esc(s.name) + '</td>' +
-        '<td>' + esc(s.tier || 'D') + '</td>' +
-        '<td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td>' +
-        '<td class="s">' + cr(s.cr) + '</td>' +
-        '</tr>').join('') + '</tbody></table>';
+    el.innerHTML = '<table class="board"><caption class="sr-only">Agent standings, current run highlighted</caption><thead><tr><th scope="col">#</th><th scope="col">Agent</th><th scope="col">Tier</th><th scope="col">Rep</th><th scope="col">End reason</th><th scope="col">Credits</th></tr></thead><tbody>' +
+      list.map((s, i) => {
+        const self = s.d === Career.lastFiledAt;
+        return '<tr' + (self ? ' data-self="true"' : '') + '>' +
+          '<td class="n">' + (i + 1) + '</td>' +
+          '<td>' + (self ? '<span aria-hidden="true">&#9656; </span>' + esc(s.name) + '<span class="sr-only"> (this run)</span>' : esc(s.name)) + '</td>' +
+          '<td>' + esc(s.tier || 'D') + '</td>' +
+          '<td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td>' +
+          '<td>' + esc(endReasonLabel(s.reason)) + '</td>' +
+          '<td class="s"' + (s.cr < 0 ? ' data-negative="true"' : '') + '>' + cr(s.cr) + '</td>' +
+          '</tr>';
+      }).join('') + '</tbody></table>';
   },
 
   /* ---------------------------------------------------------------- */
@@ -647,7 +661,7 @@ export function wireUI() {
   on('dlg-input', 'keydown', (e) => { if (e.key === 'Enter') { e.stopPropagation(); DLG.submitName(); } });
 
   on('btn-shop', 'click', () => UI.showShop());
-  on('btn-retire', 'click', () => { Career.filePayroll(); UI.showOver(true); });
+  on('btn-retire', 'click', () => { UI.showOver(true); });
 
   on('btn-dive', 'click', () => UI.dive());
   on('btn-decline', 'click', () => UI.showBoard());

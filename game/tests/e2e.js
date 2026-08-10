@@ -34,6 +34,7 @@ async function captureBrief(page, organId, seed) {
     }
     return {
       visible: document.getElementById('scr-brief').classList.contains('on'),
+      insuranceNote: !!document.getElementById('brief-insurance-note'),
       site: document.getElementById('brief-site').textContent,
       expectedSite: organ.name + ' (' + organ.short + ')',
       grade: document.getElementById('brief-grade').textContent,
@@ -97,6 +98,7 @@ async function captureTransfusionBrief(page) {
       throw new Error(`briefing site mismatch: got "${brief.site}", expected "${brief.expectedSite}"`);
     }
     if (!brief.grade) throw new Error('briefing grade missing');
+    if (brief.insuranceNote) throw new Error('briefing insurance note should not be rendered');
     if (brief.readiness !== 'blocked') throw new Error(`expected readiness "blocked", got "${brief.readiness}"`);
     if (!brief.total) throw new Error('briefing total missing');
     if (!brief.contract) throw new Error('pending contract missing');
@@ -116,6 +118,7 @@ async function captureTransfusionBrief(page) {
       throw new Error(`fallback site mismatch: got "${fallback.site}", expected "${fallback.expectedSite}"`);
     }
     if (!fallback.grade) throw new Error('fallback grade missing');
+    if (fallback.insuranceNote) throw new Error('fallback briefing insurance note should not be rendered');
     if (fallback.readiness !== 'ready') throw new Error(`expected readiness "ready", got "${fallback.readiness}"`);
     if (!fallback.total) throw new Error('fallback total missing');
     if (!fallback.contract) throw new Error('fallback pending contract missing');

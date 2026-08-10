@@ -64,6 +64,7 @@ export const Career = {
   struckOff: false,
   dead: false,
   lastO2Left: 0,
+  lastFiledAt: 0,
   reason: '',
   devMode: false,
   dev: { ...DEV_DEFAULTS },
@@ -96,6 +97,7 @@ export const Career = {
     this.struckOff = false;
     this.dead = false;
     this.lastO2Left = 0;
+    this.lastFiledAt = 0;
     this.reason = '';
   },
 
@@ -265,16 +267,19 @@ export const Career = {
 
   filePayroll() {
     const list = this.payroll();
-    list.push({
+    const entry = {
       name: this.fullName(),
       cr: Math.round(this.credits),
       rep: Math.round(this.rep),
       contracts: this.contracts,
       tier: this.bestTier,
+      reason: this.reason || 'retired',
       d: Date.now()
-    });
+    };
+    this.lastFiledAt = entry.d;
+    list.push(entry);
     list.sort((a, b) => b.cr - a.cr);
     Store.setJSON(KEYS.scores, list.slice(0, 8));
-    return list;
+    return entry;
   }
 };
