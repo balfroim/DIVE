@@ -147,6 +147,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       }));
       const table = document.querySelector('#scores-over table');
       const selfRow = document.querySelector('#scores-over tr[data-self="true"]');
+      const selfReason = selfRow && selfRow.querySelector('td:nth-child(5)');
       const selfCredits = selfRow && selfRow.querySelector('td:last-child');
       return {
         section: document.querySelector('#scr-over .section-label')?.textContent || '',
@@ -154,9 +155,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         hasNameEntry: !!document.getElementById('over-name'),
         stats,
         caption: table && table.querySelector('caption') ? table.querySelector('caption').textContent : '',
+        headers: table ? [...table.querySelectorAll('th')].map((th) => th.textContent) : [],
         scopes: table ? [...table.querySelectorAll('th')].every((th) => th.getAttribute('scope') === 'col') : false,
         selfRow: !!selfRow,
         selfMarker: selfRow ? selfRow.querySelector('td:nth-child(2)').textContent : '',
+        selfReasonText: selfReason ? selfReason.textContent : '',
         selfCreditsText: selfCredits ? selfCredits.textContent : '',
         selfCreditsNegative: !!(selfCredits && selfCredits.hasAttribute('data-negative'))
       };
@@ -171,8 +174,14 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (over.caption !== 'Agent standings, current run highlighted' || !over.scopes) {
       throw new Error('leaderboard caption or scope attributes missing');
     }
+    if (!over.headers.includes('End reason')) {
+      throw new Error('leaderboard end reason column missing');
+    }
     if (!over.selfRow || !over.selfMarker.includes('this run')) {
       throw new Error('current run row was not marked');
+    }
+    if (!over.selfReasonText) {
+      throw new Error('current run end reason was not rendered');
     }
     if (!over.selfCreditsText || !over.selfCreditsNegative) {
       throw new Error('negative credits were not marked');

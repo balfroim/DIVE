@@ -38,6 +38,16 @@ function blockedSuitCopy(s, currentSuit) {
     ' pressure; yours is ' + currentSuit + '.';
 }
 
+function endReasonLabel(reason) {
+  switch (reason) {
+    case 'debt': return 'Debt';
+    case 'litigation': return 'Litigation';
+    case 'asphyxia': return 'Asphyxia';
+    case 'retired': return 'Retired';
+    default: return reason ? reason.replace(/^\w/, (c) => c.toUpperCase()) : 'Retired';
+  }
+}
+
 function paintSiteMap(canvas, organ, t) {
   if (!canvas || !organ || !canvas.getContext) return;
   const c = canvas.getContext('2d');
@@ -503,6 +513,7 @@ export const UI = {
     Game.state = 'over';
     show('over');
     this.syncDevTools();
+    if (retired && !Career.reason) Career.reason = 'retired';
     Career.filePayroll();
     const struck = Career.struckOff;
     const dead = Career.dead;
@@ -558,7 +569,7 @@ export const UI = {
       el.innerHTML = '<div class="empty">No payroll records on file.</div>';
       return;
     }
-    el.innerHTML = '<table class="board"><caption class="sr-only">Agent standings, current run highlighted</caption><thead><tr><th scope="col">#</th><th scope="col">Agent</th><th scope="col">Tier</th><th scope="col">Rep</th><th scope="col">Credits</th></tr></thead><tbody>' +
+    el.innerHTML = '<table class="board"><caption class="sr-only">Agent standings, current run highlighted</caption><thead><tr><th scope="col">#</th><th scope="col">Agent</th><th scope="col">Tier</th><th scope="col">Rep</th><th scope="col">End reason</th><th scope="col">Credits</th></tr></thead><tbody>' +
       list.map((s, i) => {
         const self = s.d === Career.lastFiledAt;
         return '<tr' + (self ? ' data-self="true"' : '') + '>' +
@@ -566,6 +577,7 @@ export const UI = {
           '<td>' + (self ? '<span aria-hidden="true">&#9656; </span>' + esc(s.name) + '<span class="sr-only"> (this run)</span>' : esc(s.name)) + '</td>' +
           '<td>' + esc(s.tier || 'D') + '</td>' +
           '<td class="w">' + (s.rep === undefined ? '' : s.rep + ' rep') + '</td>' +
+          '<td>' + esc(endReasonLabel(s.reason)) + '</td>' +
           '<td class="s"' + (s.cr < 0 ? ' data-negative="true"' : '') + '>' + cr(s.cr) + '</td>' +
           '</tr>';
       }).join('') + '</tbody></table>';

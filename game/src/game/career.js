@@ -273,6 +273,7 @@ export const Career = {
       rep: Math.round(this.rep),
       contracts: this.contracts,
       tier: this.bestTier,
+      reason: this.reason || 'retired',
       d: Date.now()
     };
     this.lastFiledAt = entry.d;
