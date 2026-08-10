@@ -25,10 +25,15 @@ async function captureBrief(page, organId, seed) {
     }
     return {
       visible: document.getElementById('scr-brief').classList.contains('on'),
-      chips: document.getElementById('brief-chips').textContent.length > 0,
+      site: document.getElementById('brief-site').textContent,
+      grade: document.getElementById('brief-grade').textContent,
+      readiness: document.getElementById('brief-readiness').dataset.state,
+      total: document.getElementById('brief-total').textContent,
+      warn: document.getElementById('brief-warn').textContent,
       contract: !!__D.Career.pending,
       mapPainted: painted,
-      mapText: document.getElementById('brief-mapdesc').textContent,
+      pressure: organ.pressure,
+      mapPressure: parseFloat(document.getElementById('brief-mapdesc').textContent),
       mapLink: __D.Career.pending.organ.map ?? null
     };
   }, { organId, seed });
@@ -52,17 +57,21 @@ async function captureBrief(page, organId, seed) {
     await sleep(500);
     await page.evaluate(() => __D.DLG.skip());
     await sleep(500);
+    await page.evaluate(() => { __D.Career.suit = 0; });
 
     const brief = await captureBrief(page, 'lung', 12345);
-    if (!brief.visible || !brief.chips || !brief.contract || !brief.mapPainted ||
-      !brief.mapText || !brief.mapText.includes('LUNG MAP') || brief.mapLink !== 'lung') {
+    if (!brief.visible || !brief.site || brief.site !== 'Pulmonary vein' || !brief.grade ||
+      brief.readiness !== 'blocked' || !brief.total || !brief.warn || !brief.contract || !brief.mapPainted ||
+      Math.abs(brief.mapPressure - brief.pressure) > 0.001 || brief.mapLink !== 'lung') {
       throw new Error('briefing failed');
     }
     pass++;
 
+    await page.evaluate(() => { __D.Career.suit = 99; });
     const fallback = await captureBrief(page, 'brain', 54321);
-    if (!fallback.visible || !fallback.chips || !fallback.contract || !fallback.mapPainted ||
-      fallback.mapText.includes('MAP') || fallback.mapLink !== null) {
+    if (!fallback.visible || !fallback.site || fallback.site !== 'Cortex' || !fallback.grade ||
+      fallback.readiness !== 'clear' || !fallback.total || !fallback.warn || !fallback.contract || !fallback.mapPainted ||
+      Math.abs(fallback.mapPressure - fallback.pressure) > 0.001 || fallback.mapLink !== null) {
       throw new Error('fallback briefing failed');
     }
     await page.evaluate(() => __D.UI.dive());

@@ -33,6 +33,11 @@ function hover(text, tip) {
   return '<span class="hoverterm" title="' + esc(tip || '') + '">' + esc(text) + '</span>';
 }
 
+function blockedSuitCopy(s, currentSuit) {
+  return '<p><b>Blocked.</b> Suit rating ' + s.suit + ' is required for ' + s.band.toLowerCase() +
+    ' pressure; yours is ' + currentSuit + '.</p>';
+}
+
 function paintSiteMap(canvas, organ, t) {
   if (!canvas || !organ || !canvas.getContext) return;
   const c = canvas.getContext('2d');
@@ -49,12 +54,9 @@ function paintSiteMap(canvas, organ, t) {
   const scale = Math.min((S - 18) / Math.max(1, maxCols), (S - 22) / Math.max(1, rows.length));
   const x = (S - maxCols * scale) / 2;
   const y = (S - rows.length * scale) / 2;
-  const labelY = Math.max(10, y - Math.max(4, Math.floor(scale * 0.3)));
   c.font = Math.max(8, Math.floor(scale * 0.86)) + 'px ui-monospace,SFMono-Regular,Menlo,monospace';
   c.textAlign = 'center';
   c.textBaseline = 'middle';
-  c.fillStyle = 'rgba(255,255,255,0.22)';
-  c.fillText(map.id.toUpperCase(), S * 0.5, labelY);
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r];
     for (let col = 0; col < maxCols; col++) {
@@ -172,6 +174,7 @@ export const UI = {
   showBoard() {
     Game.state = 'board';
     if (Career.finished()) { this.showOver(false); return; }
+    Career.pendingSummary = null;
     if (!Career.offers.length) Career.refreshBoard();
     show('board');
     this.syncDevTools();
@@ -228,59 +231,62 @@ export const UI = {
     Game.state = 'brief';
     show('brief');
     const s = offerSummary(offer);
+    Career.pendingSummary = s;
 
-    $('brief-num').textContent = 'Work order ' + offer.id + ' \u00b7 ' + Career.agent;
+    $('brief-num').textContent = 'Work order ' + offer.id;
     $('brief-client').textContent = offer.client.job;
     $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
-    $('brief-site').innerHTML = esc(s.site) + ' \u00b7 ' + hover(s.organ, s.note);
-
-    const chips = [
-      ['TIER', s.tier + ' \u00b7 ' + s.tierLabel],
-      ['DEPTH', s.depth + ' rows'],
-      ['WAVES', String(s.waves)],
-      ['CONTRACT', s.difficulty],
-      ['PRESSURE', s.band + ' ' + s.pressure],
-      ['SUIT', 'rating ' + s.suit + (Career.suit >= s.suit ? ' \u2713' : ' \u2717 yours ' + Career.suit)],
-      ['ADVANCE', s.fee + ' cr'],
-      ['COMPLETION', s.comp + ' cr'],
-      ['REPUTATION', '+' + s.rep + ' / \u2212' + s.risk]
-    ];
-    $('brief-chips').innerHTML = chips
-      .map((c) => '<span class="chip"><b>' + c[0] + '</b> ' + esc(c[1]) + '</span>')
-      .join('');
+    $('brief-site').textContent = s.site;
 
     /* specimens */
     preview.sig = previewEnt(offer.hostArch, offer.sig, 1);
     preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation);
     preview.sym = previewEnt(anySymbiote(), offer.sig, 1);
     const spec = PSPEC[offer.targetSpecies];
-    $('brief-sigdesc').textContent = NUCNAME[offer.sig.nuc] + ' \u00b7 ' + Math.round(offer.sig.hue) + '\u00b0 hue';
-    $('brief-tgtdesc').textContent = spec ? spec.desc : '';
-    $('brief-tgtname').textContent = (spec ? spec.name : offer.targetSpecies) +
-      (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION, HARD TO CALL' : '');
-    $('brief-kit').textContent = 'KIT: ' + (Career.scans + CFG.econ.issue) + ' SCAN CHARGES \u00b7 ENTRY READY' +
-      (Career.waiver ? ' \u00b7 WAIVER \u00d7' + Career.waiver : '') +
-      (Career.stab ? ' \u00b7 STABILISER READY' : '');
-    $('brief-mapnote').innerHTML = '<b>Map note</b>' + esc(s.note);
-    $('brief-mapdesc').textContent = (s.map ? s.map.toUpperCase() + ' MAP \u00b7 ' : '') +
-      s.organ + ' \u00b7 ' + s.pressure + ' P';
+    $('brief-depth').textContent = s.depth + ' rows';
+    $('brief-waves').textContent = String(s.waves);
+    $('brief-mapnote').textContent = s.note;
+    $('brief-mapdesc').textContent = s.pressure + ' P';
+    $('brief-sigdesc').textContent = NUCNAME[offer.sig.nuc] + ' nucleus \u00b7 ' + Math.round(offer.sig.hue) + '\u00b0 hue';
+    $('brief-tgtname').innerHTML = '<span>Primary target</span><span>' +
+      esc((spec ? spec.name : offer.targetSpecies) + (offer.deviation < 0.55 ? ' \u00b7 LOW DEVIATION' : '')) + '</span>';
+    $('brief-tgtdesc').textContent = s.objective + (offer.deviation < 0.55 ? ' The shape is noisy, so trust the scan.' : '');
+    $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
+    $('brief-grade').textContent = s.difficulty;
+    $('brief-tiernote').textContent = s.band + ' pressure \u00b7 suit ' + s.suit + ' required';
+    const readiness = $('brief-readiness');
+    readiness.dataset.state = Career.suit >= s.suit ? 'clear' : 'blocked';
+    readiness.innerHTML = Career.suit >= s.suit
+      ? '<span>\u2713</span><span>Cleared</span>'
+      : '<span>\u26a0</span><span>Blocked</span>';
+    $('brief-fee').textContent = cr(s.fee);
+    $('brief-comp').textContent = cr(s.comp);
+    $('brief-total').textContent = cr(s.fee + s.comp);
+    $('brief-rep-gain').textContent = '+' + s.rep;
+    $('brief-rep-loss').textContent = '\u2212' + s.risk;
     paintSiteMap($('cv-site'), offer.organ, Game.t);
 
     const under = Career.suit < s.suit;
-    $('brief-warn').className = 'warnline' + (under || s.lethal ? '' : ' okline');
     $('brief-warn').innerHTML = under
-      ? '<b>SUIT UNDER-RATED.</b> Your shell is rating ' + Career.suit + ' against ' + s.band.toLowerCase() +
-        ' pressure. You will be shoved downstream and the corridors will squeeze. You may dive anyway. Many do.'
+      ? blockedSuitCopy(s, Career.suit)
       : s.lethal
-        ? '<b>INSURED CLIENT.</b> If this one dies, Legal terminates your licence. The white cell kills everything on its path \u2014 mind your angles.'
-        : '<b>UNINSURED CLIENT.</b> A casualty here is billable, not terminal. Good conditions to learn the vessel.';
+        ? '<p><b>Insured client.</b> Death here voids the licence and ends the career file.</p>'
+        : '<p><b>Uninsured client.</b> Casualties are billable, not terminal.</p>';
+    $('brief-warn').dataset.state = under ? 'blocked' : 'clear';
+    const diveBtn = $('btn-dive');
+    if (diveBtn) diveBtn.disabled = under;
 
   },
 
   dive() {
     const offer = Career.pending;
     if (!offer) return;
+    const s = Career.pendingSummary || offerSummary(offer);
+    if (Career.suit < s.suit) {
+      return;
+    }
     Career.accept(offer);
+    Career.pendingSummary = null;
     hideAll();
     Game.startContract(offer);
   },
