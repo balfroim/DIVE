@@ -254,7 +254,7 @@ export const UI = {
     $('brief-tier').dataset.severity = s.difficulty === 'HARD' ? 'high' : s.difficulty === 'EASY' ? 'low' : 'mid';
     $('brief-grade').textContent = s.difficulty;
     $('brief-tiernote').textContent = s.band + ' pressure \u00b7 ' + s.pressure + ' bar';
-    const suitState = Career.suit >= s.suit ? 'ready' : Career.suit === s.suit - 1 ? 'marginal' : 'blocked';
+    const suitState = Career.suit >= s.suit ? 'ready' : Career.suit >= s.suit - 1 ? 'marginal' : 'blocked';
     const suitBox = $('brief-suitbox');
     suitBox.dataset.state = suitState;
     $('brief-suit').innerHTML = suitState === 'ready'
