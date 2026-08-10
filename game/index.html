@@ -19,6 +19,9 @@
     --font-mono:"IBM Plex Mono",ui-monospace,monospace;
     --font-sans:"Inter",system-ui,sans-serif;
     --gap-xs:4px; --gap-sm:8px; --gap-md:12px; --gap-lg:20px; --gap-xl:32px; --radius:10px;
+    --cat-consumable:var(--accent-caution); --cat-upgrade:var(--accent-ready);
+    --cat-protection:var(--accent-brand); --cat-economy:var(--accent-reward);
+    --tile-ratio:4 / 3;
   }
   html,body{height:100%;background:#0b0308;overflow:hidden}
   body{
@@ -163,18 +166,41 @@
   .memo b{font-style:normal;color:var(--amber);letter-spacing:.1em;font-size:10px;display:block;margin-bottom:3px;text-transform:uppercase}
 
   /* ---------- shop ---------- */
-  .credits{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(26px,7vw,40px);
-    font-weight:800;color:var(--amber);line-height:1;text-shadow:0 0 26px rgba(255,194,90,.45)}
-  .shop-item{display:flex;gap:12px;align-items:center;padding:11px;margin-bottom:9px;border-radius:12px;
-    background:rgba(255,255,255,.04);border:1px solid rgba(255,140,175,.20)}
-  .shop-item .ico{flex:0 0 auto;width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    font-size:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10)}
-  .shop-item .info{flex:1;min-width:0}
-  .shop-item .n{font-size:13.5px;font-weight:800;letter-spacing:.03em}
-  .shop-item .n span{font-size:10px;color:var(--mut);font-weight:600;letter-spacing:.1em;margin-left:6px}
-  .shop-item .d{font-size:11px;color:var(--mut);line-height:1.4;margin-top:2px}
-  .shop-item .buy{flex:0 0 auto;width:auto;margin:0;padding:10px 13px;font-size:11px;letter-spacing:.08em;border-radius:9px}
-  .owned{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--amber);margin-top:3px}
+  .shop .label{font:600 11px/1.2 var(--font-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+  .shop .value{font:500 13px/1.4 var(--font-mono);color:var(--text-primary)}
+  .shop .prose{font:400 13px/1.55 var(--font-sans);color:var(--text-secondary)}
+  .shop__header{display:flex;justify-content:space-between;align-items:baseline;gap:var(--gap-md);flex-wrap:wrap;margin-bottom:var(--gap-lg)}
+  .shop__header h1{font-size:clamp(22px,5vw,36px);letter-spacing:.04em;font-weight:800;margin:2px 0 0;background:none;-webkit-background-clip:unset;background-clip:unset;color:var(--text-primary);filter:none;line-height:1.1}
+  .shop__meta{display:flex;gap:var(--gap-md);align-items:baseline;flex-wrap:wrap;margin-top:var(--gap-xs)}
+  .shop__meta .label,.shop__meta .value{display:inline}
+  .shop__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--gap-md);list-style:none;padding:0;margin:0}
+  .shop__terms{margin-top:var(--gap-lg)}
+  .item{display:flex;flex-direction:column;gap:var(--gap-sm);height:100%;padding:var(--gap-md);background:var(--bg-card);border:1px solid var(--border-card);border-left:3px solid var(--cat,var(--border-card));border-radius:var(--radius)}
+  .item[data-category="consumable"]{--cat:var(--cat-consumable)}
+  .item[data-category="upgrade"]{--cat:var(--cat-upgrade)}
+  .item[data-category="protection"]{--cat:var(--cat-protection)}
+  .item[data-category="economy"]{--cat:var(--cat-economy)}
+  .item[data-state="unaffordable"]{opacity:.55}
+  .item[data-state="unaffordable"] .btn{pointer-events:none}
+  .item[data-state="owned"] .item__foot .btn{display:none}
+  .item__tile{position:relative;aspect-ratio:var(--tile-ratio);display:grid;place-items:center;border-radius:calc(var(--radius) - 2px);background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--cat,var(--border-card)) 22%,transparent),transparent 70%),var(--bg-page);color:var(--cat,var(--text-muted))}
+  .item__sigil{width:56%;height:auto}
+  .item__sigil path,.item__sigil circle,.item__sigil polygon,.item__sigil polyline{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .item__tag{position:absolute;top:var(--gap-sm);left:var(--gap-sm);font:600 9px/1 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--cat,var(--text-muted));opacity:.85}
+  .item__name{font:600 13px/1.25 var(--font-sans);letter-spacing:.04em;color:var(--text-primary);margin:0}
+  .item__desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+  .item__held{display:flex;gap:var(--gap-sm);margin:0}
+  .item__held dd{margin:0}
+  .item__foot{display:flex;justify-content:space-between;align-items:center;gap:var(--gap-sm);margin-top:auto;padding-top:var(--gap-sm);border-top:1px solid var(--border-subtle)}
+  .item__price{color:var(--accent-reward)}
+  .item__short{color:var(--accent-threat);margin:0}
+  .btn--sm{height:34px;padding:0 14px;font-size:12px;width:auto;margin:0}
+  .btn--ghost{background:rgba(255,255,255,.06);color:var(--text-primary);border:1px solid rgba(255,150,180,.3);box-shadow:none;margin:0;padding:8px 14px;font-size:12px}
+  .btn--ghost:active{transform:translateY(2px)}
+  @media (max-width:560px){
+    .shop__header{flex-direction:column;align-items:flex-start;gap:var(--gap-sm)}
+    .item__tile{aspect-ratio:16 / 9}
+  }
 
   table.sc{width:100%;border-collapse:collapse;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
   table.sc th{text-align:left;font-size:9.5px;letter-spacing:.2em;color:var(--pink);text-transform:uppercase;padding-bottom:6px;font-weight:700}
@@ -513,6 +539,11 @@
               <div class="value" id="brief-total-tier">&mdash;</div>
               <div class="prose" id="brief-total-note">&mdash;</div>
             </div>
+            <div class="terms__card terms__aside">
+              <div class="label">Insurance</div>
+              <div class="value" id="brief-insurance-tier">&mdash;</div>
+              <div class="prose" id="brief-insurance-note">&mdash;</div>
+            </div>
           </div>
         </section>
         <div class="briefing__actions">
@@ -549,16 +580,24 @@
 
     <!-- ============ SHOP ============ -->
     <div class="overlay" id="scr-shop">
-      <div class="panel">
-        <div class="kicker">Requisitions</div>
-        <h2>Equipment</h2>
-        <div class="tag" id="shop-bank">Balance</div>
-        <div id="shop-list"></div>
-        <div class="memo">
-          Terms: equipment is billed on requisition. Scan charges are billed again on activation.
-          The Division thanks you for your custom.
-        </div>
-        <button class="btn" id="btn-shop-done">Back to board</button>
+      <div class="panel wide shop">
+        <section class="shop">
+          <header class="shop__header">
+            <div>
+              <span class="label">Requisitions</span>
+              <h1 class="shop__heading">Equipment</h1>
+              <p class="shop__meta" id="shop-bank">
+                <span class="label">Balance</span>
+                <span class="value" id="shop-balance">&mdash;</span>
+                <span class="label">Licence</span>
+                <span class="value" id="shop-licence">&mdash;</span>
+              </p>
+            </div>
+            <button class="btn btn--ghost btn--sm" id="btn-shop-done" type="button">Back to board</button>
+          </header>
+          <ul class="shop__grid" id="shop-list"></ul>
+          <p class="shop__terms prose">Equipment is billed on requisition. Scan charges are billed again on activation. The Division thanks you for your custom.</p>
+        </section>
       </div>
     </div>
 
