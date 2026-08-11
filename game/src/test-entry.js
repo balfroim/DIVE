@@ -15,22 +15,22 @@ import { DLG } from './ui/dialogue.js';
 import { SCRIPTS, SCRIPT, script as getScript } from './data/dialogue.js';
 import { SHOP } from './data/shop.js';
 import { TIERS } from './data/clients.js';
-import { ORGANS } from './data/organs.js';
+import { ORGANS, organsForRep } from './data/organs.js';
 import { CFG } from './core/config.js';
 import { View, cam } from './core/view.js';
 import { Input } from './core/input.js';
 import { Maze } from './world/maze.js';
-import { ents, spawnEnt } from './entities/pool.js';
+import { ENTS_POOL } from './entities/pool.js';
+import { spawnEnt } from './entities/cell.js';
 import { player } from './entities/player.js';
 import { buddy, hasFiringLine, lungeCasualties } from './entities/buddy.js';
 import { makeContract, generateOffers, offerSummary, suitFor, pressureLabel } from './game/contracts.js';
 import { buildInvoice } from './game/economy.js';
 import { ENEMIES, archetype } from './data/enemies.js';
-import { organsForRep } from './data/organs.js';
 
 window.__D = {
   Game, Career, UI, DLG, SCRIPT, SCRIPTS, getScript, SHOP, TIERS, ORGANS, CFG, View, cam, Input, Maze,
-  ents, spawnEnt, player, buddy, hasFiringLine, lungeCasualties, firingPreview,
+  ents: ENTS_POOL, spawnEnt, player, buddy, hasFiringLine, lungeCasualties, firingPreview,
   makeContract, generateOffers, offerSummary, suitFor, pressureLabel, organsForRep, ENEMIES, archetype,
   buildInvoice,
   getZoom: () => View.zoom

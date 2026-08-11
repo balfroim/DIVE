@@ -164,7 +164,9 @@ export const CFG = {
   },
 
   /* ---- pools ----------------------------------------------------------- */
-  poolEnt: 140,
+  pool : {
+    length: 140,        // how many entities the pool can hold
+  },
   poolPart: 900,
   poolPop: 44,
   ambientRBC: 110

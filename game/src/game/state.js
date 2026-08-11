@@ -25,7 +25,9 @@ import { Input, pollHold } from '../core/input.js';
 import { Maze } from '../world/maze.js';
 import { hashSeed } from '../core/rng.js';
 import { runSystems } from '../ecs/systems.js';
-import { ents, spawnEnt, morphEnt, clearEnts, countEntities } from '../entities/pool.js';
+import { World } from '../ecs/world.js';
+import { ENTS_POOL, clearPool } from '../entities/pool.js';
+import { spawnEnt, morphEnt } from '../entities/cell.js';
 import '../entities/systems.js';   // registers the pipeline
 import { player, playerReset } from '../entities/player.js';
 import {
@@ -145,7 +147,7 @@ export const Game = {
     this.rows = [];
     for (let r = 0; r < Maze.rows; r++) this.rows.push({ spawned: false, cleared: false });
 
-    clearEnts();
+    clearPool();
     playerReset(Maze.entry.x, Maze.entry.y);
     player.suit = Career.suit;
     buddyReset();
@@ -181,15 +183,14 @@ export const Game = {
     const c = this.contract;
     const T = this.type();
 
-    /* the client's own cells arrive with the wave, so they are not signposted */
     const hosts = T.hostCount(c.diff);
     for (let i = 0; i < Math.ceil(hosts / Maze.rows) + 1; i++) {
-      spawnEnt(c.hostArch, c.sig, 1, { ...this.spawnOpts(r), strictRow: true });
+      spawnEnt(c.hostArch, c.sig, 1, { ...this.spawnOpts(r), strictRow: true, species: c.targetSpecies });
     }
 
     const n = T.threatCount(c.diff, r);
     for (let i = 0; i < n; i++) {
-      spawnEnt(c.targetSpecies, c.sig, c.deviation, { ...this.spawnOpts(r, player, 240), strictRow: true });
+      spawnEnt(c.targetSpecies, c.sig, c.deviation, { ...this.spawnOpts(r, player, 240), strictRow: true, species: c.targetSpecies });
     }
 
     for (const ex of T.extras) {
@@ -210,17 +211,17 @@ export const Game = {
 
   /** Hostiles still alive that belong to a row. */
   rowThreats(r) {
-    return countEntities((e) => !!e.comp.hostile && e.row === r);
+    return World.count((e) => !!e.comp.hostile && e.row === r);
   },
 
   /** Any hostile anywhere - used for the corruption cap and the HUD. */
-  countPathogens() { return countEntities((e) => !!e.comp.hostile); },
-  countCorrupt() { return countEntities((e) => e.arch === 'corrupted'); },
-  countClots() { return countEntities((e) => e.comp.agglutinate && e.clumpN >= e.comp.agglutinate.min); },
+  countPathogens() { return World.count((e) => !!e.comp.hostile); },
+  countCorrupt() { return World.count((e) => e.arch === 'corrupted'); },
+  countClots() { return World.count((e) => e.comp.agglutinate && e.comp.agglutinate.clumpN >= e.comp.agglutinate.min); },
 
   /** Compatibility helper used by the HUD and older tests. */
   nextMark() {
-    const cands = ents.filter((e) => e.on && !e.dying && e.comp && e.comp.hostile && !e.marked);
+    const cands = ENTS_POOL.filter((e) => e.on && !e.dying && e.comp && e.comp.hostile && !e.marked);
     return cands[0] || null;
   },
 
@@ -413,8 +414,8 @@ export const Game = {
   /** Entity under a world point, if any. */
   pickEnt(wx, wy, pad) {
     let best = null, bd = 1e9;
-    for (let i = 0; i < ents.length; i++) {
-      const e = ents[i];
+    for (let i = 0; i < ENTS_POOL.length; i++) {
+      const e = ENTS_POOL[i];
       if (!e.on || e.dying) continue;
       const rad = e.r * e.elong + (pad || 0);
       const d = Math.hypot(e.x - wx, e.y - wy);
@@ -457,8 +458,8 @@ export const Game = {
     if (this.scanning) {
       this.scanR += (CFG.scan.maxR / CFG.scan.time) * dt;
       let pinged = 0;
-      for (let i = 0; i < ents.length; i++) {
-        const e = ents[i];
+      for (let i = 0; i < ENTS_POOL.length; i++) {
+        const e = ENTS_POOL[i];
         if (!e.on || e.dying) continue;
         const d = Math.hypot(e.x - player.x, e.y - player.y);
         /* the pulse cannot see through tissue - another reason corridors matter */

@@ -17,7 +17,7 @@ import { TAU, rr, lerp, lerpAngle, distToSegment } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { World } from '../ecs/world.js';
 import { attach } from '../ecs/components.js';
-import { ents } from './pool.js';
+import { ENTS_POOL } from './pool.js';
 import { spawnPart } from './particles.js';
 import { player } from './player.js';
 import { Rules } from './hooks.js';
@@ -95,8 +95,7 @@ export function shotReach(x, y, dx, dy, range) {
 export function shotCasualties(x0, y0, x1, y1, out) {
   const list = out || [];
   list.length = 0;
-  for (let i = 0; i < ents.length; i++) {
-    const e = ents[i];
+  for (const e of ENTS_POOL) {
     if (!e.on || e.dying) continue;
     const d = distToSegment(e.x, e.y, x0, y0, x1, y1);
     if (d < CFG.buddy.killR + e.r * 0.72) list.push(e);
@@ -106,7 +105,7 @@ export function shotCasualties(x0, y0, x1, y1, out) {
 
 /** Compatibility helper used by the browser tests and older probes. */
 export function hasFiringLine(x, y, target) {
-  if (!target || !target.on || target.dying) return false;
+  if (!target?.on || target.dying) return false;
   const dx = target.x - x;
   const dy = target.y - y;
   const m = Math.hypot(dx, dy) || 1;
@@ -126,8 +125,7 @@ export function lungeCasualties(bx, by, target, out) {
 
 /** Cells actually struck by the segment the body swept this frame. */
 function sweepHits(B, x0, y0, x1, y1) {
-  for (let i = 0; i < ents.length; i++) {
-    const e = ents[i];
+  for (const e of ENTS_POOL) {
     if (!e.on || e.dying) continue;
     const d = distToSegment(e.x, e.y, x0, y0, x1, y1);
     if (d < CFG.buddy.killR + e.r * 0.72) {
@@ -198,62 +196,22 @@ export function updateBuddy(dt, live) {
 
   let ax = 0, ay = 0, maxV = 460;
 
+  // TODO: refactor this more.
   switch (B.state) {
     case 'follow': {
-      const p = buddyFollowPoint(t);
-      ax = (p.x - B.x) * CFG.buddy.k - B.vx * CFG.buddy.d;
-      ay = (p.y - B.y) * CFG.buddy.k - B.vy * CFG.buddy.d;
-      maxV = 700;
+      ({ ax, ay, maxV } = getBuddyFollowVector(t, B));
       break;
     }
     case 'wind': {
-      /* rear back along the firing axis, so the launch reads */
-      ax = -B.dirX * 1500 - B.vx * 6;
-      ay = -B.dirY * 1500 - B.vy * 6;
-      B.squash = lerp(B.squash, -0.3, dt * 14);
-      if (B.st > CFG.buddy.windup) {
-        B.state = 'lunge';
-        B.st = 0;
-        B.flight = 0;
-        B.lungeX = B.x; B.lungeY = B.y;
-        /* recompute the reach from where the wind-up actually left us */
-        const reach = shotReach(B.x, B.y, B.dirX, B.dirY);
-        B.endX = B.x + B.dirX * reach;
-        B.endY = B.y + B.dirY * reach;
-      }
+      ({ ax, ay } = calculateWindBackAcceleration(B, dt));
       break;
     }
     case 'lunge': {
-      ax = B.dirX * CFG.buddy.lungeAcc - B.vx * 1.6;
-      ay = B.dirY * CFG.buddy.lungeAcc - B.vy * 1.6;
-      maxV = CFG.buddy.lungeMax;
-      B.dirA = Math.atan2(B.dirY, B.dirX);
-      B.squash = lerp(B.squash, 0.34, dt * 16);
-      B.flight += dt;
-      B.trailT -= dt;
-      if (B.trailT <= 0) {
-        B.trailT = 0.018;
-        spawnPart(B.x + rr(-6, 6), B.y + rr(-6, 6), -B.vx * 0.12, -B.vy * 0.12,
-          rr(6, 13), rr(0.22, 0.4), 190, 40, 92, 0, 3);
-      }
-      /* past the far end, or out of patience */
-      const travelled = (B.x - B.lungeX) * B.dirX + (B.y - B.lungeY) * B.dirY;
-      const total = (B.endX - B.lungeX) * B.dirX + (B.endY - B.lungeY) * B.dirY;
-      if (travelled >= total - 2 || B.flight > CFG.buddy.maxFlight) {
-        B.state = 'return';
-        B.st = 0;
-        B.cool = CFG.buddy.cool;
-        if (B.hits > 0) { B.digest = 1; B.gulp = 1; B.joy = 1; }
-      }
+      ({ ax, ay, maxV } = calculateLungeAcceleration(ax, B, ay, maxV, dt));
       break;
     }
     case 'return': {
-      const p = buddyFollowPoint(t);
-      ax = (p.x - B.x) * 46 - B.vx * 11;
-      ay = (p.y - B.y) * 46 - B.vy * 11;
-      maxV = 620;
-      B.squash = lerp(B.squash, 0, dt * 8);
-      if (B.st > 0.22 && Math.hypot(p.x - B.x, p.y - B.y) < 110) { B.state = 'follow'; B.st = 0; }
+      ({ ax, ay, maxV } = calculateBuddyReturnAcceleration(t, ax, B, ay, maxV, dt));
       break;
     }
   }
@@ -297,3 +255,64 @@ export function updateBuddy(dt, live) {
   B.lookX = lerp(B.lookX, lx / ld, Math.min(1, dt * 9));
   B.lookY = lerp(B.lookY, ly / ld, Math.min(1, dt * 9));
 }
+function calculateBuddyReturnAcceleration(t, ax, B, ay, maxV, dt) {
+  const p = buddyFollowPoint(t);
+  ax = (p.x - B.x) * 46 - B.vx * 11;
+  ay = (p.y - B.y) * 46 - B.vy * 11;
+  maxV = 620;
+  B.squash = lerp(B.squash, 0, dt * 8);
+  if (B.st > 0.22 && Math.hypot(p.x - B.x, p.y - B.y) < 110) { B.state = 'follow'; B.st = 0; }
+  return { ax, ay, maxV };
+}
+
+function calculateLungeAcceleration(ax, B, ay, maxV, dt) {
+  ax = B.dirX * CFG.buddy.lungeAcc - B.vx * 1.6;
+  ay = B.dirY * CFG.buddy.lungeAcc - B.vy * 1.6;
+  maxV = CFG.buddy.lungeMax;
+  B.dirA = Math.atan2(B.dirY, B.dirX);
+  B.squash = lerp(B.squash, 0.34, dt * 16);
+  B.flight += dt;
+  B.trailT -= dt;
+  if (B.trailT <= 0) {
+    B.trailT = 0.018;
+    spawnPart(B.x + rr(-6, 6), B.y + rr(-6, 6), -B.vx * 0.12, -B.vy * 0.12,
+      rr(6, 13), rr(0.22, 0.4), 190, 40, 92, 0, 3);
+  }
+  /* past the far end, or out of patience */
+  const travelled = (B.x - B.lungeX) * B.dirX + (B.y - B.lungeY) * B.dirY;
+  const total = (B.endX - B.lungeX) * B.dirX + (B.endY - B.lungeY) * B.dirY;
+  if (travelled >= total - 2 || B.flight > CFG.buddy.maxFlight) {
+    B.state = 'return';
+    B.st = 0;
+    B.cool = CFG.buddy.cool;
+    if (B.hits > 0) { B.digest = 1; B.gulp = 1; B.joy = 1; }
+  }
+  return { ax, ay, maxV };
+}
+
+function calculateWindBackAcceleration(B, dt) {
+  /* rear back along the firing axis, so the launch reads */
+  const ax = -B.dirX * 1500 - B.vx * 6;
+  const ay = -B.dirY * 1500 - B.vy * 6;
+  B.squash = lerp(B.squash, -0.3, dt * 14);
+  if (B.st > CFG.buddy.windup) {
+    B.state = 'lunge';
+    B.st = 0;
+    B.flight = 0;
+    B.lungeX = B.x; B.lungeY = B.y;
+    /* recompute the reach from where the wind-up actually left us */
+    const reach = shotReach(B.x, B.y, B.dirX, B.dirY);
+    B.endX = B.x + B.dirX * reach;
+    B.endY = B.y + B.dirY * reach;
+  }
+  return { ax, ay };
+}
+
+function getBuddyFollowVector(t, B) {
+  const p = buddyFollowPoint(t);
+  const ax = (p.x - B.x) * CFG.buddy.k - B.vx * CFG.buddy.d;
+  const ay = (p.y - B.y) * CFG.buddy.k - B.vy * CFG.buddy.d;
+  const maxV = 700;
+  return { ax, ay, maxV };
+}
+

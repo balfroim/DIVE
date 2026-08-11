@@ -28,7 +28,7 @@ import { TAU, PI, rr, lerp, clamp } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { currentAt } from '../world/flow.js';
 import { defineSystem, ORDER } from '../ecs/systems.js';
-import { ents } from './pool.js';
+import { ENTS_POOL } from './pool.js';
 import { burst } from './particles.js';
 import { Rules } from './hooks.js';
 import { player, updatePlayer } from './player.js';
@@ -37,8 +37,8 @@ import { buddy, updateBuddy } from './buddy.js';
 /** Nearest entity the client owns - what a `seek` pathogen hunts. */
 function nearestProperty(e, maxD) {
   let best = null, bd = maxD * maxD;
-  for (let i = 0; i < ents.length; i++) {
-    const o = ents[i];
+  for (let i = 0; i < ENTS_POOL.length; i++) {
+    const o = ENTS_POOL[i];
     if (!o.on || o.dying || !o.comp.property) continue;
     const dx = o.x - e.x, dy = o.y - e.y, d = dx * dx + dy * dy;
     if (d < bd) { bd = d; best = o; }
@@ -207,9 +207,9 @@ defineSystem({
     if (e.dying > 0) return;
     let n = 0;
     const r2 = ag.r * ag.r;
-    for (let i = 0; i < ents.length; i++) {
-      const o = ents[i];
-      if (o === e || !o.on || o.dying || !o.comp.bloodtype) continue;
+    for (let i = 0; i < ENTS_POOL.length; i++) {
+      const o = ENTS_POOL[i];
+      if (o === e || !o.on || o.dying || !o.comp.bloodSignature) continue;
       const dx = o.x - e.x, dy = o.y - e.y;
       const d2 = dx * dx + dy * dy;
       if (d2 > r2 || d2 < 1) continue;
@@ -220,9 +220,8 @@ defineSystem({
       /* the clot drags its neighbours in too */
       o._ax = (o._ax || 0) - (dx / d) * pull * 0.55;
       o._ay = (o._ay || 0) - (dy / d) * pull * 0.55;
-      o.clumpN = Math.max(o.clumpN, 1);
     }
-    e.clumpN = n;
+    ag.clumpN = n;
   }
 });
 
@@ -290,11 +289,11 @@ defineSystem({
   name: 'contact',
   order: ORDER.contact,
   run(dt, ctx) {
-    for (let i = 0; i < ents.length; i++) {
-      const a = ents[i];
+    for (let i = 0; i < ENTS_POOL.length; i++) {
+      const a = ENTS_POOL[i];
       if (!a.on || a.dying) continue;
-      for (let j = i + 1; j < ents.length; j++) {
-        const b = ents[j];
+      for (let j = i + 1; j < ENTS_POOL.length; j++) {
+        const b = ENTS_POOL[j];
         if (!b.on || b.dying) continue;
         const dx = b.x - a.x, dy = b.y - a.y;
         const rad = (a.r * a.elong + b.r * b.elong) * 1.05;

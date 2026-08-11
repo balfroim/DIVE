@@ -6,7 +6,7 @@
  */
 
 import { rr, TAU } from '../core/math.js';
-import { blankEnt, dressEnt } from '../entities/pool.js';
+import { blankEnt, dressEnt } from '../entities/cell.js';
 import { glowSprite } from '../render/sprites.js';
 import { drawEntityBody, drawHalo } from '../render/cells.js';
 

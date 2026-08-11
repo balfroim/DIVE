@@ -103,9 +103,10 @@ defineComponent('guest', {
 defineComponent('bleeds', { defaults: { rate: 0.34, needsClump: false } });
 
 /** Sticks to nearby blood cells and drags them into a clot. */
-defineComponent('agglutinate', { defaults: { r: 92, pull: 130, bleed: 0.16, min: 2 } });
+defineComponent('agglutinate', { defaults: { r: 92, pull: 130, bleed: 0.16, min: 2, clumpN: 0 } });
 
 /** A red cell with an ABO antigen pattern. `abo` is 'O' | 'A' | 'B' | 'AB'. */
+defineComponent('bloodSignature', { defaults: { abo: 'O', foreign: false } });
 defineComponent('bloodtype', { defaults: { abo: 'O', foreign: false } });
 
 /** The diver. One of these exists. */

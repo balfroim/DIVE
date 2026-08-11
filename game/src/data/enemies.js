@@ -244,7 +244,7 @@ export const ENEMIES = {
     desc: 'The client\u2019s own red cells. Count the antigen studs before you fire.',
     idName: 'RED CELL', idSub: 'CLIENT', idCol: '#7fdcff',
     dress(e, sig, dev, o) {
-      const abo = (o && o.abo) || 'O';
+      const abo = (o?.abo) || 'O';
       e.hue = wrapHue(sig.hue + rr(-3, 3));
       e.sat = clamp(sig.sat + rr(-3, 3), 34, 92);
       e.lit = clamp(sig.lit + rr(-2, 2), 36, 74);
@@ -255,13 +255,12 @@ export const ENEMIES = {
       e.spikes = ABO_STUDS[abo] || 0;
       e.spikeLen = 0.11;
       e.spikeTip = true;
-      e.abo = abo;
       e.idSub = 'TYPE ' + abo + ' \u00b7 CLIENT';
     },
     components: {
       motion: { kind: 'drift', force: 22 },
       property: {},
-      bloodtype: { foreign: false }
+      bloodSignature: { foreign: false }
     }
   },
 
@@ -282,14 +281,13 @@ export const ENEMIES = {
       e.spikes = ABO_STUDS[abo] || 4;
       e.spikeLen = 0.12;
       e.spikeTip = true;
-      e.abo = abo;
       e.idSub = 'TYPE ' + abo + ' \u00b7 DONOR';
     },
     components: {
       motion: { kind: 'clump', force: 24 },
       hostile: {},
       bounty: { kind: 'kill', mult: 0.75 },
-      bloodtype: { foreign: true },
+      bloodSignature: { foreign: true },
       agglutinate: {}
     }
   }

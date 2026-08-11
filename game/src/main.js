@@ -11,11 +11,12 @@
  * @module main
  */
 
-import { attachCanvas, View } from './core/view.js';
+import { attachCanvas, View, cam } from './core/view.js';
 import { attachInput } from './core/input.js';
 import { Store, KEYS } from './core/store.js';
 import { Maze } from './world/maze.js';
-import { spawnEnt, clearEnts } from './entities/pool.js';
+import { clearPool } from './entities/pool.js';
+import { spawnEnt } from './entities/cell.js';
 import { playerReset, player } from './entities/player.js';
 import { buddyReset } from './entities/buddy.js';
 import { makeSignature } from './entities/species.js';
@@ -25,7 +26,6 @@ import { Game } from './game/state.js';
 import { Career } from './game/career.js';
 import { UI, wireUI } from './ui/screens.js';
 import { DLG } from './ui/dialogue.js';
-import { cam } from './core/view.js';
 import { GAME_VERSION } from './core/version.js';
 
 function queryParams() {
@@ -46,7 +46,7 @@ function queryParams() {
 function bootBackdrop() {
   Maze.build({ seed: 20260808, rows: 3, cols: 3, bore: 1, organName: 'ATRIUM', hue: 340 });
   for (const e of Maze.edges) e.open = true;
-  clearEnts();
+  clearPool();
   const sig = makeSignature();
   playerReset(Maze.entry.x, Maze.entry.y);
   buddyReset();
@@ -72,9 +72,7 @@ function boot() {
   if (devMode) {
     Career.loadDev();
     const patch = {};
-    const rep = params.rep;
-    const credits = params.credits;
-    const scans = params.scans;
+    const { rep, credits, scans } = params;
     if (rep !== undefined && Number.isFinite(Number(rep))) patch.rep = Number(rep);
     if (credits !== undefined && Number.isFinite(Number(credits))) patch.credits = Number(credits);
     if (scans !== undefined && Number.isFinite(Number(scans))) patch.scans = Number(scans);
