@@ -25,7 +25,7 @@ import { Input, pollHold } from '../core/input.js';
 import { Maze } from '../world/maze.js';
 import { hashSeed } from '../core/rng.js';
 import { runSystems } from '../ecs/systems.js';
-import { ents, spawnEnt, morphEnt, clearEnts, countEnts } from '../entities/pool.js';
+import { ents, spawnEnt, morphEnt, clearEnts, countEntities } from '../entities/pool.js';
 import '../entities/systems.js';   // registers the pipeline
 import { player, playerReset } from '../entities/player.js';
 import {
@@ -210,13 +210,13 @@ export const Game = {
 
   /** Hostiles still alive that belong to a row. */
   rowThreats(r) {
-    return countEnts((e) => !!e.comp.hostile && e.row === r);
+    return countEntities((e) => !!e.comp.hostile && e.row === r);
   },
 
   /** Any hostile anywhere - used for the corruption cap and the HUD. */
-  countPathogens() { return countEnts((e) => !!e.comp.hostile); },
-  countCorrupt() { return countEnts((e) => e.arch === 'corrupted'); },
-  countClots() { return countEnts((e) => e.comp.agglutinate && e.clumpN >= e.comp.agglutinate.min); },
+  countPathogens() { return countEntities((e) => !!e.comp.hostile); },
+  countCorrupt() { return countEntities((e) => e.arch === 'corrupted'); },
+  countClots() { return countEntities((e) => e.comp.agglutinate && e.clumpN >= e.comp.agglutinate.min); },
 
   /** Compatibility helper used by the HUD and older tests. */
   nextMark() {

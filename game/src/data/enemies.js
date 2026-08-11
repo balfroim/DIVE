@@ -271,7 +271,7 @@ export const ENEMIES = {
     desc: 'Wrong-group red cells from the transfusion. They clot, and the clot kills.',
     idName: 'DONOR CELL', idSub: 'WRONG GROUP', idCol: '#ff8f4a',
     dress(e, sig, dev, o) {
-      const abo = (o && o.donorAbo) || 'A';
+      const abo = (o?.donorAbo) || 'A';
       e.hue = wrapHue(sig.hue + sgn() * (4 + 10 * dev));
       e.sat = clamp(sig.sat + 4, 34, 94);
       e.lit = clamp(sig.lit - 4, 32, 72);

@@ -6,5 +6,10 @@
     "build": "npm --prefix game run build",
     "check": "npm --prefix game run check",
     "test": "npm --prefix game test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.9.0"
   }
 }

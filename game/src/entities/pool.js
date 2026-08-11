@@ -1,188 +1,319 @@
 /**
- * The entity pool, and the bridge between "archetype in a data file" and
- * "live ECS entity in the vessel".
- *
- * `CFG.poolEnt` entity structs are allocated once at start-up and recycled
- * forever. Spawning is maze-aware: cells appear inside real vessel space, never
- * inside the endothelium, and threats prefer chambers the diver is not standing
- * in.
- *
- * @module entities/pool
+ * Pooled entities are allocated once at module load and recycled forever.  
  */
 
 import { CFG } from '../core/config.js';
 import { TAU, rr } from '../core/math.js';
-import { Maze } from '../world/maze.js';
 import { World } from '../ecs/world.js';
-import { attach } from '../ecs/components.js';
+import { COMPONENTS } from '../ecs/components.js';
 import { archetype } from '../data/enemies.js';
 
-export const ents = new Array(CFG.poolEnt);
-let entUid = 1;
+let nextUid = 1;
 
-/** The full entity shape, in one place, so pooled objects never change hidden class. */
-export function blankEnt() {
-  return {
-    /* identity */
-    on: false, uid: 0, arch: '', kind: 'healthy', species: '',
-    /* ECS components (see ecs/components.js) */
-    comp: Object.create(null),
-    /* transform + motion */
-    x: 0, y: 0, vx: 0, vy: 0, r: 20, ang: 0, spin: 0, phase: 0, seed: 0,
-    motion: 'drift', mt: 0, bob: 0, target: null,
-    orbA: 0, orbR: 0, orbX: 0, orbY: 0,
-    /* appearance */
-    hue: 0, sat: 70, lit: 60, elong: 1, lobes: 4, lobeAmp: 0.1, deform: 0,
-    spikes: 0, spikeLen: 0, spikeTip: false, flag: 0, nuc: 'dot', halo: 0,
-    coil: false, segs: 0, wave: 0, tremor: 0, verts: 18, scale: 1,
-    /* diagnostics */
-    idUntil: -99, idPing: 0, idName: '', idSub: '', idCol: '#7fdcff',
-    /* state */
-    infect: 0, infCd: 0, infBy: null, age: 0, dying: 0, born: 0, hurt: 0,
-    leaving: false, lifespan: 0, preview: false,
-    /* blood group, for transfusion contracts */
-    abo: '',
-    /* how many cells this one is currently clotted to */
-    clumpN: 0,
-    /** Which maze row this cell belongs to - used by wave bookkeeping. */
-    row: 0
-  };
+/**
+ * Identity holds per-entity metadata for indentification.
+ * 
+ * @member {number} uid: unique integer for this entity
+ * @member {string} arch: archetype string, e.g. "bacteria"
+ * @member {string} kind: string, e.g. "healthy", "infected", "mutant"
+ * @member {string} species: string, e.g. "bacteria", "virus", "parasite"
+ *
+ */
+class Identity {
+  uid = 0;
+  arch = null;
+  kind = 'healthy';
+  species = '';
+
+  reset() {
+    this.uid = 0;
+    this.arch = null;
+    this.kind = 'healthy';
+    this.species = '';
+  }
 }
-for (let i = 0; i < ents.length; i++) ents[i] = blankEnt();
+
+/**
+ * Transform holds per-entity position, velocity, and orientation data.
+ * 
+ * @member {number} x: x position
+ * @member {number} y: y position
+ * @member {number} vx: x velocity
+ * @member {number} vy: y velocity
+ * @member {number} r: radius
+ * @member {number} ang: angle in radians
+ * @member {number} spin: angular velocity in radians per frame
+ * @member {number} phase: phase offset for oscillatory motion
+ * @member {number} seed: random seed for procedural variation
+ */
+class Transform {
+  x = 0; y = 0; vx = 0; vy = 0; r = 20; ang = 0; spin = 0; phase = 0; seed = 0;
+
+  reset() {
+    this.x = 0; this.y = 0; this.vx = 0; this.vy = 0; this.r = 20;
+    this.ang = 0; this.spin = 0; this.phase = 0; this.seed = 0;
+  }
+}
+
+/**
+ * Motion holds per-entity motion state, including mode, target, and orbital parameters.
+ *
+ * @member {string} mode: motion mode, e.g. "drift", "orbit", "chase"
+ * @member {number} mt: motion time accumulator
+ * @member {number} bob: vertical bobbing offset
+ * @member {object|null} target: target entity for chasing or orbiting
+ * @member {number} orbA: orbital angle in radians
+ * @member {number} orbR: orbital radius
+ * @member {number} orbX: orbital center x position
+ * @member {number} orbY: orbital center y position
+ */
+class Motion {
+  mode = 'drift'; mt = 0; bob = 0; target = null; orbA = 0; orbR = 0; orbX = 0; orbY = 0;
+
+  reset() {
+    this.mode = 'drift'; this.mt = 0; this.bob = 0; this.target = null;
+    this.orbA = 0; this.orbR = 0; this.orbX = 0; this.orbY = 0;
+  }
+}
+
+/**
+ * Appearance holds per-entity visual styling parameters.
+ *
+ * @member {number} hue: color hue (0-360)
+ * @member {number} sat: color saturation (0-100)
+ * @member {number} lit: color lightness (0-100)
+ * @member {number} elong: elongation factor for shape
+ * @member {number} lobes: number of lobes in shape
+ * @member {number} lobeAmp: amplitude of lobes
+ * @member {number} deform: deformation factor
+ * @member {number} spikes: number of spikes
+ * @member {number} spikeLen: length of spikes
+ * @member {boolean} spikeTip: whether spikes have tips
+ * @member {boolean} flag: whether to render a flag
+ * @member {string} nuc: nucleus style, e.g. "dot", "ring"
+ * @member {number} halo: halo size
+ * @member {boolean} coil: whether to render a coil
+ * @member {number} segs: number of segments in shape
+ * @member {number} wave: wave amplitude
+ * @member {number} tremor: tremor amplitude
+ * @member {number} verts: number of vertices in shape
+ * @member {number} scale: overall scale factor
+ */
+class Appearance {
+  hue = 0; sat = 70; lit = 60; elong = 1; lobes = 4; lobeAmp = 0.1;
+  // TODO(open question): If per-frame systems write deform, tremor, wave, or bob,
+  // reproject() must not clear those animated values or morphs will hitch.
+  deform = 0; spikes = 0; spikeLen = 0; spikeTip = false; flag = false;
+  nuc = 'dot'; halo = 0; coil = false; segs = 0; wave = 0; tremor = 0;
+  verts = 18; scale = 1;
+
+  reset() {
+    this.hue = 0; this.sat = 70; this.lit = 60; this.elong = 1; this.lobes = 4;
+    this.lobeAmp = 0.1; this.deform = 0; this.spikes = 0; this.spikeLen = 0;
+    this.spikeTip = false; this.flag = false; this.nuc = 'dot'; this.halo = 0;
+    this.coil = false; this.segs = 0; this.wave = 0; this.tremor = 0;
+    this.verts = 18; this.scale = 1;
+  }
+}
+
+/**
+ * Diagnostics holds per-entity debug information for development and testing.
+ *
+ * @member {number} idUntil: frame until which the ID is displayed
+ * @member {number} idPing: ping counter for ID display
+ * @member {string} idName: name to display for the entity
+ * @member {string} idSub: subtitle to display for the entity
+ * @member {string} idCol: color for ID display
+ */
+class Diagnostics {
+  idUntil = -99; idPing = 0; idName = ''; idSub = ''; idCol = '#7fdcff';
+
+  reset() {
+    this.idUntil = -99; this.idPing = 0; this.idName = ''; this.idSub = '';
+    this.idCol = '#7fdcff';
+  }
+}
+
+/**
+ * State holds per-entity gameplay state, including infection, age, and lifecycle flags.
+ *
+ * @member {number} infect: infection level (0-100)
+ * @member {number} infCd: infection cooldown timer
+ * @member {Entity|null} infBy: entity that infected this one
+ * @member {number} age: age in frames
+ * @member {boolean} dying: whether the entity is dying
+ * @member {number} born: frame when the entity was spawned
+ * @member {number} hurt: damage taken
+ * @member {boolean} leaving: whether the entity is leaving the scene
+ * @member {number} lifespan: total lifespan in frames
+ * @member {boolean} preview: whether the entity is in preview mode
+ */
+class State {
+  infect = 0; infCd = 0; infBy = null; age = 0; dying = false; born = 0;
+  hurt = 0; leaving = false; lifespan = 0; preview = false;
+
+  reset() {
+    this.infect = 0; this.infCd = 0; this.infBy = null; this.age = 0;
+    this.dying = false; this.born = 0; this.hurt = 0; this.leaving = false;
+    this.lifespan = 0; this.preview = false;
+  }
+}
+
+class Blood {
+  abo = ''; clumpN = 0;
+
+  reset() { this.abo = ''; this.clumpN = 0; }
+}
+
+function componentNamesFor(arch) {
+  return arch?.components ?? arch?.comps ?? [];
+}
+
+function componentDefinition(name) {
+  return COMPONENTS[name] ?? {};
+}
+
+export class Entity {
+  // These are intentionally flat hot fields: every loop head checks them.
+  on = false;
+  row = 0;
+
+  id;
+  transform;
+  motion;
+  appearance;
+  diag;
+  state;
+  blood;
+  #comp = new Map();
+
+  constructor() {
+    this.id = new Identity();
+    this.transform = new Transform();
+    this.motion = new Motion();
+    this.appearance = new Appearance();
+    this.diag = new Diagnostics();
+    this.state = new State();
+    this.blood = new Blood();
+  }
+
+  get components() { return [...this.#comp.keys()]; }
+
+  has(name) { return this.#comp.has(name); }
+  get(name) { return this.#comp.get(name); }
+
+  attach(name, data = {}) {
+    const definition = componentDefinition(name);
+    const defaults = definition.defaults ?? {};
+    const value = { ...defaults, ...data };
+    this.#comp.set(name, value);
+    if (typeof definition.apply === 'function') definition.apply(this, value);
+    return value;
+  }
+
+  detach(name) { return this.#comp.delete(name); }
+  clearComponents() { this.#comp.clear(); }
+
+  *[Symbol.iterator]() { yield* this.#comp; }
+
+  reset(now) {
+    this.id.reset();
+    this.transform.reset();
+    this.motion.reset();
+    this.appearance.reset();
+    this.diag.reset();
+    this.state.reset();
+    this.blood.reset();
+    this.clearComponents();
+    this.on = true;
+    this.id.uid = nextUid++;
+    this.transform.seed = rr(0, 100);
+    this.transform.phase = rr(0, TAU);
+    this.transform.ang = rr(0, TAU);
+    this.transform.spin = rr(-0.5, 0.5);
+    this.appearance.verts = 18;
+    this.state.born = now || 0;
+    return this;
+  }
+
+  release() {
+    this.on = false;
+    this.clearComponents();
+  }
+
+  reproject() {
+    // This is why the sub-objects were worth it: "which fields are appearance"
+    // is now the object itself, so it can never drift out of sync.
+    this.appearance.reset();
+    for (const [name, data] of this.#comp) {
+      const apply = componentDefinition(name).apply;
+      if (typeof apply === 'function') apply(this, data);
+    }
+    return this;
+  }
+
+  describe() {
+    return `Entity#${this.id.uid} arch=${this.id.arch ?? '-'} kind=${this.id.kind} on=${this.on} components=[${this.components.join(',')}]`;
+  }
+
+  toString() { return this.describe(); }
+}
+
+export const ents = Array.from({ length: CFG.poolEnt }, () => new Entity());
 World.usePool(ents);
 
 export function freeEnt() {
-  for (let i = 0; i < ents.length; i++) if (!ents[i].on) return ents[i];
-  return null;
+  return ents.find((e) => e.on === false) ?? null;
 }
 
-const _blank = blankEnt();
+export function resetEnt(e, now) { return e.reset(now); }
 
-export function resetEnt(e, now) {
-  for (const k in _blank) {
-    if (k === 'comp') continue;
-    e[k] = _blank[k];
-  }
-  e.comp = Object.create(null);
-  e.on = true;
-  e.uid = entUid++;
-  e.seed = rr(0, 100);
-  e.phase = rr(0, TAU);
-  e.verts = 18;
-  e.ang = rr(0, TAU);
-  e.spin = rr(-0.5, 0.5);
-  e.born = now || 0;
-  return e;
-}
+export function spawnEnt(archId, p = {}, now = 0) {
+  const definition = archetype(archId);
+  const entity = freeEnt();
+  if (!definition || !entity) return null;
 
-/**
- * Apply an archetype to an entity: appearance, then components.
- *
- * Shared by the world and by the briefing preview cards, so what you are shown
- * in the briefing is built by exactly the same code as what you meet inside.
- *
- * @param {object} e
- * @param {string} archId  key into data/enemies.js
- * @param {object} sig     the client's cell signature
- * @param {number} dev     species deviation 0..1 (low = convincing mimic)
- * @param {object} [o]     contract context, e.g. { abo, donorAbo }
- */
-export function dressEnt(e, archId, sig, dev, o) {
-  const A = archetype(archId);
-  e.arch = A.id;
-  e.kind = A.kind;
-  e.species = A.id;
-  e.idName = A.idName;
-  e.idSub = A.idSub;
-  e.idCol = A.idCol;
-  /* baseline from the client's own signature, then the archetype's own dress */
-  e.hue = sig.hue; e.sat = sig.sat; e.lit = sig.lit; e.r = sig.r;
-  e.lobes = sig.lobes; e.lobeAmp = sig.lobeAmp; e.nuc = sig.nuc;
-  if (A.dress) A.dress(e, sig, dev === undefined ? 1 : dev, o || null);
-  attach(e, 'cell', null, o || null);
-  for (const name in A.components) attach(e, name, A.components[name], o || null);
-  return e;
-}
+  entity.reset(now);
+  entity.id.arch = archId;
+  if (p.x !== undefined) entity.transform.x = p.x;
+  if (p.y !== undefined) entity.transform.y = p.y;
+  if (p.row !== undefined) entity.row = p.row;
+  if (p.kind !== undefined) entity.id.kind = p.kind;
+  if (p.species !== undefined) entity.id.species = p.species;
 
-/**
- * Find somewhere legal to put a new cell.
- *
- * @param {number} row      preferred maze row
- * @param {number} clearR   radius that must fit
- * @param {{x:number,y:number}} [away] point to keep away from (usually the diver)
- * @param {number} [awayD]  how far away
- */
-export function spawnPos(row, clearR, away, awayD, strictRow) {
-  const rowsToTry = strictRow ? [row] : [row, row + 1, row - 1, row + 2];
-  for (const r of rowsToTry) {
-    if (r < 0 || r >= Maze.rows) continue;
-    for (let i = 0; i < 14; i++) {
-      const p = Maze.pointInRow(r, null, clearR + 18);
-      if (!Maze.fits(p.x, p.y, clearR)) continue;
-      if (away && Math.hypot(p.x - away.x, p.y - away.y) < (awayD || 0)) continue;
-      p.row = r;
-      return p;
-    }
-  }
-  /* last resort: the entry chamber always exists and always fits */
-  return strictRow
-    ? { ...Maze.pointInRow(row, null, clearR), row }
-    : { x: Maze.entry.x, y: Maze.entry.y, row: 0 };
-}
+  // Assumption: reset runs first because archetype styling assigns, rather than
+  // incrementally reads, existing appearance values.
+  // TODO(open question): Does dress/archetype code read values (e.g. e.hue += 10)
+  // or only assign them? If it reads them, this ordering needs revisiting.
+  for (const name of componentNamesFor(definition)) entity.attach(name);
 
-/**
- * Spawn one entity from an archetype id.
- * @param {string} archId
- * @param {object} sig    the client's cell signature
- * @param {number} dev    species deviation 0..1
- * @param {object} opts   { row, now, away, awayD, abo, donorAbo }
- */
-export function spawnEnt(archId, sig, dev, opts) {
-  const e = freeEnt();
-  if (!e) return null;
-  const o = opts || {};
-  resetEnt(e, o.now);
-  const probe = sig.r * 1.2;
-  const p = spawnPos(o.row === undefined ? 0 : o.row, probe, o.away, o.awayD, o.strictRow);
-  e.x = p.x; e.y = p.y;
-  e.row = p.row === undefined ? 0 : p.row;
-  dressEnt(e, archId, sig, dev, o);
   const a = rr(0, TAU);
   const s = rr(10, 30);
-  e.vx = Math.cos(a) * s;
-  e.vy = Math.sin(a) * s;
-  e.orbX = e.x; e.orbY = e.y;
-  e.scale = 0;
+  entity.transform.vx = Math.cos(a) * s;
+  entity.transform.vy = Math.sin(a) * s;
+  entity.motion.orbX = entity.transform.x;
+  entity.motion.orbY = entity.transform.y;
+  entity.appearance.scale = 0;
+  return entity;
+}
+
+export function morphEnt(e, archId, now) {
+  const definition = archetype(archId);
+  if (!definition || !e) return null;
+  for (const name of e.components) e.detach(name);
+  e.appearance.reset();
+  for (const name of componentNamesFor(definition)) e.attach(name);
+  e.id.arch = archId;
+  // Structurally correct: the new component set is the single source of truth.
+  e.reproject();
+  if (now !== undefined) e.state.born = now;
   return e;
 }
 
-/**
- * Convert a live entity into a different archetype in place (a host cell
- * losing to a pathogen). Keeps position, velocity and row.
- */
-export function morphEnt(e, archId, sig, dev, o) {
-  e.comp = Object.create(null);
-  e.spikes = 0; e.spikeLen = 0; e.spikeTip = false; e.flag = 0;
-  e.coil = false; e.segs = 0; e.wave = 0; e.tremor = 0; e.deform = 0;
-  e.elong = 1; e.halo = 0; e.leaving = false; e.infect = 0;
-  dressEnt(e, archId, sig, dev, o);
-  return e;
+export function countEntities(predicate) {
+  return ents.reduce((count, e) => count + (e.on && !e.state.dying && predicate(e) ? 1 : 0), 0);
 }
 
-/** Count live entities matching a predicate - used all over the wave logic. */
-export function countEnts(fn) {
-  let n = 0;
-  for (let i = 0; i < ents.length; i++) {
-    const e = ents[i];
-    if (e.on && !e.dying && fn(e)) n++;
-  }
-  return n;
-}
-
-/** Despawn everything (contract teardown). */
 export function clearEnts() {
-  for (let i = 0; i < ents.length; i++) {
-    ents[i].on = false;
-    ents[i].comp = Object.create(null);
-  }
+  for (const e of ents) e.release();
 }
