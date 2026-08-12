@@ -23,12 +23,11 @@
  * @module entities/systems
  */
 
-import { CFG } from '../core/config.js';
 import { TAU, PI, rr, lerp, clamp } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { currentAt } from '../world/flow.js';
 import { defineSystem, ORDER } from '../ecs/systems.js';
-import { ENTS_POOL } from './pool.js';
+import { World } from '../ecs/world.js';
 import { burst } from './particles.js';
 import { Rules } from './hooks.js';
 import { player, updatePlayer } from './player.js';
@@ -37,8 +36,8 @@ import { buddy, updateBuddy } from './buddy.js';
 /** Nearest entity the client owns - what a `seek` pathogen hunts. */
 function nearestProperty(e, maxD) {
   let best = null, bd = maxD * maxD;
-  for (let i = 0; i < ENTS_POOL.length; i++) {
-    const o = ENTS_POOL[i];
+  for (let i = 0; i < World.pool.length; i++) {
+    const o = World.pool[i];
     if (!o.on || o.dying || !o.comp.property) continue;
     const dx = o.x - e.x, dy = o.y - e.y, d = dx * dx + dy * dy;
     if (d < bd) { bd = d; best = o; }
@@ -207,8 +206,8 @@ defineSystem({
     if (e.dying > 0) return;
     let n = 0;
     const r2 = ag.r * ag.r;
-    for (let i = 0; i < ENTS_POOL.length; i++) {
-      const o = ENTS_POOL[i];
+    for (let i = 0; i < World.pool.length; i++) {
+      const o = World.pool[i];
       if (o === e || !o.on || o.dying || !o.comp.bloodSignature) continue;
       const dx = o.x - e.x, dy = o.y - e.y;
       const d2 = dx * dx + dy * dy;
@@ -289,11 +288,11 @@ defineSystem({
   name: 'contact',
   order: ORDER.contact,
   run(dt, ctx) {
-    for (let i = 0; i < ENTS_POOL.length; i++) {
-      const a = ENTS_POOL[i];
+    for (let i = 0; i < World.pool.length; i++) {
+      const a = World.pool[i];
       if (!a.on || a.dying) continue;
-      for (let j = i + 1; j < ENTS_POOL.length; j++) {
-        const b = ENTS_POOL[j];
+      for (let j = i + 1; j < World.pool.length; j++) {
+        const b = World.pool[j];
         if (!b.on || b.dying) continue;
         const dx = b.x - a.x, dy = b.y - a.y;
         const rad = (a.r * a.elong + b.r * b.elong) * 1.05;

@@ -17,7 +17,6 @@ import { TAU, rr, lerp, lerpAngle, distToSegment } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { World } from '../ecs/world.js';
 import { attach } from '../ecs/components.js';
-import { ENTS_POOL } from './pool.js';
 import { spawnPart } from './particles.js';
 import { player } from './player.js';
 import { Rules } from './hooks.js';
@@ -95,7 +94,7 @@ export function shotReach(x, y, dx, dy, range) {
 export function shotCasualties(x0, y0, x1, y1, out) {
   const list = out || [];
   list.length = 0;
-  for (const e of ENTS_POOL) {
+  for (const e of World.pool) {
     if (!e.on || e.dying) continue;
     const d = distToSegment(e.x, e.y, x0, y0, x1, y1);
     if (d < CFG.buddy.killR + e.r * 0.72) list.push(e);
@@ -125,7 +124,7 @@ export function lungeCasualties(bx, by, target, out) {
 
 /** Cells actually struck by the segment the body swept this frame. */
 function sweepHits(B, x0, y0, x1, y1) {
-  for (const e of ENTS_POOL) {
+  for (const e of World.pool) {
     if (!e.on || e.dying) continue;
     const d = distToSegment(e.x, e.y, x0, y0, x1, y1);
     if (d < CFG.buddy.killR + e.r * 0.72) {

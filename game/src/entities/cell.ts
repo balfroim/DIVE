@@ -14,12 +14,122 @@ const DEFAULT_ID_COL = '#7fdcff';
 
 let nextUid = 1;
 
-function clearComponentMap(e) {
+export type EntityKind = 'healthy' | string;
+export type MotionType = 'drift' | string;
+export type NucleusType = 'dot' | string;
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Entity {
+  on: boolean;
+  row: number;
+  uid: number;
+  arch: string | null;
+  kind: EntityKind;
+  species: string;
+
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  ang: number;
+  spin: number;
+  phase: number;
+  seed: number;
+
+  motion: MotionType;
+  mt: number;
+  bob: number;
+  target: unknown;
+  orbA: number;
+  orbR: number;
+  orbX: number;
+  orbY: number;
+
+  hue: number;
+  sat: number;
+  lit: number;
+  elong: number;
+  lobes: number;
+  lobeAmp: number;
+  deform: number;
+  spikes: number;
+  spikeLen: number;
+  spikeTip: boolean;
+  flag: boolean;
+  nuc: NucleusType;
+  halo: number;
+  coil: boolean;
+  segs: number;
+  wave: number;
+  tremor: number;
+  verts: number;
+  scale: number;
+
+  idUntil: number;
+  idPing: number;
+  idName: string;
+  idSub: string;
+  idCol: string;
+
+  infect: number;
+  infCd: number;
+  infBy: unknown;
+  age: number;
+  dying: boolean;
+  born: number;
+  hurt: number;
+  leaving: boolean;
+  lifespan: number;
+  preview: boolean;
+  marked: boolean;
+
+  comp: Record<string, unknown>;
+
+  _ax: number;
+  _ay: number;
+  _g: unknown;
+  _gk: string;
+  _gc: unknown;
+}
+
+interface Definition {
+  kind?: EntityKind;
+  idName?: string;
+  idSub?: string;
+  idCol?: string;
+  components?: string[] | Record<string, Record<string, unknown>>;
+  comps?: string[] | Record<string, Record<string, unknown>>;
+  dress?: (e: Entity, sig: unknown, dev: number, o: DressOpts) => void;
+}
+
+export interface DressOpts {
+  species?: string;
+  abo?: string;
+  donorAbo?: string;
+  kind?: EntityKind;
+  now?: number;
+  row?: number;
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+  away?: Point | null;
+  awayD?: number;
+  strictRow?: boolean;
+  [key: string]: unknown;
+}
+
+function clearComponentMap(e: Entity): void {
   if (!e.comp) e.comp = Object.create(null);
   for (const name in e.comp) delete e.comp[name];
 }
 
-function resetIdentity(e) {
+function resetIdentity(e: Entity): void {
   e.uid = 0;
   e.arch = null;
   e.kind = 'healthy';
@@ -29,7 +139,7 @@ function resetIdentity(e) {
   e.idCol = DEFAULT_ID_COL;
 }
 
-function resetTransform(e) {
+function resetTransform(e: Entity): void {
   e.x = 0;
   e.y = 0;
   e.vx = 0;
@@ -41,7 +151,7 @@ function resetTransform(e) {
   e.seed = 0;
 }
 
-function resetMotion(e) {
+function resetMotion(e: Entity): void {
   e.motion = 'drift';
   e.mt = 0;
   e.bob = 0;
@@ -52,7 +162,7 @@ function resetMotion(e) {
   e.orbY = 0;
 }
 
-function resetAppearance(e) {
+function resetAppearance(e: Entity): void {
   e.hue = 0;
   e.sat = 70;
   e.lit = 60;
@@ -74,13 +184,13 @@ function resetAppearance(e) {
   e.scale = 1;
 }
 
-function resetDiagnostics(e) {
+function resetDiagnostics(e: Entity): void {
   e.idUntil = -99;
   e.idPing = 0;
   e.marked = false;
 }
 
-function resetState(e) {
+function resetState(e: Entity): void {
   e.infect = 0;
   e.infCd = 0;
   e.infBy = null;
@@ -93,7 +203,7 @@ function resetState(e) {
   e.preview = false;
 }
 
-function resetScratch(e) {
+function resetScratch(e: Entity): void {
   e._ax = 0;
   e._ay = 0;
   e._g = null;
@@ -101,13 +211,18 @@ function resetScratch(e) {
   e._gc = null;
 }
 
-function componentNamesFor(definition) {
+function componentNamesFor(definition: Definition | null | undefined): string[] {
   const comps = definition?.components ?? definition?.comps ?? null;
   if (!comps) return [];
   return Array.isArray(comps) ? comps : Object.keys(comps);
 }
 
-function componentDataFor(definition, archId, name, opts) {
+function componentDataFor(
+  definition: Definition | null | undefined,
+  archId: string,
+  name: string,
+  opts: DressOpts = {}
+): Record<string, unknown> {
   const comps = definition?.components ?? definition?.comps ?? null;
   if (!comps || Array.isArray(comps)) return {};
   if (name === 'bloodSignature' || name === 'bloodtype') {
@@ -118,7 +233,7 @@ function componentDataFor(definition, archId, name, opts) {
   return comps[name] || {};
 }
 
-function clearMorphSurface(e) {
+function clearMorphSurface(e: Entity): void {
   e.on = true;
   e.arch = null;
   e.kind = 'healthy';
@@ -134,7 +249,8 @@ function clearMorphSurface(e) {
   e.preview = false;
 }
 
-export function blankEnt() {
+// TODO: refactor and split this too much information
+export function blankEnt(): Entity {
   return {
     on: false,
     row: 0,
@@ -203,7 +319,7 @@ export function blankEnt() {
   };
 }
 
-export function resetEnt(e, now = 0) {
+export function resetEnt(e: Entity, now = 0): Entity {
   if (!e.comp) e.comp = Object.create(null);
   for (const name in e.comp) delete e.comp[name];
   resetIdentity(e);
@@ -223,14 +339,21 @@ export function resetEnt(e, now = 0) {
   return e;
 }
 
-export function dressEnt(e, archId, sig, dev = 0, o = {}) {
-  const definition = archetype(archId);
+export function dressEnt(
+  e: Entity,
+  archId: string,
+  sig: unknown,
+  dev = 0,
+  o: DressOpts = {}
+): Entity | null {
+  const definition = archetype(archId) as Definition | null;
   if (!definition || !e) return null;
 
   clearComponentMap(e);
   e.arch = archId;
   e.kind = definition.kind || 'healthy';
-  e.species = o.species !== undefined ? o.species : archId;
+
+  e.species = o?.species ?? archId;
   e.idName = definition.idName || '';
   e.idSub = definition.idSub || '';
   e.idCol = definition.idCol || DEFAULT_ID_COL;
@@ -242,12 +365,17 @@ export function dressEnt(e, archId, sig, dev = 0, o = {}) {
   return e;
 }
 
-export function spawnPos(row, away = null, awayD = 0, strictRow = false) {
-  let targetRow = row;
-  if (targetRow === undefined || targetRow === null) targetRow = Maze.entry ? Maze.entry.r : 0;
+export function spawnPos(
+  row?: number | null,
+  away: Point | null = null,
+  awayD = 0,
+  strictRow = false
+): Point {
+  const entry = Maze.entry as { r?: number } | null;
+  const targetRow = row ?? (entry?.r ?? 0);
   const attempts = strictRow ? 12 : 8;
   const pad = 40;
-  const pointInRow = () => Maze.pointInRow(targetRow, Math.random, pad);
+  const pointInRow = (): Point => Maze.pointInRow(targetRow, Math.random, pad);
 
   if (!away || awayD <= 0) return pointInRow();
 
@@ -265,21 +393,27 @@ export function spawnPos(row, away = null, awayD = 0, strictRow = false) {
   return point;
 }
 
-export function spawnEnt(archId, sig, dev = 0, opts = {}) {
+export function spawnEnt(
+  archId: string,
+  sig: unknown,
+  dev = 0,
+  opts: DressOpts = {}
+): Entity | null {
   const entity = fetchAvailableEntity();
   const definition = archetype(archId);
   if (!definition || !entity) return null;
 
   resetEnt(entity, opts.now || 0);
-  entity.row = opts.row !== undefined ? opts.row : 0;
+  entity.row = opts.row ?? 0;
   dressEnt(entity, archId, sig, dev, opts);
 
   if (opts.kind !== undefined) entity.kind = opts.kind;
   if (opts.species !== undefined) entity.species = opts.species;
 
-  const pos = opts.x !== undefined && opts.y !== undefined
-    ? { x: opts.x, y: opts.y }
-    : spawnPos(entity.row, opts.away || null, opts.awayD || 0, !!opts.strictRow);
+  const pos =
+    opts.x !== undefined && opts.y !== undefined
+      ? { x: opts.x, y: opts.y }
+      : spawnPos(entity.row, opts.away || null, opts.awayD || 0, !!opts.strictRow);
 
   entity.x = pos.x;
   entity.y = pos.y;
@@ -299,7 +433,13 @@ export function spawnEnt(archId, sig, dev = 0, opts = {}) {
   return entity;
 }
 
-export function morphEnt(e, archId, sig, dev = 0, opts = {}) {
+export function morphEnt(
+  e: Entity,
+  archId: string,
+  sig: unknown,
+  dev = 0,
+  opts: DressOpts = {}
+): Entity | null {
   const definition = archetype(archId);
   if (!definition || !e) return null;
 

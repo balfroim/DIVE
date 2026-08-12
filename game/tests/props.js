@@ -1,5 +1,5 @@
 /* Contract and maze property checks. */
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 (async () => {
@@ -68,15 +68,16 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const enterRow = __D.Game.enterRow;
       __D.Game.enterRow = () => {};
       __D.Game.startContract(contract);
+      const ents = Array.isArray(__D.ents) ? __D.ents : (__D.pool?.entities || __D.world?.entities || []);
       const before = {
-        host: __D.ents.filter((e) => e.on && e.arch === contract.hostArch).length,
-        hostile: __D.ents.filter((e) => e.on && e.comp && e.comp.hostile).length
+        host: ents.filter((e) => e.on && e.arch === contract.hostArch).length,
+        hostile: ents.filter((e) => e.on && e.comp && e.comp.hostile).length
       };
       __D.Game.enterRow = enterRow;
       __D.Game.enterRow(0);
       const after = {
-        host: __D.ents.filter((e) => e.on && e.arch === contract.hostArch).length,
-        hostile: __D.ents.filter((e) => e.on && e.comp && e.comp.hostile).length
+        host: ents.filter((e) => e.on && e.arch === contract.hostArch).length,
+        hostile: ents.filter((e) => e.on && e.comp && e.comp.hostile).length
       };
       return { before, after };
     });

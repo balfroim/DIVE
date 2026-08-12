@@ -11,7 +11,7 @@
 import { TAU, PI, rr, lerp, clamp, hsl, easeOut, easeOutBack, hueDelta, wrapHue } from '../core/math.js';
 import { View, cam, inView } from '../core/view.js';
 import { CFG } from '../core/config.js';
-import { ENTS_POOL } from '../entities/pool.js';
+import { World } from '../ecs/world.js';
 import { spawnPart } from '../entities/particles.js';
 import { glowSprite, drawGlow } from './sprites.js';
 const _px = new Float32Array(64), _py = new Float32Array(64);
@@ -208,8 +208,8 @@ export function drawHalo(c, e, t) {
 export function drawEntities(t) {
   /* glow pass */
   View.ctx.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < ENTS_POOL.length; i++) {
-    const e = ENTS_POOL[i];
+  for (let i = 0; i < World.pool.length; i++) {
+    const e = World.pool[i];
     if (!e.on) continue;
     if (!inView(e.x, e.y, e.r * 4 + 60)) continue;
     const sc = e.dying > 0 ? e.dying : e.scale;
@@ -220,8 +220,8 @@ export function drawEntities(t) {
   View.ctx.globalCompositeOperation = 'source-over';
 
   /* bodies */
-  for (let i = 0; i < ENTS_POOL.length; i++) {
-    const e = ENTS_POOL[i];
+  for (let i = 0; i < World.pool.length; i++) {
+    const e = World.pool[i];
     if (!e.on) continue;
     if (!inView(e.x, e.y, e.r * 4 + 60)) continue;
     const sc = e.dying > 0 ? easeOut(e.dying) : easeOutBack(Math.min(1, e.scale));
@@ -247,8 +247,8 @@ export function drawEntities(t) {
 
 /* labels, marks, hover — drawn above everything in world space */
 export function drawEntityUI(t, hover) {
-  for (let i = 0; i < ENTS_POOL.length; i++) {
-    const e = ENTS_POOL[i];
+  for (let i = 0; i < World.pool.length; i++) {
+    const e = World.pool[i];
     if (!e.on || e.dying > 0) continue;
     if (!inView(e.x, e.y, e.r * 4 + 90)) continue;
     const idd = t < e.idUntil;

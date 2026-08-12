@@ -2,6 +2,7 @@
   "name": "dive",
   "version": "1.0.0",
   "main": "src/main.js",
+  "type": "module",
   "scripts": {
     "test": "node build.mjs --test && node tests/run-all.mjs",
     "build": "node build.mjs",
@@ -12,7 +13,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "D.I.V.E. - freelance microsurgery under late-stage capitalism",
+  "description": "D.I.V.E.",
   "dependencies": {
     "acorn": "^8.18.0",
     "acorn-walk": "^8.3.5",

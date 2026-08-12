@@ -20,7 +20,7 @@ import { CFG } from './core/config.js';
 import { View, cam } from './core/view.js';
 import { Input } from './core/input.js';
 import { Maze } from './world/maze.js';
-import { ENTS_POOL } from './entities/pool.js';
+import { World } from './ecs/world.js';
 import { spawnEnt } from './entities/cell.js';
 import { player } from './entities/player.js';
 import { buddy, hasFiringLine, lungeCasualties } from './entities/buddy.js';
@@ -30,7 +30,7 @@ import { ENEMIES, archetype } from './data/enemies.js';
 
 window.__D = {
   Game, Career, UI, DLG, SCRIPT, SCRIPTS, getScript, SHOP, TIERS, ORGANS, CFG, View, cam, Input, Maze,
-  ents: ENTS_POOL, spawnEnt, player, buddy, hasFiringLine, lungeCasualties, firingPreview,
+  ents: World.entities, pool: World.pool, spawnEnt, player, buddy, hasFiringLine, lungeCasualties, firingPreview,
   makeContract, generateOffers, offerSummary, suitFor, pressureLabel, organsForRep, ENEMIES, archetype,
   buildInvoice,
   getZoom: () => View.zoom

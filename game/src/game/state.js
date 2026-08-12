@@ -26,7 +26,7 @@ import { Maze } from '../world/maze.js';
 import { hashSeed } from '../core/rng.js';
 import { runSystems } from '../ecs/systems.js';
 import { World } from '../ecs/world.js';
-import { ENTS_POOL, clearPool } from '../entities/pool.js';
+import { clearPool } from '../entities/pool.js';
 import { spawnEnt, morphEnt } from '../entities/cell.js';
 import '../entities/systems.js';   // registers the pipeline
 import { player, playerReset } from '../entities/player.js';
@@ -173,6 +173,32 @@ export const Game = {
     };
   },
 
+  spawnHostCells(T, c, r) {
+    const hosts = T.hostCount(c.diff);
+    for (let i = 0; i < Math.ceil(hosts / Maze.rows) + 1; i++) {
+      spawnEnt(c.hostArch, c.sig, 1, { ...this.spawnOpts(r), strictRow: true});
+    }
+  },
+
+  spawnThreats(T, c, r) {
+    const n = T.threatCount(c.diff, r);
+    for (let i = 0; i < n; i++) {
+      spawnEnt(c.targetSpecies, c.sig, c.deviation, { ...this.spawnOpts(r, player, 240), strictRow: true});
+    }
+  },
+
+  spawnAllies(T, c, r) {
+    for (const ex of T.extras) {
+      if (ex.minRow !== undefined && r < ex.minRow) continue;
+      if (ex.minDiff !== undefined && c.diff < ex.minDiff) continue;
+      if (Math.random() >= ex.chance) continue;
+      const id = typeof ex.arch === 'function' ? ex.arch(c) : ex.arch;
+      const dev = clamp(c.deviation + (ex.devBonus || 0), 0, 1);
+      spawnEnt(id, c.sig, dev, { ...this.spawnOpts(r, player, ex.awayD || 200), strictRow: true });
+    }
+  },
+    
+
   /** First arrival in a row: spawn its wave from the contract type's spec. */
   enterRow(r) {
     if (r < 0 || r >= this.rows.length) return;
@@ -183,25 +209,11 @@ export const Game = {
     const c = this.contract;
     const T = this.type();
 
-    const hosts = T.hostCount(c.diff);
-    for (let i = 0; i < Math.ceil(hosts / Maze.rows) + 1; i++) {
-      spawnEnt(c.hostArch, c.sig, 1, { ...this.spawnOpts(r), strictRow: true, species: c.targetSpecies });
-    }
+    this.spawnHostCells(T, c, r);
+    this.spawnThreats(T, c, r);
+    this.spawnAllies(T, c, r);
 
-    const n = T.threatCount(c.diff, r);
-    for (let i = 0; i < n; i++) {
-      spawnEnt(c.targetSpecies, c.sig, c.deviation, { ...this.spawnOpts(r, player, 240), strictRow: true, species: c.targetSpecies });
-    }
-
-    for (const ex of T.extras) {
-      if (ex.minRow !== undefined && r < ex.minRow) continue;
-      if (ex.minDiff !== undefined && c.diff < ex.minDiff) continue;
-      if (Math.random() >= ex.chance) continue;
-      const id = typeof ex.arch === 'function' ? ex.arch(c) : ex.arch;
-      const dev = clamp(c.deviation + (ex.devBonus || 0), 0, 1);
-      spawnEnt(id, c.sig, dev, { ...this.spawnOpts(r, player, ex.awayD || 200), strictRow: true });
-    }
-
+  
     if (r > 0) {
       SFX.wave();
       this.setBanner('WAVE ' + (r + 1) + ' / ' + this.waveTotal,
@@ -221,7 +233,7 @@ export const Game = {
 
   /** Compatibility helper used by the HUD and older tests. */
   nextMark() {
-    const cands = ENTS_POOL.filter((e) => e.on && !e.dying && e.comp && e.comp.hostile && !e.marked);
+    const cands = World.pool.filter((e) => e.on && !e.dying && e.comp && e.comp.hostile && !e.marked);
     return cands[0] || null;
   },
 
@@ -414,8 +426,8 @@ export const Game = {
   /** Entity under a world point, if any. */
   pickEnt(wx, wy, pad) {
     let best = null, bd = 1e9;
-    for (let i = 0; i < ENTS_POOL.length; i++) {
-      const e = ENTS_POOL[i];
+    for (let i = 0; i < World.pool.length; i++) {
+      const e = World.pool[i];
       if (!e.on || e.dying) continue;
       const rad = e.r * e.elong + (pad || 0);
       const d = Math.hypot(e.x - wx, e.y - wy);
@@ -458,8 +470,8 @@ export const Game = {
     if (this.scanning) {
       this.scanR += (CFG.scan.maxR / CFG.scan.time) * dt;
       let pinged = 0;
-      for (let i = 0; i < ENTS_POOL.length; i++) {
-        const e = ENTS_POOL[i];
+      for (let i = 0; i < World.pool.length; i++) {
+        const e = World.pool[i];
         if (!e.on || e.dying) continue;
         const d = Math.hypot(e.x - player.x, e.y - player.y);
         /* the pulse cannot see through tissue - another reason corridors matter */

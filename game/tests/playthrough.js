@@ -1,7 +1,7 @@
 /* A short simulated pass through a dive frame-loop. */
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const { findSuitableOfferIdx } = require('./test-helpers');
+import { findSuitableOfferIdx } from './test-helpers.js';
 
 (async () => {
   let pass = 0;

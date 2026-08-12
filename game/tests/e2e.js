@@ -1,5 +1,5 @@
 /* End-to-end flow checks for onboarding, contract selection, and dive start. */
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const pressureLabel = (p) => (p < 1.0 ? 'LOW' : p < 1.3 ? 'NORMAL' : p < 1.6 ? 'RAISED' : p < 2.0 ? 'HIGH' : 'CRISIS');
 

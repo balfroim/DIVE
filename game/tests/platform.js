@@ -1,5 +1,5 @@
 /* Viewport and HUD sanity checks. */
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 (async () => {
