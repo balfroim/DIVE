@@ -1,6 +1,7 @@
 import { rr, ri, pick, sgn, clamp, wrapHue } from '../core/math.js';
 import type { Archetype } from '../entities/archetype.js';
-import type { DressOpts, Entity } from '../entities/cell.js';
+import type { DressOpts, Entity, EntityKind } from '../entities/cell.js';
+import type { Signature } from './Signature.js';
 
 /** Antigen stud counts. This is the tell the player has to read. */
 const ABO_STUDS: Record<string, number> = { O: 0, A: 4, B: 8, AB: 12 };
@@ -13,14 +14,17 @@ export const ABO_INCOMPATIBLE = {
   AB: []
 };
 
-export interface Signature {
-  hue: number;
-  sat: number;
-  lit: number;
-  r: number;
-  lobes: number;
-  lobeAmp: number;
-  nuc: string;
+export interface PartialArchetype {
+  kind?: EntityKind;
+  name?: string;
+  short?: string;
+  desc?: string;
+  idName?: string;
+  idSub?: string;
+  idCol?: string;
+  components?: string[] | Record<string, Record<string, unknown>>;
+  comps?: string[] | Record<string, Record<string, unknown>>;
+  onDress?: (e: Entity, sig: Signature, dev: number, o: DressOpts) => void;
 }
  
 export class ArchetypeRegistry {
@@ -37,11 +41,15 @@ export class ArchetypeRegistry {
     }
     return archetype;
   }
+
+  public getAll(): Record<string, Archetype> {
+    return this.archetypes;
+  }
 }
 
 class ArchetypeBuilder {
 
-  archetype: Archetype = {};
+  archetype: PartialArchetype = {};
 
   public setKind(kind: string): this {
     this.archetype.kind = kind;
@@ -89,7 +97,7 @@ class ArchetypeBuilder {
   }
 
   public build(): Archetype {
-    return this.archetype;
+    return this.archetype as Archetype;
   }
 }
 

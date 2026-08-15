@@ -18,8 +18,7 @@ import { offerSummary} from '../game/contracts.js';
 import { repLabel } from '../game/economy.js';
 import { mapFor } from '../data/maps.js';
 import { SHOP } from '../data/shop.js';
-import { PSPEC } from '../entities/species.js';
-import { anySymbiote } from '../data/archetypes.js';
+import { anySymbiote, ARCHETYPES } from '../data/archetypes.js';
 import { drawBody } from '../render/minimap.js';
 import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
 import { DLG } from './dialogue.js';
@@ -305,8 +304,7 @@ export const UI = {
 
     $('brief-num').textContent = 'Work order ' + offer.id;
     $('brief-client').textContent = offer.client.job;
-    // $('brief-title').innerHTML = esc(s.typeShort) + ' \u00b7 ' + esc(s.typeName) + ' \u00b7 ' + esc(s.objective);
-
+    
     /* specimens */
     const ctx = offer.type === 'transfusion'
       ? { abo: offer.abo, donorAbo: offer.donorAbo }
@@ -314,7 +312,8 @@ export const UI = {
     preview.sig = previewEnt('host', offer.sig, offer.deviation, ctx);
     preview.tgt = previewEnt(offer.targetSpecies, offer.sig, offer.deviation, ctx);
     preview.sym = previewEnt(anySymbiote(), offer.sig, offer.deviation);
-    const spec = PSPEC[offer.targetSpecies];
+    
+    const spec = ARCHETYPES.get(offer.targetSpecies);
     $('brief-depth').textContent = s.depth;
     $('brief-waves').textContent = String(s.waves);
     $('brief-mapnote').textContent = s.note;

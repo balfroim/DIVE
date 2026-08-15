@@ -6,7 +6,8 @@
 
 import { rr, TAU } from '../core/math.js';
 import { attach } from '../ecs/components.js';
-import { ARCHETYPES, type Signature } from '../data/archetypes.js';
+import { ARCHETYPES } from '../data/archetypes.js';
+import { type Signature } from '../data/Signature.js';
 import { Maze } from '../world/maze.js';
 import { fetchAvailableEntity } from './pool.js';
 import type { Archetype } from './archetype.js';
@@ -346,21 +347,18 @@ export function dressEntity(
   dev = 0,
   o: DressOpts = {}
 ): Entity | null {
-  const definition = ARCHETYPES.get(archId) as Archetype | null;
-  if (!definition || !entity) return null;
+  const archetype: Archetype = ARCHETYPES.get(archId) as Archetype;
 
-  clearComponentMap(entity);
   entity.arch = archId;
-  entity.kind = definition.kind || 'healthy';
+  entity.kind = archetype.kind;
+  entity.species = o?.species ?? archId; // FIXME: wtf
+  entity.idName = archetype.idName;
+  entity.idSub = archetype.idSub;
+  entity.idCol = archetype.idCol || DEFAULT_ID_COL;
 
-  entity.species = o?.species ?? archId;
-  entity.idName = definition.idName || '';
-  entity.idSub = definition.idSub || '';
-  entity.idCol = definition.idCol || DEFAULT_ID_COL;
-
-  if (typeof definition.onDress === 'function') definition.onDress(entity, sig, dev, o);
-  for (const name of componentNamesFor(definition)) {
-    attach(entity, name, componentDataFor(definition, archId, name, o));
+  archetype.onDress(entity, sig, dev, o);
+  for (const name of componentNamesFor(archetype)) {
+    attach(entity, name, componentDataFor(archetype, archId, name, o));
   }
   return entity;
 }
@@ -405,6 +403,7 @@ export function spawnEnt(
 
   resetEnt(entity, opts.now || 0);
   entity.row = opts.row ?? 0;
+  clearComponentMap(entity);
   dressEntity(entity, archId, sig, dev, opts);
 
   if (opts.kind !== undefined) entity.kind = opts.kind;
