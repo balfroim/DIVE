@@ -86,15 +86,14 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     if (spawnRows.after.host === 0 || spawnRows.after.hostile === 0) {
       throw new Error('wave spawning did not add hosts and hostiles together');
     }
-    pass++;
-
     const spriteTag = await page.evaluate(() => {
       const e = __D.ents.find((ent) => ent.on && ent.comp && ent.comp.hostile);
       return e ? { sprite: e.sprite, arch: e.arch, species: e.species } : null;
     });
-    if (!spriteTag || !spriteTag.sprite || spriteTag.sprite !== spriteTag.arch || spriteTag.species !== spriteTag.arch) {
-      throw new Error('spawned entities did not keep a sprite identifier');
-    }
+    if (!spriteTag) throw new Error('no hostile entity was available to inspect');
+    if (!spriteTag.sprite) throw new Error('spawned entity sprite identifier was not set');
+    if (spriteTag.sprite !== spriteTag.arch) throw new Error('spawned entity sprite did not match its archetype');
+    if (spriteTag.species !== spriteTag.arch) throw new Error('spawned entity species did not match its archetype');
     pass++;
 
     const generated = await page.evaluate(() => {
