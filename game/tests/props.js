@@ -88,6 +88,15 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     }
     pass++;
 
+    const spriteTag = await page.evaluate(() => {
+      const e = __D.ents.find((ent) => ent.on && ent.comp && ent.comp.hostile);
+      return e ? { sprite: e.sprite, arch: e.arch, species: e.species } : null;
+    });
+    if (!spriteTag || !spriteTag.sprite || spriteTag.sprite !== spriteTag.arch || spriteTag.species !== spriteTag.arch) {
+      throw new Error('spawned entities did not keep a sprite identifier');
+    }
+    pass++;
+
     const generated = await page.evaluate(() => {
       const offers = [];
       for (let i = 0; i < 10; i++) {

@@ -33,6 +33,7 @@ export function blankEnt() {
     orbA: 0, orbR: 0, orbX: 0, orbY: 0,
     /* appearance */
     hue: 0, sat: 70, lit: 60, elong: 1, lobes: 4, lobeAmp: 0.1, deform: 0,
+    sprite: '',
     spikes: 0, spikeLen: 0, spikeTip: false, flag: 0, nuc: 'dot', halo: 0,
     coil: false, segs: 0, wave: 0, tremor: 0, verts: 18, scale: 1,
     /* diagnostics */
@@ -92,6 +93,7 @@ export function dressEnt(e, archId, sig, dev, o) {
   e.arch = A.id;
   e.kind = A.kind;
   e.species = A.id;
+  e.sprite = A.sprite || A.id;
   e.idName = A.idName;
   e.idSub = A.idSub;
   e.idCol = A.idCol;

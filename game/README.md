@@ -134,7 +134,7 @@ src/
 │   └── systems.js         the system runner and pipeline ORDER
 │
 ├── entities/
-│   ├── pool.js            fixed object pool - nothing is allocated mid-dive
+│   ├── pool.js            fixed object pool + spawn pipeline: reset -> place -> dress -> tag
 │   ├── species.js         the client cell signature the bestiary dresses against
 │   ├── systems.js         per-frame AI as systems: motion, infection, clotting
 │   ├── player.js          the diver: thrust, suit rating, pressure surge
