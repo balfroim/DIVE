@@ -13,7 +13,7 @@
  * @module data/contract-types
  */
 
-import { ABO_TYPES, ABO_INCOMPATIBLE, anySymbiote } from './enemies.js';
+import { ABO_TYPES, ABO_INCOMPATIBLE, anySymbiote } from './archetypes.js';
 
 export const CONTRACT_TYPES = [
   {

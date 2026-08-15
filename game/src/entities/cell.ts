@@ -6,9 +6,10 @@
 
 import { rr, TAU } from '../core/math.js';
 import { attach } from '../ecs/components.js';
-import { archetype } from '../data/enemies.js';
+import { ARCHETYPES, type Signature } from '../data/archetypes.js';
 import { Maze } from '../world/maze.js';
 import { fetchAvailableEntity } from './pool.js';
+import type { Archetype } from './archetype.js';
 
 const DEFAULT_ID_COL = '#7fdcff';
 
@@ -60,7 +61,7 @@ export interface Entity {
   spikes: number;
   spikeLen: number;
   spikeTip: boolean;
-  flag: boolean;
+  flag: number;
   nuc: NucleusType;
   halo: number;
   coil: boolean;
@@ -95,16 +96,6 @@ export interface Entity {
   _g: unknown;
   _gk: string;
   _gc: unknown;
-}
-
-interface Definition {
-  kind?: EntityKind;
-  idName?: string;
-  idSub?: string;
-  idCol?: string;
-  components?: string[] | Record<string, Record<string, unknown>>;
-  comps?: string[] | Record<string, Record<string, unknown>>;
-  dress?: (e: Entity, sig: unknown, dev: number, o: DressOpts) => void;
 }
 
 export interface DressOpts {
@@ -173,7 +164,7 @@ function resetAppearance(e: Entity): void {
   e.spikes = 0;
   e.spikeLen = 0;
   e.spikeTip = false;
-  e.flag = false;
+  e.flag = 0;
   e.nuc = 'dot';
   e.halo = 0;
   e.coil = false;
@@ -211,14 +202,14 @@ function resetScratch(e: Entity): void {
   e._gc = null;
 }
 
-function componentNamesFor(definition: Definition | null | undefined): string[] {
+function componentNamesFor(definition: Archetype | null | undefined): string[] {
   const comps = definition?.components ?? definition?.comps ?? null;
   if (!comps) return [];
   return Array.isArray(comps) ? comps : Object.keys(comps);
 }
 
 function componentDataFor(
-  definition: Definition | null | undefined,
+  definition: Archetype | null | undefined,
   archId: string,
   name: string,
   opts: DressOpts = {}
@@ -285,7 +276,7 @@ export function blankEnt(): Entity {
     spikes: 0,
     spikeLen: 0,
     spikeTip: false,
-    flag: false,
+    flag: 0,
     nuc: 'dot',
     halo: 0,
     coil: false,
@@ -339,30 +330,39 @@ export function resetEnt(e: Entity, now = 0): Entity {
   return e;
 }
 
-export function dressEnt(
-  e: Entity,
+/**
+ * Configures a pooled entity to the specified archetype.
+ * @param entity The pooled entity to configure.
+ * @param archId The archetype ID.
+ * @param sig The signature for the entity.
+ * @param dev The deviation for the entity.
+ * @param o The dress options.
+ * @returns The dressed entity or null if the archetype is not found.
+ */
+export function dressEntity(
+  entity: Entity,
   archId: string,
-  sig: unknown,
+  sig: Signature,
   dev = 0,
   o: DressOpts = {}
 ): Entity | null {
-  const definition = archetype(archId) as Definition | null;
-  if (!definition || !e) return null;
+  const definition = ARCHETYPES.get(archId) as Archetype | null;
+  if (!definition || !entity) return null;
 
-  clearComponentMap(e);
-  e.arch = archId;
-  e.kind = definition.kind || 'healthy';
+  clearComponentMap(entity);
+  entity.arch = archId;
+  entity.kind = definition.kind || 'healthy';
 
-  e.species = o?.species ?? archId;
-  e.idName = definition.idName || '';
-  e.idSub = definition.idSub || '';
-  e.idCol = definition.idCol || DEFAULT_ID_COL;
+  entity.species = o?.species ?? archId;
+  entity.idName = definition.idName || '';
+  entity.idSub = definition.idSub || '';
+  entity.idCol = definition.idCol || DEFAULT_ID_COL;
 
-  if (typeof definition.dress === 'function') definition.dress(e, sig, dev, o);
+  if (typeof definition.onDress === 'function') definition.onDress(entity, sig, dev, o);
   for (const name of componentNamesFor(definition)) {
-    attach(e, name, componentDataFor(definition, archId, name, o));
+    attach(entity, name, componentDataFor(definition, archId, name, o));
   }
-  return e;
+  return entity;
 }
 
 export function spawnPos(
@@ -395,17 +395,17 @@ export function spawnPos(
 
 export function spawnEnt(
   archId: string,
-  sig: unknown,
+  sig: Signature,
   dev = 0,
   opts: DressOpts = {}
 ): Entity | null {
   const entity = fetchAvailableEntity();
-  const definition = archetype(archId);
+  const definition = ARCHETYPES.get(archId);
   if (!definition || !entity) return null;
 
   resetEnt(entity, opts.now || 0);
   entity.row = opts.row ?? 0;
-  dressEnt(entity, archId, sig, dev, opts);
+  dressEntity(entity, archId, sig, dev, opts);
 
   if (opts.kind !== undefined) entity.kind = opts.kind;
   if (opts.species !== undefined) entity.species = opts.species;
@@ -436,18 +436,18 @@ export function spawnEnt(
 export function morphEnt(
   e: Entity,
   archId: string,
-  sig: unknown,
+  sig: Signature,
   dev = 0,
   opts: DressOpts = {}
 ): Entity | null {
-  const definition = archetype(archId);
+  const definition = ARCHETYPES.get(archId);
   if (!definition || !e) return null;
 
   clearMorphSurface(e);
   e.orbX = e.x;
   e.orbY = e.y;
 
-  dressEnt(e, archId, sig, dev, opts);
+  dressEntity(e, archId, sig, dev, opts);
   if (opts.kind !== undefined) e.kind = opts.kind;
   if (opts.species !== undefined) e.species = opts.species;
   if (opts.now !== undefined) e.born = opts.now;

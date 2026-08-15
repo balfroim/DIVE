@@ -147,3 +147,4 @@ shots/
 .local/
 dive.html
 game/legacy/
+*.tour

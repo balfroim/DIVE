@@ -19,7 +19,7 @@ import { repLabel } from '../game/economy.js';
 import { mapFor } from '../data/maps.js';
 import { SHOP } from '../data/shop.js';
 import { PSPEC } from '../entities/species.js';
-import { anySymbiote } from '../data/enemies.js';
+import { anySymbiote } from '../data/archetypes.js';
 import { drawBody } from '../render/minimap.js';
 import { $, esc, on, stop, show, hideAll, cr } from './dom.js';
 import { DLG } from './dialogue.js';

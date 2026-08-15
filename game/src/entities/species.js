@@ -13,13 +13,13 @@
  */
 
 import { rr, ri, pick } from '../core/math.js';
-import { ENEMIES } from '../data/enemies.js';
+import { ARCHETYPES } from '../data/archetypes.js';
 
 export const NUCLEI = ['dot', 'trio', 'ring', 'crescent'];
 export const NUCNAME = { dot: 'MONO-NUCLEUS', trio: 'TRI-NUCLEUS', ring: 'RING-NUCLEUS', crescent: 'CRESCENT', none: 'ANUCLEATE' };
 export const SITES = ['femoral artery', 'pulmonary vein', 'hepatic portal', 'carotid branch', 'renal capillary', 'aortic arch', 'splenic sinus'];
 
-export const PSPEC = Object.fromEntries(Object.entries(ENEMIES).map(([id, archetype]) => [id, {
+export const PSPEC = Object.fromEntries(Object.entries(ARCHETYPES).map(([id, archetype]) => [id, {
   ...archetype,
   build(e, sig, dev) {
     if (archetype.dress) archetype.dress(e, sig, dev);

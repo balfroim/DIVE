@@ -6,7 +6,7 @@
  */
 
 import { rr, TAU } from '../core/math.js';
-import { blankEnt, dressEnt } from '../entities/cell.js';
+import { blankEnt, dressEntity } from '../entities/cell.js';
 import { glowSprite } from '../render/sprites.js';
 import { drawEntityBody, drawHalo } from '../render/cells.js';
 
@@ -22,7 +22,7 @@ export function previewEnt(kind, sig, dev, species) {
   e.verts = 18;
   e.ang = 0;
   e.spin = 0.25;
-  dressEnt(e, kind, sig, dev, species);
+  dressEntity(e, kind, sig, dev, species);
   return e;
 }
 
