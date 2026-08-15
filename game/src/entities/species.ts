@@ -25,6 +25,6 @@ export function makeSignature(): Signature {
   const nucname: string = NUCNAME[nuc] ?? 'MONO-NUCLEUS'; // FIXME: wtf
   const lobename: string = sig.lobes ? sig.lobes + '-LOBE' : 'SMOOTH';
   sig.desc = `HUE ${sig.hue.toString()}° · ${lobename} · ${nucname}`;
-  sig.short = `H${sig.hue} · ${lobes ? lobes + 'L' : 'SM'} · ${nucname.split('-')[0].slice(0, 4)}`;
+  sig.short = `H${sig.hue} · ${lobes ? lobes + 'L' : 'SM'}`;
   return sig;
 }

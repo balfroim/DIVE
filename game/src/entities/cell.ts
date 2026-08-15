@@ -355,7 +355,7 @@ export function dressEntity(
   entity.idName = archetype.idName;
   entity.idSub = archetype.idSub;
   entity.idCol = archetype.idCol || DEFAULT_ID_COL;
-
+  
   archetype.onDress(entity, sig, dev, o);
   for (const name of componentNamesFor(archetype)) {
     attach(entity, name, componentDataFor(archetype, archId, name, o));
@@ -400,10 +400,10 @@ export function spawnEnt(
   const entity = fetchAvailableEntity();
   const definition = ARCHETYPES.get(archId);
   if (!definition || !entity) return null;
-
   resetEnt(entity, opts.now || 0);
   entity.row = opts.row ?? 0;
   clearComponentMap(entity);
+  // attach(entity, 'cell', {});
   dressEntity(entity, archId, sig, dev, opts);
 
   if (opts.kind !== undefined) entity.kind = opts.kind;
@@ -428,7 +428,7 @@ export function spawnEnt(
     entity.vy = Math.sin(a) * s;
   }
 
-  entity.scale = 0;
+  entity.scale = 1;
   return entity;
 }
 

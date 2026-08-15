@@ -39,7 +39,7 @@ export function attach(e, name, data, ctx) {
   if (def) for (const k in def.defaults) inst[k] = def.defaults[k];
   if (data) for (const k in data) inst[k] = data[k];
   e.comp[name] = inst;
-  if (def && def.apply) def.apply(e, inst, ctx || null);
+  if (def?.apply) def.apply(e, inst, ctx || null);
   return inst;
 }
 

@@ -121,6 +121,7 @@ ARCHETYPES.register('host', new ArchetypeBuilder()
     e.nuc = sig.nuc;
   })
   .setComponents({
+    cell: {},
     motion: { kind: 'drift', force: 26 },
     property: {},
     converts: { into: 'corrupted' }

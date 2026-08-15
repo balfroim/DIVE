@@ -61,6 +61,12 @@ export class EntityManagement {
     }
     return n;
   }
+
+  forEach(fn: (e: Entity) => void): void {
+    for (const e of this.pool) {
+      if (e.on) fn(e);
+    }
+  }
 }
 
 /** Does this entity carry the component? */

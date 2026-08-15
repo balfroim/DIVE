@@ -26,37 +26,81 @@
 import { TAU, PI, rr, lerp, clamp } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { currentAt } from '../world/flow.js';
-import { defineSystem, ORDER } from '../ecs/systems.js';
 import { World } from '../ecs/world.js';
 import { burst } from './particles.js';
 import { Rules } from './hooks.js';
 import { player, updatePlayer } from './player.js';
 import { buddy, updateBuddy } from './buddy.js';
+import type { Entity } from './cell.js';
 
+/** Canonical pipeline slots, so a new system can be dropped in by name. */
+export const ORDER = {
+  timers: 10,
+  steer: 20,
+  integrate: 40,
+  contact: 50,
+  consequences: 60,
+  actors: 70
+};
+
+export interface System {
+  name: string;
+  order: number;
+  require?: string[];
+  each?: ((e: any, dt: number, ctx: any, c: any) => void) | null;
+  pre?: ((dt: number, ctx: any) => void) | null;
+  post?: ((dt: number, ctx: any) => void) | null;
+  run?: ((dt: number, ctx: any) => void) | null;
+}
+
+class SystemRegistry {
+  private readonly systems: System[] = [];
+
+  register(sys: System) {
+    this.systems.push(sys);
+  }
+
+  sort() {
+    this.systems.sort((a, b) => (a.order - b.order));
+  }
+
+  clear() {
+    this.systems.length = 0;
+  }
+
+  forEach(fn: (sys: System) => void) {
+    for (const sys of this.systems) {
+      fn(sys);
+    }
+  }
+}
+export const SYSTEMS: SystemRegistry = new SystemRegistry();
 /** Nearest entity the client owns - what a `seek` pathogen hunts. */
-function nearestProperty(e, maxD) {
-  let best = null, bd = maxD * maxD;
-  for (let i = 0; i < World.pool.length; i++) {
-    const o = World.pool[i];
-    if (!o.on || o.dying || !o.comp.property) continue;
+function nearestProperty(e: Entity, maximumDistance: number) {
+  let best = null, bd = maximumDistance * maximumDistance;
+  World.forEach((o) => {
+    if (!o.on || o.dying || !o.comp.property) return;
     const dx = o.x - e.x, dy = o.y - e.y, d = dx * dx + dy * dy;
     if (d < bd) { bd = d; best = o; }
-  }
+  });
   return best;
 }
+
+
 
 /* ------------------------------------------------------------------ */
 /* 5 + 6 - the actors                                                  */
 /* ------------------------------------------------------------------ */
 
-defineSystem({
+
+SYSTEMS.register({
   name: 'diver',
   order: 5,
   require: ['playerControl'],
   each(e, dt, ctx) { updatePlayer(dt, ctx.live, ctx.env); }
 });
 
-defineSystem({
+SYSTEMS.register({
   name: 'escort',
   order: 6,
   require: ['escort'],
@@ -67,7 +111,7 @@ defineSystem({
 /* 10 - timers                                                         */
 /* ------------------------------------------------------------------ */
 
-defineSystem({
+SYSTEMS.register({
   name: 'timers',
   order: ORDER.timers,
   require: ['cell'],
@@ -90,16 +134,75 @@ defineSystem({
 /* ------------------------------------------------------------------ */
 
 /** Scratch acceleration, written by the steering systems, read by integrate. */
-function steer(e, ax, ay) { e._ax += ax; e._ay += ay; }
+function steer(e: Entity, ax: number, ay: number) { e._ax += ax; e._ay += ay; }
+function drift(e: Entity, dt: number, m: any, t: number) {
+  e.mt -= dt;
+  if (e.mt <= 0) { e.mt = rr(1.8, 4.2); e.ang = rr(0, TAU); }
+  steer(e, Math.cos(e.ang) * m.force, Math.sin(e.ang) * m.force);
+  if (e.tremor) {
+    steer(e,
+      Math.sin(t * 21 + e.seed) * 46 * e.tremor,
+      Math.cos(t * 19.3 + e.seed * 2) * 46 * e.tremor);
+  }
+}
 
-defineSystem({
+/** a slow, heavy tumble - the pulling is done by the agglutinate system */
+function clump(e: any, dt: number, m: any) {
+  e.mt -= dt;
+  if (e.mt <= 0) { e.mt = rr(2.4, 5.0); e.ang = rr(0, TAU); }
+  steer(e, Math.cos(e.ang) * m.force, Math.sin(e.ang) * m.force);
+}
+
+function orbit(e: any, dt: number) {
+  e.orbA += dt * 0.55;
+  const tx = e.orbX + Math.cos(e.orbA) * e.orbR;
+  const ty = e.orbY + Math.sin(e.orbA) * e.orbR * 0.7;
+  steer(e, (tx - e.x) * 1.7, (ty - e.y) * 1.7);
+}
+
+function wiggle(e: any, dt: number, m: any, aggr: any, t: any) {
+  e.mt -= dt;
+  if (e.mt <= 0) { e.mt = rr(1.4, 3.0); e.ang += rr(-1.1, 1.1); }
+  const sp = m.force * aggr;
+  steer(e, Math.cos(e.ang) * sp, Math.sin(e.ang) * sp);
+  const s = Math.sin(t * 9 + e.seed) * 70;
+  steer(e, Math.cos(e.ang + PI / 2) * s, Math.sin(e.ang + PI / 2) * s);
+}
+
+function seek(e: any, m: any, aggr: any, dt: number) {
+  let tg = e.target;
+  if (!tg?.on || tg.dying || !tg.comp.property) { tg = nearestProperty(e, 620); e.target = tg; }
+  if (tg) {
+    const dx = tg.x - e.x, dy = tg.y - e.y, d = Math.hypot(dx, dy) || 1;
+    steer(e, (dx / d) * m.force * aggr, (dy / d) * m.force * aggr);
+    e.ang = Math.atan2(dy, dx);
+  } else {
+    e.mt -= dt;
+    if (e.mt <= 0) { e.mt = rr(2, 4); e.ang = rr(0, TAU); }
+    steer(e, Math.cos(e.ang) * 34, Math.sin(e.ang) * 34);
+  }
+}
+
+function dart(e: any, dt: number, m: any, aggr: any) {
+  e.mt -= dt;
+  if (e.mt <= 0) {
+    e.mt = rr(1.1, 2.3);
+    const a = rr(0, TAU), p = rr(0.72, 1.28) * m.force * aggr;
+    e.vx += Math.cos(a) * p; e.vy += Math.sin(a) * p;
+    e.ang = a; e.bob = 1;
+  }
+  e.bob = Math.max(0, e.bob - dt * 2.2);
+}
+
+
+SYSTEMS.register({
   name: 'motion',
   order: ORDER.steer,
   require: ['cell', 'motion'],
   each(e, dt, ctx, m) {
     if (e.dying > 0) return;
     e._ax = 0; e._ay = 0;
-    const t = ctx.t;
+    const {t} = ctx;
     const aggr = ctx.env ? ctx.env.aggression : 1;
 
     const c = currentAt(e.x, e.y, t, ctx.env ? ctx.env.flow : 1);
@@ -107,69 +210,34 @@ defineSystem({
 
     switch (m.kind) {
       case 'drift': {
-        e.mt -= dt;
-        if (e.mt <= 0) { e.mt = rr(1.8, 4.2); e.ang = rr(0, TAU); }
-        steer(e, Math.cos(e.ang) * m.force, Math.sin(e.ang) * m.force);
-        if (e.tremor) {
-          steer(e,
-            Math.sin(t * 21 + e.seed) * 46 * e.tremor,
-            Math.cos(t * 19.3 + e.seed * 2) * 46 * e.tremor);
-        }
+        drift(e, dt, m, t);
         break;
       }
       case 'dart': {
-        e.mt -= dt;
-        if (e.mt <= 0) {
-          e.mt = rr(1.1, 2.3);
-          const a = rr(0, TAU), p = rr(0.72, 1.28) * m.force * aggr;
-          e.vx += Math.cos(a) * p; e.vy += Math.sin(a) * p;
-          e.ang = a; e.bob = 1;
-        }
-        e.bob = Math.max(0, e.bob - dt * 2.2);
+        dart(e, dt, m, aggr);
         break;
       }
       case 'seek': {
-        let tg = e.target;
-        if (!tg || !tg.on || tg.dying || !tg.comp.property) { tg = nearestProperty(e, 620); e.target = tg; }
-        if (tg) {
-          const dx = tg.x - e.x, dy = tg.y - e.y, d = Math.hypot(dx, dy) || 1;
-          steer(e, (dx / d) * m.force * aggr, (dy / d) * m.force * aggr);
-          e.ang = Math.atan2(dy, dx);
-        } else {
-          e.mt -= dt;
-          if (e.mt <= 0) { e.mt = rr(2, 4); e.ang = rr(0, TAU); }
-          steer(e, Math.cos(e.ang) * 34, Math.sin(e.ang) * 34);
-        }
+        seek(e, m, aggr, dt);
         break;
       }
       case 'wiggle': {
-        e.mt -= dt;
-        if (e.mt <= 0) { e.mt = rr(1.4, 3.0); e.ang += rr(-1.1, 1.1); }
-        const sp = m.force * aggr;
-        steer(e, Math.cos(e.ang) * sp, Math.sin(e.ang) * sp);
-        const s = Math.sin(t * 9 + e.seed) * 70;
-        steer(e, Math.cos(e.ang + PI / 2) * s, Math.sin(e.ang + PI / 2) * s);
+        wiggle(e, dt, m, aggr, t);
         break;
       }
       case 'orbit': {
-        e.orbA += dt * 0.55;
-        const tx = e.orbX + Math.cos(e.orbA) * e.orbR;
-        const ty = e.orbY + Math.sin(e.orbA) * e.orbR * 0.7;
-        steer(e, (tx - e.x) * 1.7, (ty - e.y) * 1.7);
+        orbit(e, dt);
         break;
       }
       case 'clump': {
-        /* a slow, heavy tumble - the pulling is done by the agglutinate system */
-        e.mt -= dt;
-        if (e.mt <= 0) { e.mt = rr(2.4, 5.0); e.ang = rr(0, TAU); }
-        steer(e, Math.cos(e.ang) * m.force, Math.sin(e.ang) * m.force);
+        clump(e, dt, m);
         break;
       }
     }
   }
 });
 
-defineSystem({
+SYSTEMS.register({
   name: 'chemotaxis',
   order: ORDER.steer + 1,
   require: ['chemotaxis'],
@@ -182,7 +250,7 @@ defineSystem({
   }
 });
 
-defineSystem({
+SYSTEMS.register({
   name: 'guest',
   order: ORDER.steer + 2,
   require: ['guest'],
@@ -198,7 +266,7 @@ defineSystem({
  * including the client's own. That is what makes a transfusion reaction lethal,
  * and what makes it hard to shoot: the clot is a mixed mass.
  */
-defineSystem({
+SYSTEMS.register({
   name: 'agglutinate',
   order: ORDER.steer + 3,
   require: ['agglutinate'],
@@ -206,12 +274,11 @@ defineSystem({
     if (e.dying > 0) return;
     let n = 0;
     const r2 = ag.r * ag.r;
-    for (let i = 0; i < World.pool.length; i++) {
-      const o = World.pool[i];
-      if (o === e || !o.on || o.dying || !o.comp.bloodSignature) continue;
+    World.forEach((o) => {
+      if (o === e || !o.on || o.dying || !o.comp.bloodSignature) return;
       const dx = o.x - e.x, dy = o.y - e.y;
       const d2 = dx * dx + dy * dy;
-      if (d2 > r2 || d2 < 1) continue;
+      if (d2 > r2 || d2 < 1) return;
       n++;
       const d = Math.sqrt(d2);
       const pull = ag.pull * (1 - d / ag.r);
@@ -220,6 +287,7 @@ defineSystem({
       o._ax = (o._ax || 0) - (dx / d) * pull * 0.55;
       o._ay = (o._ay || 0) - (dy / d) * pull * 0.55;
     }
+  )
     ag.clumpN = n;
   }
 });
@@ -228,7 +296,7 @@ defineSystem({
 /* 35 - the wake of the big moving things                              */
 /* ------------------------------------------------------------------ */
 
-defineSystem({
+SYSTEMS.register({
   name: 'wake',
   order: ORDER.integrate - 5,
   require: ['cell'],
@@ -250,7 +318,7 @@ defineSystem({
 /* 40 - integration                                                    */
 /* ------------------------------------------------------------------ */
 
-defineSystem({
+SYSTEMS.register({
   name: 'integrate',
   order: ORDER.integrate,
   require: ['cell'],
@@ -284,40 +352,46 @@ defineSystem({
 /* 50 - contact: separation, infection, clotting                       */
 /* ------------------------------------------------------------------ */
 
-defineSystem({
+SYSTEMS.register({
   name: 'contact',
   order: ORDER.contact,
   run(dt, ctx) {
-    for (let i = 0; i < World.pool.length; i++) {
-      const a = World.pool[i];
-      if (!a.on || a.dying) continue;
-      for (let j = i + 1; j < World.pool.length; j++) {
-        const b = World.pool[j];
-        if (!b.on || b.dying) continue;
+    World.forEach((a) => {
+      if (!a.on || a.dying) return;
+      World.forEach((b) => {
+        if (a === b) return;
+        if (!b.on || b.dying) return;
         const dx = b.x - a.x, dy = b.y - a.y;
         const rad = (a.r * a.elong + b.r * b.elong) * 1.05;
         const d2 = dx * dx + dy * dy;
-        if (d2 > rad * rad || d2 < 0.01) continue;
+        if (d2 > rad * rad || d2 < 0.01) return;
         const d = Math.sqrt(d2);
         const pushx = (dx / d) * (rad - d) * 0.5;
         const pushy = (dy / d) * (rad - d) * 0.5;
         a.x -= pushx * 0.5; a.y -= pushy * 0.5;
         b.x += pushx * 0.5; b.y += pushy * 0.5;
-        if (!ctx.live) continue;
+        if (!ctx.live) return;
         if (a.comp.infects && b.comp.converts && a.infCd <= 0) infectStep(a, b, dt, ctx);
         else if (b.comp.infects && a.comp.converts && b.infCd <= 0) infectStep(b, a, dt, ctx);
-      }
-    }
+      })
+  })
   }
 });
+
+
+interface Infection {
+  rate: number;
+  scale: number;
+  cd: number;
+}
 
 /**
  * A pathogen in contact with a host cell corrupts it.
  * Corrupted cells are the slow bleed on client integrity, which is what stops
  * the player from simply parking in a corner and waiting the timer out.
  */
-function infectStep(p, h, dt, ctx) {
-  const inf = p.comp.infects;
+function infectStep(p: Entity, h: Entity, dt: number, ctx: any) {
+  const inf: Infection = p.comp.infects as Infection;
   h.infect += dt * (inf.rate + inf.scale * (ctx ? ctx.diff : 1));
   h.infBy = p;
   if (Math.random() < dt * 14) {
@@ -337,7 +411,7 @@ function infectStep(p, h, dt, ctx) {
 /* 60 - consequences                                                   */
 /* ------------------------------------------------------------------ */
 
-defineSystem({
+SYSTEMS.register({
   name: 'bleed',
   order: ORDER.consequences,
   require: ['bleeds'],
@@ -347,7 +421,7 @@ defineSystem({
   }
 });
 
-defineSystem({
+SYSTEMS.register({
   name: 'clot-bleed',
   order: ORDER.consequences + 1,
   require: ['agglutinate'],
@@ -356,3 +430,5 @@ defineSystem({
     if (e.clumpN >= ag.min) Rules.onBleed(ag.bleed * (e.clumpN - ag.min + 1) * dt, e);
   }
 });
+
+SYSTEMS.sort();
