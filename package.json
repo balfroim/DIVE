@@ -5,7 +5,8 @@
   "scripts": {
     "build": "npm --prefix game run build",
     "check": "npm --prefix game run check",
-    "test": "npm --prefix game test"
+    "test": "npm --prefix game run test",
+    "preview": "npm --prefix game run preview"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

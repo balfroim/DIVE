@@ -4,11 +4,10 @@
  * @module render/buddy
  */
 
-import { TAU, PI, rr, lerp, clamp, hsl, easeOut } from '../core/math.js';
-import { View, cam } from '../core/view.js';
+import { TAU, PI } from '../core/math.js';
+import { View, } from '../core/view.js';
 import { CFG } from '../core/config.js';
 import { buddy } from '../entities/buddy.js';
-import { player } from '../entities/player.js';
 import { glowSprite, drawGlow } from './sprites.js';
 import { drawEntityBody } from './cells.js';
 
