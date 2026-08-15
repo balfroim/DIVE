@@ -1,0 +1,47 @@
+{
+	"$schema": "https://aka.ms/codetour-schema",
+	"title": "Enemy Spawning",
+	"description": "Walks from contract data to row spawning and final entity placement.",
+	"steps": [
+		{
+			"title": "What to follow",
+			"description": "Enemy spawning is a data pipeline:\n- `game/src/data/contract-types.js` decides which archetypes can appear and how many of each are spawned per row.\n- `game/src/game/contracts.js` turns that data into one seeded contract.\n- `game/src/game/state.js` creates a wave the first time the diver enters a row.\n- `game/src/entities/cell.ts` picks the final position and velocity for each spawned entity."
+		},
+		{
+			"title": "Contract recipe",
+			"file": "game/src/data/contract-types.js",
+			"line": 31,
+			"description": "Each contract type owns the spawn recipe.\n- `hostArch` is the client's own cell archetype.\n- `hostCount(diff)` sets the baseline friendly population.\n- `threats` + `threatCount(diff, row)` determine the hostile mix.\n- `extras` adds optional enemies with `minRow`, `minDiff`, `chance`, and `awayD`.\nIf you add a new enemy, define it in `game/src/data/enemies.js` and then list it here."
+		},
+		{
+			"title": "Seeded contract",
+			"file": "game/src/game/contracts.js",
+			"line": 83,
+			"description": "`makeContract()` turns the recipe into one seeded run.\n- `waves = rows`, so the dive has one wave per row.\n- `targetSpecies` is pulled from `type.threats`.\n- `type.setup(c, R)` can add spawn context like ABO groups.\nBecause the seed is fixed, the same contract always rebuilds the same mix."
+		},
+		{
+			"title": "First row entry",
+			"file": "game/src/game/state.js",
+			"line": 203,
+			"description": "`enterRow(r)` is the gate that actually spawns a wave.\n- it returns if the row already spawned,\n- marks the row as spawned,\n- then calls the row spawn helpers.\n`startContract()` prepares `this.rows` with `{ spawned: false, cleared: false }`, so each row can only be spawned once."
+		},
+		{
+			"title": "Row spawn helpers",
+			"file": "game/src/game/state.js",
+			"line": 176,
+			"description": "The helpers convert counts into actual entities.\n- `spawnHostCells()` uses `T.hostCount(c.diff)`.\n- `spawnThreats()` uses `T.threatCount(c.diff, r)`.\n- `spawnAllies()` walks `T.extras` and checks `minRow`, `minDiff`, and `chance`.\n- every spawn passes `strictRow: true` so the entity stays in the right chamber."
+		},
+		{
+			"title": "Entity placement",
+			"file": "game/src/entities/cell.ts",
+			"line": 396,
+			"description": "`spawnEnt()` is where the object becomes a live entity.\n- it pulls a pooled entity and applies the archetype with `dressEnt()`.\n- it chooses a point with `spawnPos()` unless explicit `x/y` were provided.\n- `spawnPos()` samples a walkable point in the row, then nudges the result away from the player when `away` / `awayD` are set.\nUnder the hood, `spawnPos()` calls `Maze.pointInRow()`."
+		},
+		{
+			"title": "Clearance opens the next row",
+			"file": "game/src/game/state.js",
+			"line": 241,
+			"description": "`checkRow(r)` closes the loop.\n- it counts live hostiles with `rowThreats(r)`.\n- once that hits zero, `Maze.openRow(r)` opens the valves.\n- the next row becomes reachable, which is why spawning is tied to row clearance."
+		}
+	]
+}
