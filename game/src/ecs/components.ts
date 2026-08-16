@@ -40,23 +40,23 @@ export function attach<T extends BaseComponent = BaseComponent, E extends Entity
   return c;
 }
 
-interface PlayerComponent extends BaseComponent {
+interface PlayerControlComponent extends BaseComponent {
   // TODO
 }
 
-COMPONENTS.register('player', {
-  defaults(): PlayerComponent {
-    return { };
+COMPONENTS.register('playerControl', {
+  defaults(): PlayerControlComponent {
+    return {};
   }
 });
 
-interface BuddyComponent extends BaseComponent {
+interface EscortComponent extends BaseComponent {
   // TODO
 }
 
-COMPONENTS.register('buddy', {
-  defaults(): BuddyComponent {
-    return { };
+COMPONENTS.register('escort', {
+  defaults(): EscortComponent {
+    return {};
   }
 });
 
@@ -65,12 +65,12 @@ COMPONENTS.register('buddy', {
  * bloodstream" from an actor (the diver, the escort), so a system can ask for
  * cells without accidentally integrating the player twice.
  */
-interface MicrobeComponent extends BaseComponent {
+interface CellComponent extends BaseComponent {
   // TODO
 }
-COMPONENTS.register('microbe', {
-  defaults(): MicrobeComponent {
-    return { };
+COMPONENTS.register('cell', {
+  defaults(): CellComponent {
+    return {};
   }
 });
 
