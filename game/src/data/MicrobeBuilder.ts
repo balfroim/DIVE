@@ -4,7 +4,7 @@ import type { Signature } from './Signature';
 
 export class MicrobeBuilder<E extends Entity = Entity> {
 
-  microbe: Partial<MicrobeBlueprint> = {};
+  microbe: Partial<MicrobeBlueprint<E>> = {};
 
   public setKind(kind: string): this {
     this.microbe.kind = kind;
@@ -52,7 +52,7 @@ export class MicrobeBuilder<E extends Entity = Entity> {
     return this;
   }
 
-  public build(): MicrobeBlueprint {
-    return this.microbe as MicrobeBlueprint;
+  public build(): MicrobeBlueprint<E> {
+    return this.microbe as MicrobeBlueprint<E>;
   }
 }

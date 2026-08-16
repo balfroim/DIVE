@@ -31,6 +31,9 @@ export function attach<T extends BaseComponent = BaseComponent, E extends Entity
   ctx?: unknown,
 ): T {
   const spec = COMPONENTS.get<T, E>(name);
+  if (!spec) {
+    throw new Error(`Component "${name}" not registered`);
+  }
   const c = { ...spec?.defaults(), ...data } as T;
   e.comp[name] = c;
   spec?.apply?.(e, c, ctx ?? null);
