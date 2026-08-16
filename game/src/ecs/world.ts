@@ -32,13 +32,18 @@ export class EntityManagement {
     this.entities = this.pool.concat(this.actors);
   }
 
-  /** Iterate every live entity carrying `name`. */
-  each(name: string, fn: (e: Entity, c: any) => void) {
-    const {entities} = this;
-    for (const e of entities) {
-      if (!e.on) continue;
-      const c = e.comp[name];
-      if (c) fn(e, c);
+  /** Apply to every entity that has a list of components. */
+  applyToEntitiesWith(components: string[], fn: (e: Entity, c: any) => void) {
+    for (const e of this.entities) {
+      if (!e?.on || !e.comp) continue;
+      let hasAll = true;
+      for (const name of components) {
+        if (!e.comp[name]) {
+          hasAll = false;
+          break;
+        }
+      }
+      if (hasAll) fn(e, e.comp);
     }
   }
 
@@ -62,8 +67,8 @@ export class EntityManagement {
     return n;
   }
 
-  forEach(fn: (e: Entity) => void): void {
-    for (const e of this.pool) {
+  applyToActiveEntities(fn: (e: Entity) => void): void {
+    for (const e of this.entities) {
       if (e.on) fn(e);
     }
   }

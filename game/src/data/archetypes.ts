@@ -1,5 +1,5 @@
 import { rr, ri, pick, sgn, clamp, wrapHue } from '../core/math.js';
-import type { Archetype } from '../entities/archetype.js';
+import type { MicrobeBlueprint } from '../entities/microbes/blueprint.js';
 import type { DressOpts, Entity, EntityKind } from '../entities/cell.js';
 import type { Signature } from './Signature.js';
 
@@ -28,21 +28,21 @@ export interface PartialArchetype {
 }
  
 export class ArchetypeRegistry {
-  private archetypes: Record<string, Archetype> = {};
+  private archetypes: Record<string, MicrobeBlueprint> = {};
 
-  public register(id: string, archetype: Archetype) {
+  public register(id: string, archetype: MicrobeBlueprint) {
     this.archetypes[id] = archetype;
   }
 
-  public get(id: string): Archetype {
-    const archetype: Archetype | undefined = this.archetypes[id];
+  public get(id: string): MicrobeBlueprint {
+    const archetype: MicrobeBlueprint | undefined = this.archetypes[id];
     if (!archetype) {
       throw new Error(`Archetype with id "${id}" not found.`);
     }
     return archetype;
   }
 
-  public getAll(): Record<string, Archetype> {
+  public getAll(): Record<string, MicrobeBlueprint> {
     return this.archetypes;
   }
 }
@@ -96,8 +96,8 @@ class ArchetypeBuilder {
     return this;
   }
 
-  public build(): Archetype {
-    return this.archetype as Archetype;
+  public build(): MicrobeBlueprint {
+    return this.archetype as MicrobeBlueprint;
   }
 }
 
@@ -121,7 +121,7 @@ ARCHETYPES.register('host', new ArchetypeBuilder()
     e.nuc = sig.nuc;
   })
   .setComponents({
-    cell: {},
+    cell: {}, // FIXME should maybe be setSystems?
     motion: { kind: 'drift', force: 26 },
     property: {},
     converts: { into: 'corrupted' }

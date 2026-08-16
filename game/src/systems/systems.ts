@@ -27,11 +27,11 @@ import { TAU, PI, rr, lerp, clamp } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { currentAt } from '../world/flow.js';
 import { World } from '../ecs/world.js';
-import { burst } from './particles.js';
-import { Rules } from './hooks.js';
-import { player, updatePlayer } from './player.js';
-import { buddy, updateBuddy } from './buddy.js';
-import type { Entity } from './cell.js';
+import { burst } from '../entities/particles.js';
+import { Rules } from '../entities/hooks.js';
+import { player, updatePlayer } from '../entities/player.js';
+import { buddy, updateBuddy } from '../entities/buddy.js';
+import type { Entity } from '../entities/cell.js';
 
 /** Canonical pipeline slots, so a new system can be dropped in by name. */
 export const ORDER = {
@@ -78,7 +78,7 @@ export const SYSTEMS: SystemRegistry = new SystemRegistry();
 /** Nearest entity the client owns - what a `seek` pathogen hunts. */
 function nearestProperty(e: Entity, maximumDistance: number) {
   let best = null, bd = maximumDistance * maximumDistance;
-  World.forEach((o) => {
+  World.applyToActiveEntities((o) => {
     if (!o.on || o.dying || !o.comp.property) return;
     const dx = o.x - e.x, dy = o.y - e.y, d = dx * dx + dy * dy;
     if (d < bd) { bd = d; best = o; }
@@ -97,7 +97,9 @@ SYSTEMS.register({
   name: 'diver',
   order: 5,
   require: ['playerControl'],
-  each(e, dt, ctx) { updatePlayer(dt, ctx.live, ctx.env); }
+  each(e, dt, ctx) { 
+    updatePlayer(dt, ctx.live, ctx.env); 
+  }
 });
 
 SYSTEMS.register({
@@ -274,7 +276,7 @@ SYSTEMS.register({
     if (e.dying > 0) return;
     let n = 0;
     const r2 = ag.r * ag.r;
-    World.forEach((o) => {
+    World.applyToActiveEntities((o) => {
       if (o === e || !o.on || o.dying || !o.comp.bloodSignature) return;
       const dx = o.x - e.x, dy = o.y - e.y;
       const d2 = dx * dx + dy * dy;
@@ -356,9 +358,9 @@ SYSTEMS.register({
   name: 'contact',
   order: ORDER.contact,
   run(dt, ctx) {
-    World.forEach((a) => {
+    World.applyToActiveEntities((a) => {
       if (!a.on || a.dying) return;
-      World.forEach((b) => {
+      World.applyToActiveEntities((b) => {
         if (a === b) return;
         if (!b.on || b.dying) return;
         const dx = b.x - a.x, dy = b.y - a.y;

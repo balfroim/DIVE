@@ -10,7 +10,7 @@ import { ARCHETYPES } from '../data/archetypes.js';
 import { type Signature } from '../data/Signature.js';
 import { Maze } from '../world/maze.js';
 import { fetchAvailableEntity } from './pool.js';
-import type { Archetype } from './archetype.js';
+import type { MicrobeBlueprint } from './microbes/blueprint.js';
 
 const DEFAULT_ID_COL = '#7fdcff';
 
@@ -203,14 +203,14 @@ function resetScratch(e: Entity): void {
   e._gc = null;
 }
 
-function componentNamesFor(definition: Archetype | null | undefined): string[] {
+function componentNamesFor(definition: MicrobeBlueprint | null | undefined): string[] {
   const comps = definition?.components ?? definition?.comps ?? null;
   if (!comps) return [];
   return Array.isArray(comps) ? comps : Object.keys(comps);
 }
 
 function componentDataFor(
-  definition: Archetype | null | undefined,
+  definition: MicrobeBlueprint | null | undefined,
   archId: string,
   name: string,
   opts: DressOpts = {}
@@ -347,7 +347,7 @@ export function dressEntity(
   dev = 0,
   o: DressOpts = {}
 ): Entity | null {
-  const archetype: Archetype = ARCHETYPES.get(archId) as Archetype;
+  const archetype: MicrobeBlueprint = ARCHETYPES.get(archId) as MicrobeBlueprint;
 
   entity.arch = archId;
   entity.kind = archetype.kind;

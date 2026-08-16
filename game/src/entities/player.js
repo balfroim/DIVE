@@ -22,7 +22,7 @@ import { attach } from '../ecs/components.js';
 
 export const player = {
   /* ECS actor bookkeeping */
-  on: true, kind: 'diver', comp: Object.create(null), dying: 0,
+  on: false, kind: 'diver', comp: Object.create(null), dying: 0,
 
   x: 0, y: 0, vx: 0, vy: 0,
   ang: 0, r: CFG.player.r,

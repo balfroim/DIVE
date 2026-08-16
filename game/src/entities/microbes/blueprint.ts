@@ -1,8 +1,8 @@
-import type { Signature } from '../data/Signature';
-import type { EntityKind, Entity, DressOpts } from './cell';
+import type { Signature } from '../../data/Signature';
+import type { EntityKind, Entity, DressOpts } from '../cell';
 
 
-export interface Archetype {
+export interface MicrobeBlueprint {
   kind: EntityKind;
   name: string;
   short: string;

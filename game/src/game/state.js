@@ -24,11 +24,11 @@ import { View, cam, s2wx, s2wy, updateQuality } from '../core/view.js';
 import { Input, pollHold } from '../core/input.js';
 import { Maze } from '../world/maze.js';
 import { hashSeed } from '../core/rng.js';
-import { runSystems } from '../ecs/systems.js';
+import { runSystems } from '../core/systems.js';
 import { World } from '../ecs/world.js';
 import { clearPool } from '../entities/pool.js';
 import { spawnEnt, morphEnt } from '../entities/cell.js';
-import '../entities/systems.js';   // registers the pipeline
+import '../systems/systems.js';   // registers the pipeline
 import { player, playerReset } from '../entities/player.js';
 import {
   buddy, buddyReset, fireBuddy, canFire, fireCharge, shotReach, shotCasualties
@@ -620,14 +620,19 @@ export const Game = {
   /** Reusable frame context handed to every ECS system. */
   _ctx: { t: 0, dt: 0, live: false, env: null, diff: 1 },
 
-  step(real) {
+  /**
+   * A single frame of the simulation. The simulation runs at a fixed timestep, but the
+   * real time between frames is passed in so the simulation can scale its effects.
+   * @param {number} deltaTime - time since the last frame
+   */
+  step(deltaTime) {
     pollHold();
     if (this.state === 'pause') {
-      this.comboFlash = Math.max(0, this.comboFlash - real * 2);
+      this.comboFlash = Math.max(0, this.comboFlash - deltaTime * 2);
       return;
     }
-    let dt = real;
-    if (this.hitStop > 0) { this.hitStop -= real; dt = real * 0.06; }
+    let dt = deltaTime;
+    if (this.hitStop > 0) { this.hitStop -= deltaTime; dt = deltaTime * 0.06; }
     const live = this.state === 'play';
     this.t += dt;
     if (live) this.run.runTime += dt;
@@ -665,10 +670,10 @@ export const Game = {
     }
 
     this.comboFlash = Math.max(0, this.comboFlash - dt * 2);
-    this.bannerT = Math.max(0, this.bannerT - real);
-    cam.trauma = Math.max(0, cam.trauma - real * 1.9);
+    this.bannerT = Math.max(0, this.bannerT - deltaTime);
+    cam.trauma = Math.max(0, cam.trauma - deltaTime * 1.9);
     this.updateCamera(dt);
-    updateQuality(real);
+    updateQuality(deltaTime);
   },
 
   /* ---------------------------------------------------------------- */

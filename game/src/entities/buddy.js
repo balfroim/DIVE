@@ -24,7 +24,7 @@ import { SFX } from '../core/audio.js';
 
 export const buddy = {
   /* ECS actor bookkeeping */
-  on: true, kind: 'escort', comp: Object.create(null), dying: 0,
+  on: false, kind: 'escort', comp: Object.create(null), dying: 0,
 
   x: 0, y: 0, vx: 0, vy: 0,
   r: CFG.buddy.r, state: 'follow', st: 0,

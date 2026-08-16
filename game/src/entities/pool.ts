@@ -1,6 +1,5 @@
 /**
- * The entity pool.
- * This is a fixed-size array of entities that are reused to avoid garbage collector churn.
+ * @file Pool management to reduce Garbage Collection (GC) pressure by recycling long-lived objects.
  */
 
 import { CFG } from '../core/config.js';
@@ -10,7 +9,6 @@ import { blankEnt, type Entity } from './cell.js';
 
 /**
  * A high-performance object pool by @ocyrusjs/pool.
- * Reduces Garbage Collection (GC) pressure by recycling long-lived objects.
  */
 export class Pool<T> {
   private readonly pool: T[] = [];
@@ -69,12 +67,10 @@ function resetEntity(e: Entity): void {
 }
 
 const entityPool = new Pool<Entity>(blankEnt, resetEntity);
-
-
 const acquired: Entity[] = initPool(entityPool);
-
 console.log(`Entity pool initialized with ${acquired.length} entities.`);
 World.usePool(acquired);
+
 /**
  * Pre-warm the pool to CFG.pool.length entities and track them
  * so World.usePool() has direct access to the underlying array.
