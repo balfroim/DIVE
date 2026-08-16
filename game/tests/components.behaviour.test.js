@@ -16,7 +16,7 @@ describe('component registry behaviour', () => {
     assert.deepEqual(entity.comp['behaviour-merge'], component);
   });
 
-  test('initialises the component bag for a fresh entity and runs apply hooks', () => {
+  test('initializes the component bag for a fresh entity and runs apply hooks', () => {
     defineComponent('behaviour-apply', {
       defaults: { strength: 3 },
       apply(e, c) {
