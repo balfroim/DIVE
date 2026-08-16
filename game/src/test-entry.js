@@ -20,17 +20,23 @@ import { CFG } from './core/config.js';
 import { View, cam } from './core/view.js';
 import { Input } from './core/input.js';
 import { Maze } from './world/maze.js';
-import { ents, spawnEnt } from './entities/pool.js';
+import { ents, spawnEnt, blankEnt, resetEnt, dressEnt, morphEnt } from './entities/pool.js';
 import { player } from './entities/player.js';
 import { buddy, hasFiringLine, lungeCasualties } from './entities/buddy.js';
 import { makeContract, generateOffers, offerSummary, suitFor, pressureLabel } from './game/contracts.js';
 import { buildInvoice } from './game/economy.js';
 import { ENEMIES, archetype } from './data/enemies.js';
 import { organsForRep } from './data/organs.js';
+import {
+  attach, detach, get, need, has, detachAll,
+  Cell, Appearance, Motion, Identity, Lifecycle, Infection, Scratch, Blood, Preview
+} from './ecs/components.js';
 
 window.__D = {
   Game, Career, UI, DLG, SCRIPT, SCRIPTS, getScript, SHOP, TIERS, ORGANS, CFG, View, cam, Input, Maze,
-  ents, spawnEnt, player, buddy, hasFiringLine, lungeCasualties, firingPreview,
+  ents, spawnEnt, blankEnt, resetEnt, dressEnt, morphEnt, attach, detach, get, need, has, detachAll,
+  Cell, Appearance, Motion, Identity, Lifecycle, Infection, Scratch, Blood, Preview,
+  player, buddy, hasFiringLine, lungeCasualties, firingPreview,
   makeContract, generateOffers, offerSummary, suitFor, pressureLabel, organsForRep, ENEMIES, archetype,
   buildInvoice,
   getZoom: () => View.zoom

@@ -14,40 +14,114 @@ import { CFG } from '../core/config.js';
 import { TAU, rr } from '../core/math.js';
 import { Maze } from '../world/maze.js';
 import { World } from '../ecs/world.js';
-import { attach } from '../ecs/components.js';
-import { archetype } from '../data/enemies.js';
+import {
+  attach, detach, detachAll, has,
+  Appearance, Motion, Identity, Lifecycle, Infection, Scratch, Blood, Preview
+} from '../ecs/components.js';
+import { ENEMIES } from '../data/enemies.js';
 
 export const ents = new Array(CFG.poolEnt);
 let entUid = 1;
 
+const CORE_COMPONENTS = [Appearance, Motion, Identity, Lifecycle, Infection, Scratch, Blood];
+
+function field(e, name, def, key, fallback, specialSet) {
+  Object.defineProperty(e, name, {
+    configurable: true,
+    enumerable: true,
+    get() {
+      const c = e.comp[def.name];
+      return c && key in c ? c[key] : fallback;
+    },
+    set(v) {
+      if (specialSet) {
+        specialSet(v);
+        return;
+      }
+      let c = e.comp[def.name];
+      if (!c) c = e.comp[def.name] = def.create(e, null) || {};
+      c[key] = v;
+    }
+  });
+}
+
+function installAccessors(e) {
+  field(e, 'motion', Motion, 'kind', 'drift');
+  field(e, 'mt', Motion, 'mt', 0);
+  field(e, 'bob', Motion, 'bob', 0);
+  field(e, 'target', Motion, 'target', null);
+  field(e, 'orbA', Motion, 'orbA', 0);
+  field(e, 'orbR', Motion, 'orbR', 0);
+  field(e, 'orbX', Motion, 'orbX', 0);
+  field(e, 'orbY', Motion, 'orbY', 0);
+
+  field(e, 'hue', Appearance, 'hue', 0);
+  field(e, 'sat', Appearance, 'sat', 70);
+  field(e, 'lit', Appearance, 'lit', 60);
+  field(e, 'elong', Appearance, 'elong', 1);
+  field(e, 'lobes', Appearance, 'lobes', 4);
+  field(e, 'lobeAmp', Appearance, 'lobeAmp', 0.1);
+  field(e, 'deform', Appearance, 'deform', 0);
+  field(e, 'spikes', Appearance, 'spikes', 0);
+  field(e, 'spikeLen', Appearance, 'spikeLen', 0);
+  field(e, 'spikeTip', Appearance, 'spikeTip', false);
+  field(e, 'flag', Appearance, 'flag', 0);
+  field(e, 'nuc', Appearance, 'nuc', 'dot');
+  field(e, 'halo', Appearance, 'halo', 0);
+  field(e, 'coil', Appearance, 'coil', false);
+  field(e, 'segs', Appearance, 'segs', 0);
+  field(e, 'wave', Appearance, 'wave', 0);
+  field(e, 'tremor', Appearance, 'tremor', 0);
+  field(e, 'verts', Appearance, 'verts', 18);
+  field(e, 'scale', Appearance, 'scale', 1);
+
+  field(e, 'idUntil', Identity, 'idUntil', -99);
+  field(e, 'idPing', Identity, 'idPing', 0);
+  field(e, 'idName', Identity, 'idName', '');
+  field(e, 'idSub', Identity, 'idSub', '');
+  field(e, 'idCol', Identity, 'idCol', '#7fdcff');
+
+  field(e, 'age', Lifecycle, 'age', 0);
+  field(e, 'dying', Lifecycle, 'dying', 0);
+  field(e, 'born', Lifecycle, 'born', 0);
+  field(e, 'leaving', Lifecycle, 'leaving', false);
+  field(e, 'lifespan', Lifecycle, 'lifespan', 0);
+
+  field(e, 'infect', Infection, 'infect', 0);
+  field(e, 'infCd', Infection, 'infCd', 0);
+  field(e, 'infBy', Infection, 'infBy', null);
+
+  field(e, 'hurt', Scratch, 'hurt', 0);
+
+  field(e, 'abo', Blood, 'abo', '');
+  field(e, 'clumpN', Blood, 'clumpN', 0);
+
+  field(e, 'preview', Preview, 'present', false, (v) => {
+    if (v) attach(e, Preview, null, { reset: true });
+    else detach(e, Preview);
+  });
+}
+
+function attachCore(e, reset) {
+  for (const comp of CORE_COMPONENTS) attach(e, comp, null, reset ? { reset: true } : null);
+}
+
 /** The full entity shape, in one place, so pooled objects never change hidden class. */
 export function blankEnt() {
-  return {
+  const e = {
     /* identity */
-    on: false, uid: 0, arch: '', kind: 'healthy', species: '',
-    /* ECS components (see ecs/components.js) */
+    on: false, uid: 0, arch: '', kind: 'healthy', species: '', row: 0,
+    /* ECS components */
     comp: Object.create(null),
     /* transform + motion */
     x: 0, y: 0, vx: 0, vy: 0, r: 20, ang: 0, spin: 0, phase: 0, seed: 0,
-    motion: 'drift', mt: 0, bob: 0, target: null,
-    orbA: 0, orbR: 0, orbX: 0, orbY: 0,
-    /* appearance */
-    hue: 0, sat: 70, lit: 60, elong: 1, lobes: 4, lobeAmp: 0.1, deform: 0,
-    spikes: 0, spikeLen: 0, spikeTip: false, flag: 0, nuc: 'dot', halo: 0,
-    coil: false, segs: 0, wave: 0, tremor: 0, verts: 18, scale: 1,
-    /* diagnostics */
-    idUntil: -99, idPing: 0, idName: '', idSub: '', idCol: '#7fdcff',
-    /* state */
-    infect: 0, infCd: 0, infBy: null, age: 0, dying: 0, born: 0, hurt: 0,
-    leaving: false, lifespan: 0, preview: false,
-    /* blood group, for transfusion contracts */
-    abo: '',
-    /* how many cells this one is currently clotted to */
-    clumpN: 0,
-    /** Which maze row this cell belongs to - used by wave bookkeeping. */
-    row: 0
+    _ax: 0, _ay: 0
   };
+  installAccessors(e);
+  attachCore(e, true);
+  return e;
 }
+
 for (let i = 0; i < ents.length; i++) ents[i] = blankEnt();
 World.usePool(ents);
 
@@ -56,14 +130,9 @@ export function freeEnt() {
   return null;
 }
 
-const _blank = blankEnt();
-
 export function resetEnt(e, now) {
-  for (const k in _blank) {
-    if (k === 'comp') continue;
-    e[k] = _blank[k];
-  }
-  e.comp = Object.create(null);
+  detachAll(e);
+  attachCore(e, true);
   e.on = true;
   e.uid = entUid++;
   e.seed = rr(0, 100);
@@ -72,6 +141,9 @@ export function resetEnt(e, now) {
   e.ang = rr(0, TAU);
   e.spin = rr(-0.5, 0.5);
   e.born = now || 0;
+  e.x = 0; e.y = 0; e.vx = 0; e.vy = 0; e.r = 20;
+  e.arch = ''; e.kind = 'healthy'; e.species = ''; e.row = 0;
+  e._ax = 0; e._ay = 0;
   return e;
 }
 
@@ -88,7 +160,8 @@ export function resetEnt(e, now) {
  * @param {object} [o]     contract context, e.g. { abo, donorAbo }
  */
 export function dressEnt(e, archId, sig, dev, o) {
-  const A = archetype(archId);
+  const A = ENEMIES[archId];
+  if (!A) return null;
   e.arch = A.id;
   e.kind = A.kind;
   e.species = A.id;
@@ -138,6 +211,8 @@ export function spawnPos(row, clearR, away, awayD, strictRow) {
  * @param {object} opts   { row, now, away, awayD, abo, donorAbo }
  */
 export function spawnEnt(archId, sig, dev, opts) {
+  const A = ENEMIES[archId];
+  if (!A) return null;
   const e = freeEnt();
   if (!e) return null;
   const o = opts || {};
@@ -146,7 +221,12 @@ export function spawnEnt(archId, sig, dev, opts) {
   const p = spawnPos(o.row === undefined ? 0 : o.row, probe, o.away, o.awayD, o.strictRow);
   e.x = p.x; e.y = p.y;
   e.row = p.row === undefined ? 0 : p.row;
-  dressEnt(e, archId, sig, dev, o);
+  const dressed = dressEnt(e, archId, sig, dev, o);
+  if (!dressed) {
+    e.on = false;
+    detachAll(e);
+    return null;
+  }
   const a = rr(0, TAU);
   const s = rr(10, 30);
   e.vx = Math.cos(a) * s;
@@ -161,10 +241,17 @@ export function spawnEnt(archId, sig, dev, opts) {
  * losing to a pathogen). Keeps position, velocity and row.
  */
 export function morphEnt(e, archId, sig, dev, o) {
-  e.comp = Object.create(null);
-  e.spikes = 0; e.spikeLen = 0; e.spikeTip = false; e.flag = 0;
-  e.coil = false; e.segs = 0; e.wave = 0; e.tremor = 0; e.deform = 0;
-  e.elong = 1; e.halo = 0; e.leaving = false; e.infect = 0;
+  const uid = e.uid;
+  const x = e.x, y = e.y, vx = e.vx, vy = e.vy, row = e.row;
+  const age = e.age, dying = e.dying, born = e.born, leaving = e.leaving, lifespan = e.lifespan;
+  const infect = e.infect, infCd = e.infCd, infBy = e.infBy;
+  const preview = e.preview;
+  resetEnt(e, born);
+  e.uid = uid;
+  e.x = x; e.y = y; e.vx = vx; e.vy = vy; e.row = row;
+  e.age = age; e.dying = dying; e.born = born; e.leaving = leaving; e.lifespan = lifespan;
+  e.infect = infect; e.infCd = infCd; e.infBy = infBy;
+  if (preview) e.preview = true;
   dressEnt(e, archId, sig, dev, o);
   return e;
 }
@@ -183,6 +270,6 @@ export function countEnts(fn) {
 export function clearEnts() {
   for (let i = 0; i < ents.length; i++) {
     ents[i].on = false;
-    ents[i].comp = Object.create(null);
+    detachAll(ents[i]);
   }
 }

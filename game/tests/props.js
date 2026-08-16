@@ -63,6 +63,54 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     }
     pass++;
 
+    const ecs = await page.evaluate(() => {
+      const e = __D.blankEnt();
+      const app1 = __D.attach(e, __D.Appearance, { hue: 12, sat: 34 });
+      const app2 = __D.attach(e, __D.Appearance, { hue: 48 });
+      const attachedHue = e.hue;
+      const beforePreview = __D.has(e, __D.Preview);
+      e.preview = true;
+      const previewOn = __D.has(e, __D.Preview) && e.preview;
+      __D.detach(e, __D.Preview);
+      const previewOff = __D.has(e, __D.Preview);
+      const sig = { hue: 20, sat: 50, lit: 60, r: 18, lobes: 4, lobeAmp: 0.1, nuc: 'dot' };
+      e.uid = 77;
+      e.x = 11; e.y = 22; e.vx = 3; e.vy = 4; e.row = 5;
+      e.age = 7; e.dying = 0.4; e.born = 2; e.leaving = true; e.lifespan = 9;
+      e.infect = 0.6; e.infCd = 1.2; e.infBy = e;
+      e.preview = true;
+      __D.attach(e, __D.Cell);
+      __D.attach(e, __D.Blood, { abo: 'A', clumpN: 3 });
+      __D.morphEnt(e, 'corrupted', sig, 1, { abo: 'A', donorAbo: 'B' });
+      return {
+        same: app1 === app2,
+        hue: attachedHue,
+        beforePreview,
+        previewOn,
+        previewOff,
+        uid: e.uid,
+        pos: [e.x, e.y, e.vx, e.vy, e.row],
+        life: [e.age, e.dying, e.born, e.leaving, e.lifespan],
+        infection: [e.infect, e.infCd, !!e.infBy],
+        preview: e.preview,
+        arch: e.arch
+      };
+    });
+    if (!ecs.same || ecs.hue !== 48) throw new Error('component reattach did not reset in place');
+    if (ecs.beforePreview || !ecs.previewOn || ecs.previewOff) throw new Error('preview component did not behave like a flag');
+    if (ecs.uid !== 77 || ecs.arch !== 'corrupted') throw new Error('morphEnt did not keep identity or apply the new archetype');
+    if (ecs.pos[0] !== 11 || ecs.pos[1] !== 22 || ecs.pos[2] !== 3 || ecs.pos[3] !== 4 || ecs.pos[4] !== 5) {
+      throw new Error('morphEnt did not preserve position and row');
+    }
+    if (ecs.life[0] !== 7 || ecs.life[1] !== 0.4 || ecs.life[2] !== 2 || ecs.life[3] !== true || ecs.life[4] !== 9) {
+      throw new Error('morphEnt did not preserve lifecycle');
+    }
+    if (ecs.infection[0] !== 0.6 || ecs.infection[1] !== 1.2 || !ecs.infection[2]) {
+      throw new Error('morphEnt did not preserve infection state');
+    }
+    if (!ecs.preview) throw new Error('morphEnt lost preview state');
+    pass++;
+
     const spawnRows = await page.evaluate(() => {
       const contract = __D.makeContract(12, 9, 0);
       const enterRow = __D.Game.enterRow;
