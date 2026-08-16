@@ -27,12 +27,72 @@ export interface Point {
 
 export interface Entity {
   on: boolean;
-  row: number;
-  uid: number;
-  arch: string | null;
   kind: EntityKind;
-  species: string;
+  dying: boolean;
 
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+
+  // motion: MotionType;
+  // mt: number;
+  // bob: number;
+  // target: unknown;
+  // orbA: number;
+  // orbR: number;
+  // orbX: number;
+  // orbY: number;
+
+  // hue: number;
+  // sat: number;
+  // lit: number;
+  // elong: number;
+  // lobes: number;
+  // lobeAmp: number;
+  // deform: number;
+  // spikes: number;
+  // spikeLen: number;
+  // spikeTip: boolean;
+  // flag: number;
+  // nuc: NucleusType;
+  // halo: number;
+  // coil: boolean;
+  // segs: number;
+  // wave: number;
+  // tremor: number;
+  // verts: number;
+  // scale: number;
+
+  // idUntil: number;
+  // idPing: number;
+  // idName: string;
+  // idSub: string;
+  // idCol: string;
+
+  // infect: number;
+  // infCd: number;
+  // infBy: unknown;
+  // age: number;
+  // dying: boolean;
+  // born: number;
+  // hurt: number;
+  // leaving: boolean;
+  // lifespan: number;
+  // preview: boolean;
+  // marked: boolean;
+
+  comp: Record<string, unknown>;
+
+  // _ax: number;
+  // _ay: number;
+  // _g: unknown;
+  // _gk: string;
+  // _gc: unknown;
+}
+
+export interface Transform {
   x: number;
   y: number;
   vx: number;
@@ -42,7 +102,9 @@ export interface Entity {
   spin: number;
   phase: number;
   seed: number;
+}
 
+export interface Motion {
   motion: MotionType;
   mt: number;
   bob: number;
@@ -51,7 +113,9 @@ export interface Entity {
   orbR: number;
   orbX: number;
   orbY: number;
+}
 
+export interface Appearance {
   hue: number;
   sat: number;
   lit: number;
@@ -71,13 +135,15 @@ export interface Entity {
   tremor: number;
   verts: number;
   scale: number;
+}
 
+export interface Diagnostics {
   idUntil: number;
   idPing: number;
-  idName: string;
-  idSub: string;
-  idCol: string;
+  marked: boolean;
+}
 
+export interface State {
   infect: number;
   infCd: number;
   infBy: unknown;
@@ -89,15 +155,27 @@ export interface Entity {
   lifespan: number;
   preview: boolean;
   marked: boolean;
+}
 
-  comp: Record<string, unknown>;
-
+export interface Scratch {
   _ax: number;
   _ay: number;
   _g: unknown;
   _gk: string;
   _gc: unknown;
 }
+
+export interface Microbe extends Entity, Transform, Motion, Appearance, Diagnostics, State, Scratch {
+  arch: string | null;
+  species: string;
+  idName: string;
+  idSub: string;
+  idCol: string;
+  comp: Record<string, unknown>;
+  uid: number;
+}
+
+
 
 export interface DressOpts {
   species?: string;
@@ -121,7 +199,7 @@ function clearComponentMap(e: Entity): void {
   for (const name in e.comp) delete e.comp[name];
 }
 
-function resetIdentity(e: Entity): void {
+function resetIdentity(e: Microbe): void {
   e.uid = 0;
   e.arch = null;
   e.kind = 'healthy';
@@ -131,7 +209,7 @@ function resetIdentity(e: Entity): void {
   e.idCol = DEFAULT_ID_COL;
 }
 
-function resetTransform(e: Entity): void {
+function resetTransform(e: Transform): void {
   e.x = 0;
   e.y = 0;
   e.vx = 0;
@@ -143,7 +221,7 @@ function resetTransform(e: Entity): void {
   e.seed = 0;
 }
 
-function resetMotion(e: Entity): void {
+function resetMotion(e: Motion): void {
   e.motion = 'drift';
   e.mt = 0;
   e.bob = 0;
@@ -154,7 +232,7 @@ function resetMotion(e: Entity): void {
   e.orbY = 0;
 }
 
-function resetAppearance(e: Entity): void {
+function resetAppearance(e: Appearance): void {
   e.hue = 0;
   e.sat = 70;
   e.lit = 60;
@@ -176,13 +254,13 @@ function resetAppearance(e: Entity): void {
   e.scale = 1;
 }
 
-function resetDiagnostics(e: Entity): void {
+function resetDiagnostics(e: Diagnostics): void {
   e.idUntil = -99;
   e.idPing = 0;
   e.marked = false;
 }
 
-function resetState(e: Entity): void {
+function resetState(e: State): void {
   e.infect = 0;
   e.infCd = 0;
   e.infBy = null;
@@ -193,9 +271,10 @@ function resetState(e: Entity): void {
   e.leaving = false;
   e.lifespan = 0;
   e.preview = false;
+  e.marked = false;
 }
 
-function resetScratch(e: Entity): void {
+function resetScratch(e: Scratch): void {
   e._ax = 0;
   e._ay = 0;
   e._g = null;
@@ -225,7 +304,7 @@ function componentDataFor(
   return comps[name] || {};
 }
 
-function clearMorphSurface(e: Entity): void {
+function clearMorphSurface(e: Microbe): void {
   e.on = true;
   e.arch = null;
   e.kind = 'healthy';
@@ -242,7 +321,7 @@ function clearMorphSurface(e: Entity): void {
 }
 
 // TODO: refactor and split this too much information
-export function blankEnt(): Entity {
+export function blankEnt(): Microbe {
   return {
     on: false,
     row: 0,
@@ -311,7 +390,7 @@ export function blankEnt(): Entity {
   };
 }
 
-export function resetEnt(e: Entity, now = 0): Entity {
+export function resetEnt(e: Microbe, now = 0): Microbe {
   if (!e.comp) e.comp = Object.create(null);
   for (const name in e.comp) delete e.comp[name];
   resetIdentity(e);
@@ -341,12 +420,12 @@ export function resetEnt(e: Entity, now = 0): Entity {
  * @returns The dressed entity or null if the archetype is not found.
  */
 export function dressEntity(
-  entity: Entity,
+  entity: Microbe,
   archId: string,
   sig: Signature,
   dev = 0,
   o: DressOpts = {}
-): Entity | null {
+): Microbe | null {
   const archetype: MicrobeBlueprint = ARCHETYPES.get(archId) as MicrobeBlueprint;
 
   entity.arch = archId;
@@ -396,7 +475,7 @@ export function spawnEnt(
   sig: Signature,
   dev = 0,
   opts: DressOpts = {}
-): Entity | null {
+): Microbe | null {
   const entity = fetchAvailableEntity();
   const definition = ARCHETYPES.get(archId);
   if (!definition || !entity) return null;
@@ -433,12 +512,12 @@ export function spawnEnt(
 }
 
 export function morphEnt(
-  e: Entity,
+  e: Microbe,
   archId: string,
   sig: Signature,
   dev = 0,
   opts: DressOpts = {}
-): Entity | null {
+): Microbe | null {
   const definition = ARCHETYPES.get(archId);
   if (!definition || !e) return null;
 

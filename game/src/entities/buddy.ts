@@ -1,17 +1,3 @@
-/**
- * The white blood cell - your buddy, and the reason this job is dangerous.
- *
- * DIRECT FIRE. There is no target acquisition, no mark queue and no lock-on.
- * You aim a direction and pull the trigger; the cell launches down that line,
- * travels until it runs out of range or hits the endothelium, and everything
- * within `killR` of the swept path is torn apart - pathogen, host cell, paying
- * tenant, it cannot tell and does not care.
- *
- * State machine: follow -> wind -> lunge -> return.
- *
- * @module entities/buddy
- */
-
 import { CFG } from '../core/config.js';
 import { TAU, rr, lerp, lerpAngle, distToSegment } from '../core/math.js';
 import { Maze } from '../world/maze.js';
@@ -21,25 +7,73 @@ import { spawnPart } from './particles.js';
 import { player } from './player.js';
 import { Rules } from './hooks.js';
 import { SFX } from '../core/audio.js';
+import type { Entity } from './cell.js';
 
-export const buddy = {
-  /* ECS actor bookkeeping */
-  on: false, kind: 'escort', comp: Object.create(null), dying: 0,
+// export const buddy = {
+//   /* ECS actor bookkeeping */
+//   on: false, kind: 'escort', comp: Object.create(null), dying: 0,
 
+//   x: 0, y: 0, vx: 0, vy: 0,
+//   r: CFG.buddy.r, state: 'follow', st: 0,
+//   excite: 0, sad: 0, joy: 0, blink: 0, blinkT: 2, squash: 0, dirA: 0,
+//   cool: 0, digest: 0, eatX: 0, eatY: 0, eatE: null, eatScale: 1,
+//   lookX: 0, lookY: 0, trailT: 0, wobT: 0, born: 0, gulp: 0,
+//   /** Pulses when a trigger pull was refused because the muzzle is in tissue. */
+//   blocked: 0,
+//   /** The shot currently in flight: origin, unit direction, and its far end. */
+//   lungeX: 0, lungeY: 0, dirX: 1, dirY: 0, endX: 0, endY: 0, flight: 0,
+//   /** How many cells the shot in flight has already destroyed. */
+//   hits: 0,
+//   /** Multiplier on the recharge rate, from heir traits. 1 = standard. */
+//   rate: 1
+// };
+
+export interface Buddy extends Entity {
+  state: 'follow' | 'wind' | 'lunge' | 'return';
+  st: number;
+  excite: number;
+  sad: number;
+  joy: number;
+  blink: number;
+  blinkT: number;
+  squash: number;
+  dirA: number;
+  cool: number;
+  digest: number;
+  eatX: number;
+  eatY: number;
+  eatE: Entity | null;
+  eatScale: number;
+  lookX: number;
+  lookY: number;
+  trailT: number;
+  wobT: number;
+  born: number;
+  gulp: number;
+  blocked: number;
+  lungeX: number;
+  lungeY: number;
+  dirX: number;
+  dirY: number;
+  endX: number;
+  endY: number;
+  flight: number;
+  hits: number;
+  rate: number;
+}
+
+export const buddy: Buddy = {
+  on: false, kind: 'escort', comp: Object.create(null), dying: false,
   x: 0, y: 0, vx: 0, vy: 0,
   r: CFG.buddy.r, state: 'follow', st: 0,
   excite: 0, sad: 0, joy: 0, blink: 0, blinkT: 2, squash: 0, dirA: 0,
   cool: 0, digest: 0, eatX: 0, eatY: 0, eatE: null, eatScale: 1,
   lookX: 0, lookY: 0, trailT: 0, wobT: 0, born: 0, gulp: 0,
-  /** Pulses when a trigger pull was refused because the muzzle is in tissue. */
   blocked: 0,
-  /** The shot currently in flight: origin, unit direction, and its far end. */
   lungeX: 0, lungeY: 0, dirX: 1, dirY: 0, endX: 0, endY: 0, flight: 0,
-  /** How many cells the shot in flight has already destroyed. */
   hits: 0,
-  /** Multiplier on the recharge rate, from heir traits. 1 = standard. */
   rate: 1
-};
+}
 
 attach(buddy, 'escort', null);
 World.addActor(buddy);
