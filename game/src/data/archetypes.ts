@@ -1,4 +1,4 @@
-import type { Entity, NucleusType } from '../entities/cell';
+import type { Entity } from '../entities/cell';
 import { rr, ri, pick, sgn, clamp, wrapHue } from '../core/math.js';
 import { MicrobeRegistry } from './MicrobeRegistry.js';
 import { MicrobeBuilder } from './MicrobeBuilder.js';
