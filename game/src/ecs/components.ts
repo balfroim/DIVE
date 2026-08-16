@@ -11,7 +11,7 @@ interface Spec<T extends BaseComponent = BaseComponent, E extends Entity = Entit
 }
 
 class ComponentRegistry {
-  private readonly components: Record<string, Spec<BaseComponent, Entity>> = {};
+  private readonly components: Record<string, Spec<BaseComponent, Entity>> = Object.create(null) as Record<string, Spec<BaseComponent, Entity>>;
 
   register<T extends BaseComponent, E extends Entity = Entity>(name: string, c: Spec<T, E>): void {
     this.components[name] = c as unknown as Spec<BaseComponent, Entity>;
