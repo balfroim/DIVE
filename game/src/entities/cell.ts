@@ -28,6 +28,7 @@ export interface Entity {
   vx: number;
   vy: number;
   r: number;
+  nucleus: NucleusType;
   comp: Record<string, unknown>;
 }
 
