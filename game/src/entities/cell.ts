@@ -1,9 +1,3 @@
-/**
- * The entity schema of a cell shape.
- *
- * @module entities/cell
- */
-
 import { rr, TAU } from '../core/math.js';
 import { attach } from '../ecs/components.js';
 import { ARCHETYPES } from '../data/archetypes.js';
@@ -36,60 +30,9 @@ export interface Entity {
   vy: number;
   r: number;
 
-  // motion: MotionType;
-  // mt: number;
-  // bob: number;
-  // target: unknown;
-  // orbA: number;
-  // orbR: number;
-  // orbX: number;
-  // orbY: number;
-
-  // hue: number;
-  // sat: number;
-  // lit: number;
-  // elong: number;
-  // lobes: number;
-  // lobeAmp: number;
-  // deform: number;
-  // spikes: number;
-  // spikeLen: number;
-  // spikeTip: boolean;
-  // flag: number;
-  // nuc: NucleusType;
-  // halo: number;
-  // coil: boolean;
-  // segs: number;
-  // wave: number;
-  // tremor: number;
-  // verts: number;
-  // scale: number;
-
-  // idUntil: number;
-  // idPing: number;
-  // idName: string;
-  // idSub: string;
-  // idCol: string;
-
-  // infect: number;
-  // infCd: number;
-  // infBy: unknown;
-  // age: number;
-  // dying: boolean;
-  // born: number;
-  // hurt: number;
-  // leaving: boolean;
-  // lifespan: number;
-  // preview: boolean;
-  // marked: boolean;
-
+  
   comp: Record<string, unknown>;
 
-  // _ax: number;
-  // _ay: number;
-  // _g: unknown;
-  // _gk: string;
-  // _gc: unknown;
 }
 
 export interface Transform {
