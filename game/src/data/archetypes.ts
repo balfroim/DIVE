@@ -1,4 +1,4 @@
-import type { Entity } from '../entities/cell';
+import type { Entity, Microbe } from '../entities/cell';
 import { rr, ri, pick, sgn, clamp, wrapHue } from '../core/math.js';
 import { MicrobeRegistry } from './MicrobeRegistry.js';
 import { MicrobeBuilder } from './MicrobeBuilder.js';
@@ -14,7 +14,7 @@ export const ABO_INCOMPATIBLE = {
   AB: []
 };
  
-export const ARCHETYPES = new MicrobeRegistry<Entity>();
+export const ARCHETYPES = new MicrobeRegistry<Microbe>();
 
 interface Colored {
   hue: number;
