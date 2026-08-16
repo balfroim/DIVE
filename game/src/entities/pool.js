@@ -243,12 +243,14 @@ export function spawnEnt(archId, sig, dev, opts) {
 export function morphEnt(e, archId, sig, dev, o) {
   const uid = e.uid;
   const x = e.x, y = e.y, vx = e.vx, vy = e.vy, row = e.row;
+  const ang = e.ang, spin = e.spin, phase = e.phase, seed = e.seed;
   const age = e.age, dying = e.dying, born = e.born, leaving = e.leaving, lifespan = e.lifespan;
   const infect = e.infect, infCd = e.infCd, infBy = e.infBy;
   const preview = e.preview;
   resetEnt(e, born);
   e.uid = uid;
   e.x = x; e.y = y; e.vx = vx; e.vy = vy; e.row = row;
+  e.ang = ang; e.spin = spin; e.phase = phase; e.seed = seed;
   e.age = age; e.dying = dying; e.born = born; e.leaving = leaving; e.lifespan = lifespan;
   e.infect = infect; e.infCd = infCd; e.infBy = infBy;
   if (preview) e.preview = true;
