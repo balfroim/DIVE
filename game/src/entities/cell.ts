@@ -23,16 +23,12 @@ export interface Entity {
   on: boolean;
   kind: EntityKind;
   dying: boolean;
-
   x: number;
   y: number;
   vx: number;
   vy: number;
   r: number;
-
-  
   comp: Record<string, unknown>;
-
 }
 
 export interface Transform {

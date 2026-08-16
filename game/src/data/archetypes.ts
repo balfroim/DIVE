@@ -13,19 +13,6 @@ export const ABO_INCOMPATIBLE = {
   B: ['A', 'AB'],
   AB: []
 };
-
-export interface PartialArchetype {
-  kind?: EntityKind;
-  name?: string;
-  short?: string;
-  desc?: string;
-  idName?: string;
-  idSub?: string;
-  idCol?: string;
-  components?: string[] | Record<string, Record<string, unknown>>;
-  comps?: string[] | Record<string, Record<string, unknown>>;
-  onDress?: (e: Entity, sig: Signature, dev: number, o: DressOpts) => void;
-}
  
 export class ArchetypeRegistry {
   private archetypes: Record<string, MicrobeBlueprint> = {};
@@ -49,7 +36,7 @@ export class ArchetypeRegistry {
 
 class ArchetypeBuilder {
 
-  archetype: PartialArchetype = {};
+  archetype: Partial<MicrobeBlueprint> = {};
 
   public setKind(kind: string): this {
     this.archetype.kind = kind;
