@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "check": "node tools/check-imports.mjs",
     "preview": "vite preview",
+    "test": "node --test tests/components.behaviour.test.js",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],
