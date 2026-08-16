@@ -67,7 +67,7 @@ export interface Appearance {
   spikeLen: number;
   spikeTip: boolean;
   flag: number;
-  nuc: NucleusType;
+  nucleus: NucleusType;
   halo: number;
   coil: boolean;
   segs: number;
@@ -184,7 +184,7 @@ function resetAppearance(e: Appearance): void {
   e.spikeLen = 0;
   e.spikeTip = false;
   e.flag = 0;
-  e.nuc = 'dot';
+  e.nucleus = 'dot';
   e.halo = 0;
   e.coil = false;
   e.segs = 0;
@@ -297,7 +297,7 @@ export function blankEnt(): Microbe {
     spikeLen: 0,
     spikeTip: false,
     flag: 0,
-    nuc: 'dot',
+    nucleus: 'dot',
     halo: 0,
     coil: false,
     segs: 0,

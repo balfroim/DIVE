@@ -62,7 +62,7 @@ export function drawNucleus(c, e, t) {
   const hi = hsl(h, e.sat, e.lit + 18, 0.5);
   c.fillStyle = col;
   const wob = Math.sin(t * 1.7 + e.seed) * e.r * 0.05;
-  switch (e.nuc) {
+  switch (e.nucleus) {
     case 'dot':
       c.beginPath(); c.ellipse(wob, wob * 0.6, e.r * 0.36 * e.elongation, e.r * 0.32, 0, 0, TAU); c.fill();
       c.fillStyle = hi; c.beginPath(); c.ellipse(wob - e.r * 0.1, wob * 0.6 - e.r * 0.1, e.r * 0.13, e.r * 0.1, 0, 0, TAU); c.fill();
@@ -186,7 +186,7 @@ export function drawEntityBody(c, e, t) {
   c.fillStyle = 'rgba(255,255,255,0.30)';
   c.fill();
 
-  if (e.nuc !== 'none') drawNucleus(c, e, t);
+  if (e.nucleus !== 'none') drawNucleus(c, e, t);
   c.restore();
 }
 

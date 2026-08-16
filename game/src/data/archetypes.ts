@@ -57,7 +57,7 @@ ARCHETYPES.register('host', new MicrobeBuilder<Cell>()
     e.r = sig.r * rr(0.9, 1.1);
     e.lobes = sig.lobes;
     e.lobeAmp = sig.lobeAmp * rr(0.9, 1.12);
-    e.nucleus = sig.nuc;
+    e.nucleus = sig.nucleus;
   })
   .setComponents({
     cell: {},
@@ -181,7 +181,7 @@ ARCHETYPES.register('mimic', new MicrobeBuilder<Mimic>()
     e.spikes = 5; 
     e.spikeLen = 0.05 + 0.06 * dev; 
     e.spikeTip = false;
-    e.nucleus = sig.nuc;
+    e.nucleus = sig.nucleus;
     e.tremor = 1;
   })
   .setComponents({
