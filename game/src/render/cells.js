@@ -24,7 +24,7 @@ export function blobPath(c, e, t, rs) {
     rad *= 1 + e.lobeAmp * Math.sin(a * (e.lobes || 1) + e.phase)
               + 0.03 * Math.sin(a * 3 + t * 1.5 + e.seed)
               + e.deform * Math.sin(a * 2.3 + e.seed * 2 + t * 0.6);
-    _px[i] = Math.cos(a) * rad * e.elong;
+    _px[i] = Math.cos(a) * rad * e.elongation;
     _py[i] = Math.sin(a) * rad;
   }
   c.beginPath();
@@ -64,19 +64,19 @@ export function drawNucleus(c, e, t) {
   const wob = Math.sin(t * 1.7 + e.seed) * e.r * 0.05;
   switch (e.nuc) {
     case 'dot':
-      c.beginPath(); c.ellipse(wob, wob * 0.6, e.r * 0.36 * e.elong, e.r * 0.32, 0, 0, TAU); c.fill();
+      c.beginPath(); c.ellipse(wob, wob * 0.6, e.r * 0.36 * e.elongation, e.r * 0.32, 0, 0, TAU); c.fill();
       c.fillStyle = hi; c.beginPath(); c.ellipse(wob - e.r * 0.1, wob * 0.6 - e.r * 0.1, e.r * 0.13, e.r * 0.1, 0, 0, TAU); c.fill();
       break;
     case 'trio':
       for (let i = 0; i < 3; i++) {
         const a = e.phase + i * TAU / 3 + t * 0.3;
-        c.beginPath(); c.ellipse(Math.cos(a) * e.r * 0.34 * e.elong, Math.sin(a) * e.r * 0.34, e.r * 0.17, e.r * 0.15, 0, 0, TAU); c.fill();
+        c.beginPath(); c.ellipse(Math.cos(a) * e.r * 0.34 * e.elongation, Math.sin(a) * e.r * 0.34, e.r * 0.17, e.r * 0.15, 0, 0, TAU); c.fill();
       }
       break;
     case 'ring':
       c.lineWidth = Math.max(1.4, e.r * 0.11);
       c.strokeStyle = col;
-      c.beginPath(); c.ellipse(0, 0, e.r * 0.44 * e.elong, e.r * 0.42, 0, 0, TAU); c.stroke();
+      c.beginPath(); c.ellipse(0, 0, e.r * 0.44 * e.elongation, e.r * 0.42, 0, 0, TAU); c.stroke();
       break;
     case 'crescent':
       c.beginPath();
@@ -101,7 +101,7 @@ export function drawEntityBody(c, e, t) {
     return;
   }
 
-  const rot = (e.elong > 1.12 || e.motion === 'seek' || e.motion === 'wiggle') ? e.ang : e.phase * 0.15;
+  const rot = (e.elongation > 1.12 || e.motion === 'seek' || e.motion === 'wiggle') ? e.ang : e.phase * 0.15;
   c.rotate(rot);
 
   /* flagella (behind) */
@@ -112,10 +112,10 @@ export function drawEntityBody(c, e, t) {
     for (let f = 0; f < e.flag; f++) {
       const off = (f - (e.flag - 1) / 2) * e.r * 0.5;
       c.beginPath();
-      c.moveTo(-e.r * e.elong * 0.9, off * 0.5);
+      c.moveTo(-e.r * e.elongation * 0.9, off * 0.5);
       for (let s = 1; s <= 5; s++) {
         const u = s / 5;
-        const x = -e.r * e.elong * (0.9 + u * 1.5);
+        const x = -e.r * e.elongation * (0.9 + u * 1.5);
         const y = off * 0.5 + Math.sin(u * 5 - t * 11 + f * 1.7 + e.seed) * e.r * 0.55 * u;
         c.lineTo(x, y);
       }
@@ -149,11 +149,11 @@ export function drawEntityBody(c, e, t) {
 
   /* membrane */
   blobPath(c, e, t, 1);
-  const gk = (e.hue | 0) + '|' + (e.sat | 0) + '|' + (e.lit | 0) + '|' + e.r.toFixed(1) + '|' + e.elong.toFixed(2);
+  const gk = (e.hue | 0) + '|' + (e.sat | 0) + '|' + (e.lit | 0) + '|' + e.r.toFixed(1) + '|' + e.elongation.toFixed(2);
   let g;
   if (e._g && e._gk === gk && e._gc === c) { g = e._g; }
   else {
-    g = c.createRadialGradient(-e.r * 0.25, -e.r * 0.3, e.r * 0.1, 0, 0, e.r * 1.15 * e.elong);
+    g = c.createRadialGradient(-e.r * 0.25, -e.r * 0.3, e.r * 0.1, 0, 0, e.r * 1.15 * e.elongation);
     g.addColorStop(0, hsl(e.hue, e.sat, Math.min(92, e.lit + 22), 0.96));
     g.addColorStop(0.55, hsl(e.hue, e.sat, e.lit, 0.90));
     g.addColorStop(1, hsl(e.hue, Math.min(98, e.sat + 8), Math.max(18, e.lit - 22), 0.85));
@@ -182,7 +182,7 @@ export function drawEntityBody(c, e, t) {
 
   /* specular */
   c.beginPath();
-  c.ellipse(-e.r * 0.34 * e.elong, -e.r * 0.38, e.r * 0.26 * e.elong, e.r * 0.15, -0.6, 0, TAU);
+  c.ellipse(-e.r * 0.34 * e.elongation, -e.r * 0.38, e.r * 0.26 * e.elongation, e.r * 0.15, -0.6, 0, TAU);
   c.fillStyle = 'rgba(255,255,255,0.30)';
   c.fill();
 
@@ -195,9 +195,9 @@ export function drawHalo(c, e, t) {
   c.save();
   c.lineWidth = 1.6;
   c.strokeStyle = hsl(150, 90, 70, 0.30 + p * 0.28);
-  c.beginPath(); c.arc(0, 0, e.r * (1.34 + p * 0.06) * Math.max(1, e.elong * 0.9), 0, TAU); c.stroke();
+  c.beginPath(); c.arc(0, 0, e.r * (1.34 + p * 0.06) * Math.max(1, e.elongation * 0.9), 0, TAU); c.stroke();
   c.strokeStyle = hsl(150, 90, 76, 0.16 + (1 - p) * 0.22);
-  c.beginPath(); c.arc(0, 0, e.r * (1.62 + (1 - p) * 0.08) * Math.max(1, e.elong * 0.9), 0, TAU); c.stroke();
+  c.beginPath(); c.arc(0, 0, e.r * (1.62 + (1 - p) * 0.08) * Math.max(1, e.elongation * 0.9), 0, TAU); c.stroke();
   c.restore();
   if (!e.preview && Math.random() < 0.07) {
     const a = rr(0, TAU), d = e.r * 1.5;
@@ -215,7 +215,7 @@ export function drawEntities(t) {
     const sc = e.dying > 0 ? e.dying : e.scale;
     const g = glowSprite(e.hue, e.sat, e.lit);
     const pul = 1 + Math.sin(t * 2.2 + e.seed) * 0.06;
-    drawGlow(g, e.x, e.y, e.r * (e.coil ? 3.6 : 2.5) * pul * sc * (e.elong > 1.2 ? 1.25 : 1), 0.32);
+    drawGlow(g, e.x, e.y, e.r * (e.coil ? 3.6 : 2.5) * pul * sc * (e.elongation > 1.2 ? 1.25 : 1), 0.32);
   }
   View.ctx.globalCompositeOperation = 'source-over';
 
@@ -252,7 +252,7 @@ export function drawEntityUI(t, hover) {
     if (!e.on || e.dying > 0) continue;
     if (!inView(e.x, e.y, e.r * 4 + 90)) continue;
     const idd = t < e.idUntil;
-    const rad = e.r * Math.max(1, e.elong) + 8;
+    const rad = e.r * Math.max(1, e.elongation) + 8;
 
     if (e.infect > 0.06) {
       View.ctx.save();

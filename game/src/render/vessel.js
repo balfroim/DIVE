@@ -249,7 +249,7 @@ export function drawFiringLine(fp) {
     ctx.strokeStyle = 'rgba(255,110,140,0.78)';
     ctx.lineWidth = e.comp.hostile ? 2 : 1.4;
     ctx.beginPath();
-    ctx.arc(e.x, e.y, e.r * e.elong + 9, 0, TAU);
+    ctx.arc(e.x, e.y, e.r * e.elongation + 9, 0, TAU);
     ctx.stroke();
   }
   ctx.restore();

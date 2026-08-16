@@ -34,7 +34,7 @@ export function paintPreview(canvas, ent, t) {
   c.clearRect(0, 0, S, S);
   c.save();
   c.translate(S / 2, S / 2);
-  const k = (S * 0.3) / (ent.r * Math.max(1, ent.elong) * (ent.coil ? 3.2 : 1 + (ent.spikeLen || 0)));
+  const k = (S * 0.3) / (ent.r * Math.max(1, ent.elongation) * (ent.coil ? 3.2 : 1 + (ent.spikeLen || 0)));
   c.scale(k, k);
   c.globalCompositeOperation = 'lighter';
   const g = glowSprite(ent.hue, ent.sat, ent.lit);

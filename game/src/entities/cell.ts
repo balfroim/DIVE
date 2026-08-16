@@ -59,7 +59,7 @@ export interface Appearance {
   hue: number;
   sat: number;
   lit: number;
-  elong: number;
+  elongation: number;
   lobes: number;
   lobeAmp: number;
   deform: number;
@@ -176,7 +176,7 @@ function resetAppearance(e: Appearance): void {
   e.hue = 0;
   e.sat = 70;
   e.lit = 60;
-  e.elong = 1;
+  e.elongation = 1;
   e.lobes = 4;
   e.lobeAmp = 0.1;
   e.deform = 0;
@@ -289,7 +289,7 @@ export function blankEnt(): Microbe {
     hue: 0,
     sat: 70,
     lit: 60,
-    elong: 1,
+    elongation: 1,
     lobes: 4,
     lobeAmp: 0.1,
     deform: 0,
