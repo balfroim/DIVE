@@ -1,9 +1,3 @@
-/**
- * The entity schema of a cell shape.
- *
- * @module entities/cell
- */
-
 import { rr, TAU } from '../core/math.js';
 import { attach } from '../ecs/components.js';
 import { ARCHETYPES } from '../data/archetypes.js';
@@ -29,67 +23,13 @@ export interface Entity {
   on: boolean;
   kind: EntityKind;
   dying: boolean;
-
   x: number;
   y: number;
   vx: number;
   vy: number;
   r: number;
-
-  // motion: MotionType;
-  // mt: number;
-  // bob: number;
-  // target: unknown;
-  // orbA: number;
-  // orbR: number;
-  // orbX: number;
-  // orbY: number;
-
-  // hue: number;
-  // sat: number;
-  // lit: number;
-  // elong: number;
-  // lobes: number;
-  // lobeAmp: number;
-  // deform: number;
-  // spikes: number;
-  // spikeLen: number;
-  // spikeTip: boolean;
-  // flag: number;
-  // nuc: NucleusType;
-  // halo: number;
-  // coil: boolean;
-  // segs: number;
-  // wave: number;
-  // tremor: number;
-  // verts: number;
-  // scale: number;
-
-  // idUntil: number;
-  // idPing: number;
-  // idName: string;
-  // idSub: string;
-  // idCol: string;
-
-  // infect: number;
-  // infCd: number;
-  // infBy: unknown;
-  // age: number;
-  // dying: boolean;
-  // born: number;
-  // hurt: number;
-  // leaving: boolean;
-  // lifespan: number;
-  // preview: boolean;
-  // marked: boolean;
-
+  nucleus: NucleusType;
   comp: Record<string, unknown>;
-
-  // _ax: number;
-  // _ay: number;
-  // _g: unknown;
-  // _gk: string;
-  // _gc: unknown;
 }
 
 export interface Transform {
@@ -119,7 +59,7 @@ export interface Appearance {
   hue: number;
   sat: number;
   lit: number;
-  elong: number;
+  elongation: number;
   lobes: number;
   lobeAmp: number;
   deform: number;
@@ -127,7 +67,7 @@ export interface Appearance {
   spikeLen: number;
   spikeTip: boolean;
   flag: number;
-  nuc: NucleusType;
+  nucleus: NucleusType;
   halo: number;
   coil: boolean;
   segs: number;
@@ -236,7 +176,7 @@ function resetAppearance(e: Appearance): void {
   e.hue = 0;
   e.sat = 70;
   e.lit = 60;
-  e.elong = 1;
+  e.elongation = 1;
   e.lobes = 4;
   e.lobeAmp = 0.1;
   e.deform = 0;
@@ -244,7 +184,7 @@ function resetAppearance(e: Appearance): void {
   e.spikeLen = 0;
   e.spikeTip = false;
   e.flag = 0;
-  e.nuc = 'dot';
+  e.nucleus = 'dot';
   e.halo = 0;
   e.coil = false;
   e.segs = 0;
@@ -349,7 +289,7 @@ export function blankEnt(): Microbe {
     hue: 0,
     sat: 70,
     lit: 60,
-    elong: 1,
+    elongation: 1,
     lobes: 4,
     lobeAmp: 0.1,
     deform: 0,
@@ -357,7 +297,7 @@ export function blankEnt(): Microbe {
     spikeLen: 0,
     spikeTip: false,
     flag: 0,
-    nuc: 'dot',
+    nucleus: 'dot',
     halo: 0,
     coil: false,
     segs: 0,

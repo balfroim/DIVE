@@ -364,7 +364,7 @@ SYSTEMS.register({
         if (a === b) return;
         if (!b.on || b.dying) return;
         const dx = b.x - a.x, dy = b.y - a.y;
-        const rad = (a.r * a.elong + b.r * b.elong) * 1.05;
+        const rad = (a.r * a.elongation + b.r * b.elongation) * 1.05;
         const d2 = dx * dx + dy * dy;
         if (d2 > rad * rad || d2 < 0.01) return;
         const d = Math.sqrt(d2);

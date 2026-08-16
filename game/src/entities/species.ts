@@ -15,14 +15,14 @@ export function makeSignature(): Signature {
     r: rr(21, 27),
     lobes: Number.parseInt(lobes, 10),
     lobeAmp: lobes === "0" ? 0.022 : rr(0.075, 0.135),
-    nuc: pick(NUCLEI),
+    nucleus: pick(NUCLEI),
     patient: 'CLIENT #' + pick('ABCDEFHJKLMNPRSTVX') + '-' + ri(1000, 9999),
     site: pick(SITES),
     desc: '',
     short: ''
   };
-  const nuc: string = sig.nuc as string;
-  const nucname: string = NUCNAME[nuc] ?? 'MONO-NUCLEUS'; // FIXME: wtf
+  const nucleus: string = sig.nucleus as string;
+  const nucname: string = NUCNAME[nucleus] ?? 'MONO-NUCLEUS'; // FIXME: wtf
   const lobename: string = sig.lobes ? sig.lobes + '-LOBE' : 'SMOOTH';
   sig.desc = `HUE ${sig.hue.toString()}° · ${lobename} · ${nucname}`;
   sig.short = `H${sig.hue} · ${lobes ? lobes + 'L' : 'SM'}`;

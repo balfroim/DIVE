@@ -6,5 +6,5 @@ export interface Signature {
   r: number;
   lobes: number;
   lobeAmp: number;
-  nuc: string;
+  nucleus: string;
 }

@@ -429,7 +429,7 @@ export const Game = {
     for (let i = 0; i < World.pool.length; i++) {
       const e = World.pool[i];
       if (!e.on || e.dying) continue;
-      const rad = e.r * e.elong + (pad || 0);
+      const rad = e.r * e.elongation + (pad || 0);
       const d = Math.hypot(e.x - wx, e.y - wy);
       if (d < rad && d < bd) { bd = d; best = e; }
     }

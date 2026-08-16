@@ -2,7 +2,7 @@ import type { Signature } from '../../data/Signature';
 import type { EntityKind, Entity, DressOpts } from '../cell';
 
 
-export interface MicrobeBlueprint {
+export interface MicrobeBlueprint<E extends Entity = Entity> {
   kind: EntityKind;
   name: string;
   short: string;
@@ -12,5 +12,5 @@ export interface MicrobeBlueprint {
   idCol: string;
   components: string[] | Record<string, Record<string, unknown>>;
   comps: string[] | Record<string, Record<string, unknown>>;
-  onDress: (e: Entity, sig: Signature, dev: number, o: DressOpts) => void;
+  onDress: (e: E, sig: Signature, dev: number, o: DressOpts) => void;
 }
